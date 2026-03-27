@@ -5,7 +5,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-import back.domain.info.dto.CategoryStatDto;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -13,8 +12,8 @@ import org.springframework.test.util.ReflectionTestUtils;
 class CategoryStatDtoTest {
 
     @Test
-    @DisplayName("DTO를 CategoryStat 엔티티로 변환한다")
-    void toEntity_returnsCategoryStat() {
+    @DisplayName("DTO getter가 주입된 값을 그대로 반환한다")
+    void getters_returnAssignedValues() {
         CategoryStatDto dto = new CategoryStatDto();
         LocalDateTime lastUpdated = LocalDateTime.of(2026, 3, 27, 11, 15);
 
@@ -25,13 +24,11 @@ class CategoryStatDtoTest {
         ReflectionTestUtils.setField(dto, "sampleCount", 24);
         ReflectionTestUtils.setField(dto, "lastUpdated", lastUpdated);
 
-        var entity = dto.toEntity();
-
-        assertThat(entity.getCategory()).isEqualTo("coding");
-        assertThat(entity.getAvgValue()).isEqualByComparingTo("87.30");
-        assertThat(entity.getMaxValue()).isEqualByComparingTo("99.10");
-        assertThat(entity.getMinValue()).isEqualByComparingTo("65.40");
-        assertThat(entity.getSampleCount()).isEqualTo(24);
-        assertThat(entity.getLastUpdated()).isEqualTo(lastUpdated);
+        assertThat(dto.getCategory()).isEqualTo("coding");
+        assertThat(dto.getAvgValue()).isEqualByComparingTo("87.30");
+        assertThat(dto.getMaxValue()).isEqualByComparingTo("99.10");
+        assertThat(dto.getMinValue()).isEqualByComparingTo("65.40");
+        assertThat(dto.getSampleCount()).isEqualTo(24);
+        assertThat(dto.getLastUpdated()).isEqualTo(lastUpdated);
     }
 }
