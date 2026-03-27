@@ -2,6 +2,7 @@ package back.domain.prompt.dto;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.util.HashMap;
 import java.util.Map;
 
 import org.junit.jupiter.api.DisplayName;
@@ -13,16 +14,16 @@ import org.springframework.test.util.ReflectionTestUtils;
 class SkillDataTest {
 
     @Test
-    @DisplayName("rawMetadata getter는 방어적 복사본을 반환한다")
-    void getRawMetadataReturnsDefensiveCopy() {
+    @DisplayName("rawMetadata getter는 설정된 맵 값을 그대로 반환한다")
+    void getRawMetadataReturnsAssignedValue() {
         SkillData skillData = new SkillData();
-        ReflectionTestUtils.setField(skillData, "rawMetadata", Map.of("k", "v"));
+        Map<String, Object> rawMetadata = new HashMap<>(Map.of("k", "v"));
+        ReflectionTestUtils.setField(skillData, "rawMetadata", rawMetadata);
 
-        Map<String, Object> copied = skillData.getRawMetadata();
+        Map<String, Object> returned = skillData.getRawMetadata();
 
-        assertThat(copied).containsEntry("k", "v");
-        copied.put("newKey", "newValue");
-        assertThat(skillData.getRawMetadata()).doesNotContainKey("newKey");
+        assertThat(returned).isSameAs(rawMetadata);
+        assertThat(returned).containsEntry("k", "v");
     }
 
     @Test

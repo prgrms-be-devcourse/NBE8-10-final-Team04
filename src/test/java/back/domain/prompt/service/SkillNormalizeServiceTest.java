@@ -185,7 +185,13 @@ class SkillNormalizeServiceTest {
                 "etag-old",
                 LocalDateTime.parse("2026-03-26T10:00:00")
         );
-        Skill existing = Skill.create(repository, "alpha", "old content", "old-hash", "skills/alpha.md");
+        Skill existing = Skill.builder()
+                .repository(repository)
+                .name("alpha")
+                .contentMd("old content")
+                .contentHash("old-hash")
+                .filePath("skills/alpha.md")
+                .build();
         SkillData skillData = skillData("alpha", "skills/alpha.md", "new content", "new-hash");
         when(skillRepository.findByRepositoryIdAndName(1L, "alpha")).thenReturn(Optional.of(existing));
 
@@ -237,7 +243,12 @@ class SkillNormalizeServiceTest {
                 "etag-old",
                 LocalDateTime.parse("2026-03-26T10:00:00")
         );
-        Agent existing = Agent.create(repository, "old agent content", "old-agent-hash", "AGENTS.md");
+        Agent existing = Agent.builder()
+                .repository(repository)
+                .contentMd("old agent content")
+                .contentHash("old-agent-hash")
+                .filePath("AGENTS.md")
+                .build();
         AgentData agentData = agentData("codex", "AGENTS.md", "new agent content", "new-agent-hash");
         when(agentRepository.findByRepositoryId(1L)).thenReturn(Optional.of(existing));
 
@@ -326,28 +337,28 @@ class SkillNormalizeServiceTest {
             String etag,
             LocalDateTime sourceUpdatedAt
     ) {
-        Repository repository = Repository.create(
-                githubId,
-                "demo-repo",
-                sourceRepo,
-                "https://example.com/" + sourceRepo,
-                "demo summary",
-                Set.of("java", "kotlin"),
-                starCount,
-                forkCount,
-                50,
-                Map.of("Java", 90, "Kotlin", 10),
-                "MIT",
-                "https://example.com",
-                "https://example.com/avatar.png",
-                OwnerType.USER,
-                true,
-                "main",
-                etag,
-                sourceUpdatedAt,
-                true,
-                Map.of("category", "demo")
-        );
+        Repository repository = Repository.builder()
+                .githubId(githubId)
+                .name("demo-repo")
+                .sourceRepo(sourceRepo)
+                .sourceUri("https://example.com/" + sourceRepo)
+                .summary("demo summary")
+                .tagsJson(Set.of("java", "kotlin"))
+                .starCount(starCount)
+                .forkCount(forkCount)
+                .size(50)
+                .languageStats(Map.of("Java", 90, "Kotlin", 10))
+                .license("MIT")
+                .homepage("https://example.com")
+                .ownerAvatarUrl("https://example.com/avatar.png")
+                .ownerType(OwnerType.USER)
+                .isOfficial(true)
+                .defaultBranch("main")
+                .etag(etag)
+                .sourceUpdatedAt(sourceUpdatedAt)
+                .active(true)
+                .rawMetadata(Map.of("category", "demo"))
+                .build();
         ReflectionTestUtils.setField(repository, "id", id);
         return repository;
     }
