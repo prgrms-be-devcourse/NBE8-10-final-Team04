@@ -4,9 +4,7 @@ import back.domain.prompt.enums.OwnerType;
 import back.global.jpa.entity.BaseEntity;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import jakarta.persistence.*;
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
@@ -17,8 +15,13 @@ import java.util.*;
 @Entity
 @Table(name = "repositories")
 @Getter
+@Builder
+@AllArgsConstructor
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @EntityListeners(AuditingEntityListener.class)
+@SuppressFBWarnings(
+        value = {"EI_EXPOSE_REP", "EI_EXPOSE_REP2"},
+        justification = "JPA 엔티티의 연관 객체와 JSON 컬렉션/맵 필드는 영속성 컨텍스트가 관리한다.")
 public class Repository extends BaseEntity {
 
     @Column(name = "github_id", nullable = false, unique = true)
@@ -92,52 +95,6 @@ public class Repository extends BaseEntity {
     @SuppressFBWarnings(value = "EI_EXPOSE_REP")
     private Agent agent;
 
-    public static Repository create(
-            Long githubId,
-            String name,
-            String sourceRepo,
-            String sourceUri,
-            String summary,
-            Set<String> tagsJson,
-            Integer starCount,
-            Integer forkCount,
-            Integer size,
-            Map<String, Integer> languageStats,
-            String license,
-            String homepage,
-            String ownerAvatarUrl,
-            OwnerType ownerType,
-            Boolean isOfficial,
-            String defaultBranch,
-            String etag,
-            LocalDateTime sourceUpdatedAt,
-            Boolean active,
-            Map<String, Object> rawMetadata
-    ) {
-        Repository repository = new Repository();
-        repository.githubId = githubId;
-        repository.name = name;
-        repository.sourceRepo = sourceRepo;
-        repository.sourceUri = sourceUri;
-        repository.summary = summary;
-        repository.tagsJson = tagsJson == null ? new HashSet<>() : new HashSet<>(tagsJson);
-        repository.starCount = starCount;
-        repository.forkCount = forkCount;
-        repository.size = size;
-        repository.languageStats = languageStats == null ? new HashMap<>() : new HashMap<>(languageStats);
-        repository.license = license;
-        repository.homepage = homepage;
-        repository.ownerAvatarUrl = ownerAvatarUrl;
-        repository.ownerType = ownerType;
-        repository.isOfficial = isOfficial;
-        repository.defaultBranch = defaultBranch;
-        repository.etag = etag;
-        repository.sourceUpdatedAt = sourceUpdatedAt;
-        repository.active = active != null ? active : Boolean.TRUE;
-        repository.rawMetadata = rawMetadata == null ? new HashMap<>() : new HashMap<>(rawMetadata);
-        return repository;
-    }
-
     public void update(
             Integer starCount,
             Integer forkCount,
@@ -155,19 +112,4 @@ public class Repository extends BaseEntity {
         this.active = false;
     }
 
-    public Set<String> getTagsJson() {
-        return new HashSet<>(tagsJson);
-    }
-
-    public Map<String, Integer> getLanguageStats() {
-        return new HashMap<>(languageStats);
-    }
-
-    public Map<String, Object> getRawMetadata() {
-        return new HashMap<>(rawMetadata);
-    }
-
-    public List<Skill> getSkills() {
-        return new ArrayList<>(skills);
-    }
 }
