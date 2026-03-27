@@ -1,5 +1,6 @@
 package back.domain.info.entity;
 
+import back.domain.info.dto.ModelBenchmarkDto;
 import back.domain.info.enums.MetricType;
 import back.global.jpa.entity.BaseEntity;
 import jakarta.persistence.*;
@@ -9,7 +10,10 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "model_benchmarks")
+@Table(
+        name = "model_benchmarks",
+        uniqueConstraints = @UniqueConstraint(columnNames = {"model_id", "metric_type"})
+)
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
@@ -32,4 +36,10 @@ public class ModelBenchmark extends BaseEntity {
 
     @Column(length = 50)
     private String unit;
+
+    public void update(ModelBenchmarkDto dto) {
+        this.metricValue = dto.getMetricValue();
+        this.measuredAt = dto.getMeasuredAt();
+        this.unit = dto.getUnit();
+    }
 }

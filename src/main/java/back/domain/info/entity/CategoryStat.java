@@ -1,5 +1,6 @@
 package back.domain.info.entity;
 
+import back.domain.info.dto.CategoryStatDto;
 import back.global.jpa.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
@@ -32,4 +33,12 @@ public class CategoryStat extends BaseEntity {
 
     @Column(nullable = false)
     private LocalDateTime lastUpdated;
+
+    public void update(CategoryStatDto dto) {
+        this.avgValue = dto.getAvgValue();
+        this.maxValue = dto.getMaxValue();
+        this.minValue = dto.getMinValue();
+        this.sampleCount = dto.getSampleCount();
+        this.lastUpdated = dto.getLastUpdated();
+    }
 }

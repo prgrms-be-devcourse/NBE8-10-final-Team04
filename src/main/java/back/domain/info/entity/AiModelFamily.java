@@ -1,6 +1,7 @@
 package back.domain.info.entity;
 
 import back.global.jpa.entity.BaseEntity;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -16,6 +17,9 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@SuppressFBWarnings(
+        value = {"EI_EXPOSE_REP", "EI_EXPOSE_REP2"},
+        justification = "JPA 엔티티의 연관 객체와 컬렉션은 영속성 컨텍스트가 관리한다.")
 public class AiModelFamily extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -31,4 +35,8 @@ public class AiModelFamily extends BaseEntity {
     @OneToMany(mappedBy = "family", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<AiModel> models = new ArrayList<>();
+
+    public void update(String commonDescription) {
+        this.commonDescription = commonDescription;
+    }
 }
