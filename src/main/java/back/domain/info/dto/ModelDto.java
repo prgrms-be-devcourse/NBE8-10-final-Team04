@@ -1,14 +1,19 @@
 package back.domain.info.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 
 @Getter
 @NoArgsConstructor
+@SuppressFBWarnings(
+        value = "EI_EXPOSE_REP",
+        justification = "Jackson DTO는 입력 모달리티 리스트를 그대로 전달한다.")
 public class ModelDto {
 
     @JsonProperty("model_name")
@@ -24,7 +29,7 @@ public class ModelDto {
     private Integer maxOutputTokens;
 
     @JsonProperty("release_date")
-    private String releaseDate;
+    private LocalDate releaseDate;
 
     @JsonProperty("is_preview")
     private Boolean isPreview;
