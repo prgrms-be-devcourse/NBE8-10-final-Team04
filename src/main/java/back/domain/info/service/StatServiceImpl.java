@@ -2,15 +2,14 @@ package back.domain.info.service;
 
 import back.domain.info.dto.CategoryStatDto;
 import back.domain.info.dto.ModelBenchmarkDto;
-import back.domain.info.dto.VendorDto;
-import back.domain.info.entity.AiModel;
-import back.domain.info.entity.AiVendor;
 import back.domain.info.entity.CategoryStat;
 import back.domain.info.entity.ModelBenchmark;
 import back.domain.info.mapper.ModelStatMapper;
 import back.domain.info.repository.AiModelRepository;
 import back.domain.info.repository.CategoryStatRepository;
 import back.domain.info.repository.ModelBenchmarkRepository;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -26,6 +25,9 @@ import java.util.List;
 @Service
 @Slf4j
 @RequiredArgsConstructor
+@SuppressFBWarnings(
+        value = "EI_EXPOSE_REP2",
+        justification = "스프링이 관리하는 ObjectMapper를 DI로 주입받아 서비스 내부에서만 사용한다.")
 public class StatServiceImpl implements StatService {
 
     @Value("${app.info.category-stat-path:data/stats/category_stats.json}")
@@ -36,16 +38,18 @@ public class StatServiceImpl implements StatService {
 
     private final CategoryStatRepository categoryStatRepository;
     private final ModelBenchmarkRepository modelBenchmarkRepository;
+    private final AiModelRepository aiModelRepository;
     private final ModelStatMapper modelStatMapper;
     private final ObjectMapper objectMapper;
 
     @Override
+    @Transactional
     public void run() {
-        readCategoryStat();
-        readModelBenchmark();
+        processCategoryStats();
+        processModelBenchmarks();
     }
 
-    private void readCategoryStat() {
+    private void processCategoryStats() {
         List<CategoryStatDto> statDtos = readJson(
                 categoryStatPath,
                 new TypeReference<List<CategoryStatDto>>() {}
@@ -56,15 +60,31 @@ public class StatServiceImpl implements StatService {
             return;
         }
 
-        List<CategoryStat> stats = statDtos.stream()
-                .map(modelStatMapper::toCategoryStatEntity)
-                .toList();
+        int createdCount = 0;
+        int updatedCount = 0;
 
-        categoryStatRepository.saveAll(stats);
-        log.info("[StatService] category_stats {}개 적재 완료.", stats.size());
+        for (CategoryStatDto statDto : statDtos) {
+            CategoryStat stat = categoryStatRepository.findByCategory(statDto.getCategory())
+                    .orElse(null);
+
+            if (stat == null) {
+                createCategoryStat(statDto);
+                createdCount++;
+            } else {
+                updateCategoryStat(stat, statDto);
+                updatedCount++;
+            }
+        }
+
+        log.info(
+                "[StatService] category_stats upsert 완료. created={}, updated={}, total={}",
+                createdCount,
+                updatedCount,
+                statDtos.size()
+        );
     }
 
-    private void readModelBenchmark() {
+    private void processModelBenchmarks() {
         List<ModelBenchmarkDto> benchmarkDtos = readJson(
                 modelBenchmarkPath,
                 new TypeReference<List<ModelBenchmarkDto>>() {}
@@ -75,15 +95,59 @@ public class StatServiceImpl implements StatService {
             return;
         }
 
-        List<ModelBenchmark> benchmarks = benchmarkDtos.stream()
-                .map(modelStatMapper::toModelBenchmarkEntity)
-                .toList();
+        int createdCount = 0;
+        int updatedCount = 0;
+        int skippedCount = 0;
 
-        modelBenchmarkRepository.saveAll(benchmarks);
-        log.info("[StatService] model_benchmarks {}개 적재 완료.", benchmarks.size());
+        for (ModelBenchmarkDto benchmarkDto : benchmarkDtos) {
+
+            ModelBenchmark benchmark = modelBenchmarkRepository
+                    .findByModelApiIdAndMetricType(benchmarkDto.getModelApiId(), benchmarkDto.getMetricType())
+                    .orElse(null);
+
+            if (benchmark == null) {
+                createModelBenchmark(benchmarkDto);
+                createdCount++;
+            } else {
+                updateModelBenchmark(benchmark, benchmarkDto);
+                updatedCount++;
+            }
+        }
+
+        log.info(
+                "[StatService] model_benchmarks upsert 완료. created={}, updated={}, skipped={}, total={}",
+                createdCount,
+                updatedCount,
+                skippedCount,
+                benchmarkDtos.size()
+        );
     }
 
+    private CategoryStat createCategoryStat(CategoryStatDto dto) {
+        CategoryStat stat = modelStatMapper.toCategoryStatEntity(dto);
+        CategoryStat savedStat = categoryStatRepository.save(stat);
+        return savedStat;
+    }
 
+    private void updateCategoryStat(CategoryStat stat, CategoryStatDto dto) {
+        stat.update(dto);
+        log.info("[StatService] category_stat 수정: {}", stat.getCategory());
+    }
+
+    private ModelBenchmark createModelBenchmark(ModelBenchmarkDto dto) {
+        ModelBenchmark benchmark = modelStatMapper.toModelBenchmarkEntity(dto);
+        ModelBenchmark savedBenchmark = modelBenchmarkRepository.save(benchmark);
+        return savedBenchmark;
+    }
+
+    private void updateModelBenchmark(ModelBenchmark benchmark, ModelBenchmarkDto dto) {
+        benchmark.update(dto);
+        log.info(
+                "[StatService] model_benchmark 수정: modelApiId={}, metricType={}",
+                benchmark.getModelApiId(),
+                benchmark.getMetricType()
+        );
+    }
 
     private <T> T readJson(String path, TypeReference<T> typeReference) {
         try {
