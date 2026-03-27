@@ -7,6 +7,7 @@ import back.domain.info.entity.AiModel;
 import back.domain.info.entity.AiVendor;
 import back.domain.info.entity.CategoryStat;
 import back.domain.info.entity.ModelBenchmark;
+import back.domain.info.mapper.ModelStatMapper;
 import back.domain.info.repository.AiModelRepository;
 import back.domain.info.repository.CategoryStatRepository;
 import back.domain.info.repository.ModelBenchmarkRepository;
@@ -35,7 +36,7 @@ public class StatServiceImpl implements StatService {
 
     private final CategoryStatRepository categoryStatRepository;
     private final ModelBenchmarkRepository modelBenchmarkRepository;
-    private final AiModelRepository aiModelRepository;
+    private final ModelStatMapper modelStatMapper;
     private final ObjectMapper objectMapper;
 
     @Override
@@ -50,13 +51,13 @@ public class StatServiceImpl implements StatService {
                 new TypeReference<List<CategoryStatDto>>() {}
         );
 
-        if (statDtos.isEmpty()) {
+        if (statDtos == null || statDtos.isEmpty()) {
             log.warn("[StatService] category_stats JSON 파일에서 읽은 데이터가 없습니다.");
             return;
         }
 
         List<CategoryStat> stats = statDtos.stream()
-                .map(CategoryStatDto::toEntity)
+                .map(modelStatMapper::toCategoryStatEntity)
                 .toList();
 
         categoryStatRepository.saveAll(stats);
@@ -69,39 +70,28 @@ public class StatServiceImpl implements StatService {
                 new TypeReference<List<ModelBenchmarkDto>>() {}
         );
 
-        if (benchmarkDtos.isEmpty()) {
+        if (benchmarkDtos == null || benchmarkDtos.isEmpty()) {
             log.warn("[StatService] model_benchmarks JSON 파일에서 읽은 데이터가 없습니다.");
             return;
         }
 
         List<ModelBenchmark> benchmarks = benchmarkDtos.stream()
-                .map(this::toModelBenchmarkEntity)
+                .map(modelStatMapper::toModelBenchmarkEntity)
                 .toList();
 
         modelBenchmarkRepository.saveAll(benchmarks);
         log.info("[StatService] model_benchmarks {}개 적재 완료.", benchmarks.size());
     }
 
-    private ModelBenchmark toModelBenchmarkEntity(ModelBenchmarkDto dto) {
-        return modelBenchmarkRepository.save(
-                ModelBenchmark.builder()
-                        .modelApiId(dto.getModelApiId())
-                        .metricType(dto.getMetricType())
-                        .metricValue(dto.getMetricValue())
-                        .measuredAt(dto.getMeasuredAt())
-                        .unit(dto.getUnit())
-                        .build()
-        );
-    }
+
 
     private <T> T readJson(String path, TypeReference<T> typeReference) {
         try {
-            log.info("[StatService] JSON을 읽습니다: {}", path);
             String json = Files.readString(Path.of(path));
             return objectMapper.readValue(json, typeReference);
         } catch (IOException e) {
             log.error("[StatService] JSON 읽기 실패: {}", path, e);
-            throw new IllegalStateException("JSON 읽기 실패: " + path, e);
+            return null;
         }
     }
 }

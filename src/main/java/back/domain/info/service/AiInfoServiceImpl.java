@@ -6,6 +6,7 @@ import back.domain.info.dto.VendorDto;
 import back.domain.info.entity.AiModel;
 import back.domain.info.entity.AiModelFamily;
 import back.domain.info.entity.AiVendor;
+import back.domain.info.mapper.AiModelMapper;
 import back.domain.info.repository.AiVendorRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -29,6 +30,7 @@ public class AiInfoServiceImpl implements AiInfoService {
     private String jsonFilePath;
 
     private final AiVendorRepository aiVendorRepository;
+    private final AiModelMapper aiModelMapper;
     private final ObjectMapper objectMapper;
 
     @Transactional
@@ -42,7 +44,7 @@ public class AiInfoServiceImpl implements AiInfoService {
         }
 
         List<AiVendor> vendors = vendorDtos.stream()
-                .map(this::toVendorEntity)
+                .map(aiModelMapper::toVendorEntity)
                 .toList();
 
         aiVendorRepository.saveAll(vendors);
@@ -66,67 +68,4 @@ public class AiInfoServiceImpl implements AiInfoService {
         return List.of();
     }
 
-    private AiVendor toVendorEntity(VendorDto dto) {
-        AiVendor vendor = AiVendor.builder()
-                .name(dto.getName())
-                .officialUrl(dto.getOfficialUrl())
-                .isActive(dto.getIsActive())
-                .isDeprecated(dto.getIsDeprecated())
-                .modelFamilies(new ArrayList<>())
-                .build();
-
-        if (dto.getFamilies() != null) {
-            dto.getFamilies().stream()
-                    .map(f -> toFamilyEntity(f, vendor))
-                    .forEach(vendor.getModelFamilies()::add);
-        }
-
-        return vendor;
-    }
-
-    private AiModelFamily toFamilyEntity(FamilyDto dto, AiVendor vendor) {
-        AiModelFamily family = AiModelFamily.builder()
-                .vendor(vendor)
-                .familyName(dto.getFamilyName())
-                .commonDescription(dto.getCommonDescription())
-                .models(new ArrayList<>())
-                .build();
-
-        if (dto.getModels() != null) {
-            dto.getModels().stream()
-                    .map(m -> toModelEntity(m, family))
-                    .forEach(family.getModels()::add);
-        }
-
-        return family;
-    }
-
-    private AiModel toModelEntity(ModelDto dto, AiModelFamily family) {
-        return AiModel.builder()
-                .family(family)
-                .modelName(dto.getModelName())
-                .apiId(dto.getApiId())
-                .contextWindow(dto.getContextWindow())
-                .maxOutputTokens(dto.getMaxOutputTokens())
-                .releaseDate(parseDate(dto.getReleaseDate()))
-                .isPreview(dto.getIsPreview())
-                .modelImageUrl(dto.getModelImageUrl())
-                .inputPrice(dto.getInputPrice())
-                .outputPrice(dto.getOutputPrice())
-                .inputModalities(dto.getInputModalities() != null ? dto.getInputModalities() : new ArrayList<>())
-                .outputModalities(dto.getOutputModalities() != null ? dto.getOutputModalities() : new ArrayList<>())
-                .build();
-    }
-
-    private LocalDate parseDate(String dateStr) {
-        if (dateStr == null || dateStr.isBlank()) {
-            return null;
-        }
-        try {
-            return LocalDate.parse(dateStr);
-        } catch (Exception e) {
-            log.warn("[DataSeedService] 날짜 파싱 실패 (값: {}), null로 처리합니다.", dateStr);
-            return null;
-        }
-    }
 }

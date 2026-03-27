@@ -31,15 +31,4 @@ public class CategoryStatDto {
     @JsonProperty("last_updated")
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime lastUpdated;
-
-    public CategoryStat toEntity() {
-        return CategoryStat.builder()
-                .category(category)
-                .avgValue(avgValue)
-                .maxValue(maxValue)
-                .minValue(minValue)
-                .sampleCount(sampleCount)
-                .lastUpdated(lastUpdated)
-                .build();
-    }
 }
