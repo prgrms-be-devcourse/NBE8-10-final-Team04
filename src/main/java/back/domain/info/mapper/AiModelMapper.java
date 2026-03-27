@@ -7,8 +7,6 @@ import back.domain.info.entity.AiModel;
 import back.domain.info.entity.AiModelFamily;
 import back.domain.info.entity.AiVendor;
 import org.springframework.stereotype.Component;
-
-import java.time.LocalDate;
 import java.util.ArrayList;
 
 @Component
@@ -55,7 +53,7 @@ public class AiModelMapper {
                 .apiId(dto.getApiId())
                 .contextWindow(dto.getContextWindow())
                 .maxOutputTokens(dto.getMaxOutputTokens())
-                .releaseDate(LocalDate.parse(dto.getReleaseDate()))
+                .releaseDate(dto.getReleaseDate())
                 .isPreview(dto.getIsPreview())
                 .modelImageUrl(dto.getModelImageUrl())
                 .inputPrice(dto.getInputPrice())
