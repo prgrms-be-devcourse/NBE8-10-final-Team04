@@ -20,7 +20,7 @@ import java.time.LocalDateTime;
         justification = "JPA 엔티티의 연관 객체는 영속성 컨텍스트가 관리한다.")
 public class Agent extends BaseEntity {
 
-    @OneToOne(fetch = FetchType.LAZY, mappedBy = "agent")
+    @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "repository_id", nullable = false, unique = true)
     private Repository repository;
 

@@ -3,7 +3,7 @@ package back.domain.info.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.reset;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -18,12 +18,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.mockito.ArgumentCaptor;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.SpringBootConfiguration;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Import;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import back.domain.info.entity.AiModel;
@@ -35,37 +29,31 @@ import back.domain.info.repository.AiModelRepository;
 import back.domain.info.repository.AiVendorRepository;
 import tools.jackson.databind.ObjectMapper;
 
-@SpringBootTest(classes = AiInfoServiceImplTest.TestConfig.class)
 class AiInfoServiceImplTest {
-
-    @SpringBootConfiguration
-    @Import({AiInfoServiceImpl.class, AiModelMapper.class})
-    static class TestConfig {
-
-        @Bean
-        ObjectMapper objectMapper() {
-            return new ObjectMapper();
-        }
-    }
 
     @TempDir
     Path tempDir;
 
-    @Autowired
     private AiInfoServiceImpl aiInfoService;
 
-    @MockitoBean
     private AiVendorRepository aiVendorRepository;
 
-    @MockitoBean
     private AiModelFamilyRepository aiModelFamilyRepository;
 
-    @MockitoBean
     private AiModelRepository aiModelRepository;
 
     @BeforeEach
     void setUp() {
-        reset(aiVendorRepository, aiModelFamilyRepository, aiModelRepository);
+        aiVendorRepository = mock(AiVendorRepository.class);
+        aiModelFamilyRepository = mock(AiModelFamilyRepository.class);
+        aiModelRepository = mock(AiModelRepository.class);
+        aiInfoService = new AiInfoServiceImpl(
+                aiVendorRepository,
+                aiModelFamilyRepository,
+                aiModelRepository,
+                new AiModelMapper(),
+                new ObjectMapper()
+        );
     }
 
     @Test
