@@ -1,6 +1,7 @@
 package back.domain.prompt.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -10,6 +11,9 @@ import java.util.Map;
 
 @Getter
 @NoArgsConstructor
+@SuppressFBWarnings(
+        value = "EI_EXPOSE_REP",
+        justification = "Jackson DTO는 JSON 컬렉션/맵 값을 그대로 전달한다.")
 public class RepositoryData {
 
     @JsonProperty("github_id")
@@ -68,12 +72,4 @@ public class RepositoryData {
 
     @JsonProperty("raw_metadata")
     private Map<String, Object> rawMetadata;
-
-    public Map<String, Object> getRawMetadata() {
-        return rawMetadata == null ? null : new HashMap<>(rawMetadata);
-    }
-
-    public Map<String, Integer> getLanguageStats() {
-        return languageStats == null ? null : new HashMap<>(languageStats);
-    }
 }

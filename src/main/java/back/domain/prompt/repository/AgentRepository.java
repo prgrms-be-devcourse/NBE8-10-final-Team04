@@ -9,7 +9,4 @@ public interface AgentRepository extends JpaRepository<Agent, Long> {
 
     // 레포당 하나만 존재
     Optional<Agent> findByRepositoryId(Long repositoryId);
-
-    // 존재 여부 확인
-    boolean existsByRepositoryId(Long repositoryId);
 }

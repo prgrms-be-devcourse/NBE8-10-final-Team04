@@ -15,17 +15,15 @@ import java.io.IOException;
 import java.nio.file.Files;
 
 @Service
+@RequiredArgsConstructor
 @Slf4j
+@SuppressFBWarnings(
+        value = "EI_EXPOSE_REP2",
+        justification = "스프링이 관리하는 ObjectMapper를 DI로 주입받아 서비스 내부에서만 사용한다.")
 public class PromptServiceImpl implements PromptService {
 
     private final SkillNormalizeServiceImpl normalizeService;
     private final ObjectMapper objectMapper;
-
-    @SuppressFBWarnings(value = "EI_EXPOSE_REP2")
-    public PromptServiceImpl(SkillNormalizeServiceImpl normalizeService, ObjectMapper objectMapper) {
-        this.normalizeService = normalizeService;
-        this.objectMapper = objectMapper;
-    }
 
     @Value("${app.prompts.base-path:data/prompts}")
     private String promptsBasePath;

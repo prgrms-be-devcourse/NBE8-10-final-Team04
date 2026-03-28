@@ -159,28 +159,28 @@ class PromptServiceImplTest {
     }
 
     private Repository repository(Long id, String sourceRepo) {
-        Repository repository = Repository.create(
-                100L,
-                "demo-repo",
-                sourceRepo,
-                "https://example.com/" + sourceRepo,
-                "demo summary",
-                Set.of("java"),
-                10,
-                3,
-                50,
-                Map.of("Java", 90),
-                "MIT",
-                "https://example.com",
-                "https://example.com/avatar.png",
-                OwnerType.USER,
-                true,
-                "main",
-                "etag-1",
-                LocalDateTime.parse("2026-03-26T00:00:00"),
-                true,
-                Map.of("category", "demo")
-        );
+        Repository repository = Repository.builder()
+                .githubId(100L)
+                .name("demo-repo")
+                .sourceRepo(sourceRepo)
+                .sourceUri("https://example.com/" + sourceRepo)
+                .summary("demo summary")
+                .tagsJson(Set.of("java"))
+                .starCount(10)
+                .forkCount(3)
+                .size(50)
+                .languageStats(Map.of("Java", 90))
+                .license("MIT")
+                .homepage("https://example.com")
+                .ownerAvatarUrl("https://example.com/avatar.png")
+                .ownerType(OwnerType.USER)
+                .isOfficial(true)
+                .defaultBranch("main")
+                .etag("etag-1")
+                .sourceUpdatedAt(LocalDateTime.parse("2026-03-26T00:00:00"))
+                .active(true)
+                .rawMetadata(Map.of("category", "demo"))
+                .build();
         ReflectionTestUtils.setField(repository, "id", id);
         return repository;
     }
