@@ -99,13 +99,26 @@ public class Repository extends BaseEntity {
             Integer starCount,
             Integer forkCount,
             String etag,
-            LocalDateTime sourceUpdatedAt
+            LocalDateTime sourceUpdatedAt,
+            String summary,
+            String homepage,
+            String license,
+            String ownerAvatarUrl,
+            boolean active,
+            Map<String, Object> rawMetadata,
+            Map<String, Integer> languageStats
     ) {
         this.starCount = starCount;
         this.forkCount = forkCount;
         this.etag = etag;
         this.sourceUpdatedAt = sourceUpdatedAt;
-        setUpdatedAt(LocalDateTime.now());
+        this.summary = summary;
+        this.homepage = homepage;
+        this.license = license;
+        this.ownerAvatarUrl = ownerAvatarUrl;
+        this.active = active;
+        this.rawMetadata = rawMetadata;
+        this.languageStats = languageStats;
     }
 
     public void deactivate() {
