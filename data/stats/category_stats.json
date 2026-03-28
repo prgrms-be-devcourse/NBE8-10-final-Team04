@@ -1,0 +1,50 @@
+[
+  {
+    "category": "INTELLIGENCE",
+    "avg_value": 21.1752,
+    "max_value": 57.2,
+    "min_value": 4.7,
+    "sample_count": 444,
+    "last_updated": "2026-03-26 18:22:52"
+  },
+  {
+    "category": "CODING",
+    "avg_value": 19.4175,
+    "max_value": 57.3,
+    "min_value": 0.0,
+    "sample_count": 354,
+    "last_updated": "2026-03-26 18:22:52"
+  },
+  {
+    "category": "MATH",
+    "avg_value": 50.3582,
+    "max_value": 99.0,
+    "min_value": 0.0,
+    "sample_count": 268,
+    "last_updated": "2026-03-26 18:22:52"
+  },
+  {
+    "category": "TPS",
+    "avg_value": 67.0744,
+    "max_value": 974.921,
+    "min_value": 0.0,
+    "sample_count": 450,
+    "last_updated": "2026-03-26 18:22:52"
+  },
+  {
+    "category": "TTFT",
+    "avg_value": 3.4338,
+    "max_value": 149.468,
+    "min_value": 0.0,
+    "sample_count": 450,
+    "last_updated": "2026-03-26 18:22:52"
+  },
+  {
+    "category": "PRICE_BLENDED",
+    "avg_value": 2.4046,
+    "max_value": 262.5,
+    "min_value": 0.0,
+    "sample_count": 450,
+    "last_updated": "2026-03-26 18:22:52"
+  }
+]
