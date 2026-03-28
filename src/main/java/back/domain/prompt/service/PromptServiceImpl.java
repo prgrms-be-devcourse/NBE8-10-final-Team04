@@ -1,7 +1,7 @@
 package back.domain.prompt.service;
 
 import back.domain.prompt.dto.PromptRepoItem;
-import back.domain.prompt.dto.SkillData;
+import back.domain.prompt.dto.SkillDto;
 import back.domain.prompt.entity.Repository;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import lombok.RequiredArgsConstructor;
@@ -22,7 +22,7 @@ import java.nio.file.Files;
         justification = "스프링이 관리하는 ObjectMapper를 DI로 주입받아 서비스 내부에서만 사용한다.")
 public class PromptServiceImpl implements PromptService {
 
-    private final SkillNormalizeServiceImpl normalizeService;
+    private final SkillNormalizeService normalizeService;
     private final ObjectMapper objectMapper;
 
     @Value("${app.prompts.base-path:data/prompts}")
@@ -74,13 +74,13 @@ public class PromptServiceImpl implements PromptService {
 
             // 2. skills 저장
             if (repoItem.getSkills() != null && !repoItem.getSkills().isEmpty()) {
-                for (SkillData skillData : repoItem.getSkills()) {
+                for (SkillDto skillDto : repoItem.getSkills()) {
                     try {
-                        normalizeService.normalizeSkill(repository, skillData);
+                        normalizeService.normalizeSkill(repository, skillDto);
                     } catch (Exception e) {
                         log.error("Skill 처리 실패: {}/{}",
                                 repoItem.getRepository().getSourceRepo(),
-                                skillData.getName(), e);
+                                skillDto.getName(), e);
                     }
                 }
             } else {
