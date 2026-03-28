@@ -1,0 +1,1188 @@
+[
+  {
+    "name": "OpenAI",
+    "official_url": "https://developers.openai.com/",
+    "is_active": true,
+    "is_deprecated": false,
+    "families": [
+      {
+        "family_name": "GPT-OSS",
+        "common_description": "OpenAI의 GPT-OSS 시리즈 모델입니다.",
+        "created_at": "2026-03-26 16:32:48",
+        "models": [
+          {
+            "model_name": "gpt-oss-20B (high)",
+            "api_id": "openai/gpt-oss-20b",
+            "context_window": 131072,
+            "max_output_tokens": 131072,
+            "release_date": "2025-08-05",
+            "is_preview": false,
+            "model_image_url": "https://img.service.com/logos/openai.png",
+            "input_price": 0.06,
+            "output_price": 0.2,
+            "input_modalities": [
+              "text"
+            ],
+            "output_modalities": [
+              "text"
+            ],
+            "category": "General"
+          },
+          {
+            "model_name": "gpt-oss-120B (high)",
+            "api_id": "openai/gpt-oss-120b",
+            "context_window": 131072,
+            "max_output_tokens": 0,
+            "release_date": "2025-08-05",
+            "is_preview": false,
+            "model_image_url": "https://img.service.com/logos/openai.png",
+            "input_price": 0.15,
+            "output_price": 0.6,
+            "input_modalities": [
+              "text"
+            ],
+            "output_modalities": [
+              "text"
+            ],
+            "category": "General"
+          }
+        ]
+      },
+      {
+        "family_name": "O3",
+        "common_description": "OpenAI의 O3 시리즈 모델입니다.",
+        "created_at": "2026-03-26 16:32:48",
+        "models": [
+          {
+            "model_name": "o3",
+            "api_id": "openai/o3",
+            "context_window": 200000,
+            "max_output_tokens": 100000,
+            "release_date": "2025-04-16",
+            "is_preview": false,
+            "model_image_url": "https://img.service.com/logos/openai.png",
+            "input_price": 2,
+            "output_price": 8,
+            "input_modalities": [
+              "image",
+              "text",
+              "file"
+            ],
+            "output_modalities": [
+              "text"
+            ],
+            "category": "General"
+          },
+          {
+            "model_name": "o3-mini (high)",
+            "api_id": "openai/o3-mini-high",
+            "context_window": 200000,
+            "max_output_tokens": 100000,
+            "release_date": "2025-01-31",
+            "is_preview": false,
+            "model_image_url": "https://img.service.com/logos/openai.png",
+            "input_price": 1.1,
+            "output_price": 4.4,
+            "input_modalities": [
+              "text",
+              "file"
+            ],
+            "output_modalities": [
+              "text"
+            ],
+            "category": "General"
+          },
+          {
+            "model_name": "o3-pro",
+            "api_id": "openai/o3-pro",
+            "context_window": 200000,
+            "max_output_tokens": 100000,
+            "release_date": "2025-06-10",
+            "is_preview": false,
+            "model_image_url": "https://img.service.com/logos/openai.png",
+            "input_price": 20,
+            "output_price": 80,
+            "input_modalities": [
+              "text",
+              "file",
+              "image"
+            ],
+            "output_modalities": [
+              "text"
+            ],
+            "category": "General"
+          },
+          {
+            "model_name": "o3-mini",
+            "api_id": "openai/o3-mini",
+            "context_window": 200000,
+            "max_output_tokens": 100000,
+            "release_date": "2025-01-31",
+            "is_preview": false,
+            "model_image_url": "https://img.service.com/logos/openai.png",
+            "input_price": 1.1,
+            "output_price": 4.4,
+            "input_modalities": [
+              "text",
+              "file"
+            ],
+            "output_modalities": [
+              "text"
+            ],
+            "category": "General"
+          }
+        ]
+      },
+      {
+        "family_name": "GPT-5.4",
+        "common_description": "OpenAI의 GPT-5.4 시리즈 모델입니다.",
+        "created_at": "2026-03-26 16:32:48",
+        "models": [
+          {
+            "model_name": "GPT-5.4 mini (xhigh)",
+            "api_id": "openai/gpt-5.4-mini",
+            "context_window": 400000,
+            "max_output_tokens": 128000,
+            "release_date": "2026-03-17",
+            "is_preview": false,
+            "model_image_url": "https://img.service.com/logos/openai.png",
+            "input_price": 0.75,
+            "output_price": 4.5,
+            "input_modalities": [
+              "file",
+              "image",
+              "text"
+            ],
+            "output_modalities": [
+              "text"
+            ],
+            "category": "General"
+          },
+          {
+            "model_name": "GPT-5.4 nano (xhigh)",
+            "api_id": "openai/gpt-5.4-nano",
+            "context_window": 400000,
+            "max_output_tokens": 128000,
+            "release_date": "2026-03-17",
+            "is_preview": false,
+            "model_image_url": "https://img.service.com/logos/openai.png",
+            "input_price": 0.2,
+            "output_price": 1.25,
+            "input_modalities": [
+              "file",
+              "image",
+              "text"
+            ],
+            "output_modalities": [
+              "text"
+            ],
+            "category": "General"
+          },
+          {
+            "model_name": "GPT-5.4 Pro (xhigh)",
+            "api_id": "openai/gpt-5.4-pro",
+            "context_window": 1050000,
+            "max_output_tokens": 128000,
+            "release_date": "2026-03-05",
+            "is_preview": false,
+            "model_image_url": "https://img.service.com/logos/openai.png",
+            "input_price": 30,
+            "output_price": 180,
+            "input_modalities": [
+              "text",
+              "image",
+              "file"
+            ],
+            "output_modalities": [
+              "text"
+            ],
+            "category": "General"
+          },
+          {
+            "model_name": "GPT-5.4 (xhigh)",
+            "api_id": "openai/gpt-5.4",
+            "context_window": 1050000,
+            "max_output_tokens": 128000,
+            "release_date": "2026-03-05",
+            "is_preview": false,
+            "model_image_url": "https://img.service.com/logos/openai.png",
+            "input_price": 2.5,
+            "output_price": 15,
+            "input_modalities": [
+              "text",
+              "image",
+              "file"
+            ],
+            "output_modalities": [
+              "text"
+            ],
+            "category": "General"
+          }
+        ]
+      },
+      {
+        "family_name": "GPT-5.3-CODEX",
+        "common_description": "OpenAI의 GPT-5.3-CODEX 시리즈 모델입니다.",
+        "created_at": "2026-03-26 16:32:48",
+        "models": [
+          {
+            "model_name": "GPT-5.3 Codex (xhigh)",
+            "api_id": "openai/gpt-5.3-codex",
+            "context_window": 400000,
+            "max_output_tokens": 128000,
+            "release_date": "2026-02-05",
+            "is_preview": false,
+            "model_image_url": "https://img.service.com/logos/openai.png",
+            "input_price": 1.75,
+            "output_price": 14,
+            "input_modalities": [
+              "text",
+              "image",
+              "file"
+            ],
+            "output_modalities": [
+              "text"
+            ],
+            "category": "General"
+          }
+        ]
+      },
+      {
+        "family_name": "O1",
+        "common_description": "OpenAI의 O1 시리즈 모델입니다.",
+        "created_at": "2026-03-26 16:32:48",
+        "models": [
+          {
+            "model_name": "o1",
+            "api_id": "openai/o1",
+            "context_window": 200000,
+            "max_output_tokens": 100000,
+            "release_date": "2024-12-05",
+            "is_preview": false,
+            "model_image_url": "https://img.service.com/logos/openai.png",
+            "input_price": 15,
+            "output_price": 60,
+            "input_modalities": [
+              "text",
+              "image",
+              "file"
+            ],
+            "output_modalities": [
+              "text"
+            ],
+            "category": "General"
+          },
+          {
+            "model_name": "o1-pro",
+            "api_id": "openai/o1-pro",
+            "context_window": 200000,
+            "max_output_tokens": 100000,
+            "release_date": "2025-03-19",
+            "is_preview": false,
+            "model_image_url": "https://img.service.com/logos/openai.png",
+            "input_price": 150,
+            "output_price": 600,
+            "input_modalities": [
+              "text",
+              "image",
+              "file"
+            ],
+            "output_modalities": [
+              "text"
+            ],
+            "category": "General"
+          }
+        ]
+      },
+      {
+        "family_name": "GPT-4O",
+        "common_description": "OpenAI의 GPT-4O 시리즈 모델입니다.",
+        "created_at": "2026-03-26 16:32:48",
+        "models": [
+          {
+            "model_name": "GPT-4o (Aug '24)",
+            "api_id": "openai/gpt-4o-2024-08-06",
+            "context_window": 128000,
+            "max_output_tokens": 16384,
+            "release_date": "2024-08-06",
+            "is_preview": false,
+            "model_image_url": "https://img.service.com/logos/openai.png",
+            "input_price": 2.5,
+            "output_price": 10,
+            "input_modalities": [
+              "text",
+              "image",
+              "file"
+            ],
+            "output_modalities": [
+              "text"
+            ],
+            "category": "General"
+          },
+          {
+            "model_name": "GPT-4o (May '24)",
+            "api_id": "openai/gpt-4o-2024-05-13",
+            "context_window": 128000,
+            "max_output_tokens": 4096,
+            "release_date": "2024-05-13",
+            "is_preview": false,
+            "model_image_url": "https://img.service.com/logos/openai.png",
+            "input_price": 5,
+            "output_price": 15,
+            "input_modalities": [
+              "text",
+              "image",
+              "file"
+            ],
+            "output_modalities": [
+              "text"
+            ],
+            "category": "General"
+          },
+          {
+            "model_name": "GPT-4o (Nov '24)",
+            "api_id": "openai/gpt-4o",
+            "context_window": 128000,
+            "max_output_tokens": 16384,
+            "release_date": "2024-11-20",
+            "is_preview": false,
+            "model_image_url": "https://img.service.com/logos/openai.png",
+            "input_price": 2.5,
+            "output_price": 10,
+            "input_modalities": [
+              "text",
+              "image",
+              "file"
+            ],
+            "output_modalities": [
+              "text"
+            ],
+            "category": "General"
+          },
+          {
+            "model_name": "GPT-4o mini",
+            "api_id": "openai/gpt-4o-mini",
+            "context_window": 128000,
+            "max_output_tokens": 16384,
+            "release_date": "2024-07-18",
+            "is_preview": false,
+            "model_image_url": "https://img.service.com/logos/openai.png",
+            "input_price": 0.15,
+            "output_price": 0.6,
+            "input_modalities": [
+              "text",
+              "image",
+              "file"
+            ],
+            "output_modalities": [
+              "text"
+            ],
+            "category": "General"
+          }
+        ]
+      },
+      {
+        "family_name": "GPT-4-TURBO",
+        "common_description": "OpenAI의 GPT-4-TURBO 시리즈 모델입니다.",
+        "created_at": "2026-03-26 16:32:48",
+        "models": [
+          {
+            "model_name": "GPT-4 Turbo",
+            "api_id": "openai/gpt-4-turbo",
+            "context_window": 128000,
+            "max_output_tokens": 4096,
+            "release_date": "2023-11-06",
+            "is_preview": false,
+            "model_image_url": "https://img.service.com/logos/openai.png",
+            "input_price": 10,
+            "output_price": 30,
+            "input_modalities": [
+              "text",
+              "image"
+            ],
+            "output_modalities": [
+              "text"
+            ],
+            "category": "General"
+          }
+        ]
+      },
+      {
+        "family_name": "GPT-3.5-TURBO",
+        "common_description": "OpenAI의 GPT-3.5-TURBO 시리즈 모델입니다.",
+        "created_at": "2026-03-26 16:32:48",
+        "models": [
+          {
+            "model_name": "GPT-3.5 Turbo",
+            "api_id": "openai/gpt-3.5-turbo",
+            "context_window": 16385,
+            "max_output_tokens": 4096,
+            "release_date": "2022-11-30",
+            "is_preview": false,
+            "model_image_url": "https://img.service.com/logos/openai.png",
+            "input_price": 0.5,
+            "output_price": 1.5,
+            "input_modalities": [
+              "text"
+            ],
+            "output_modalities": [
+              "text"
+            ],
+            "category": "General"
+          },
+          {
+            "model_name": "GPT-3.5 Turbo (0613)",
+            "api_id": "openai/gpt-3.5-turbo-0613",
+            "context_window": 4095,
+            "max_output_tokens": 4096,
+            "release_date": "2023-06-13",
+            "is_preview": false,
+            "model_image_url": "https://img.service.com/logos/openai.png",
+            "input_price": 0,
+            "output_price": 0,
+            "input_modalities": [
+              "text"
+            ],
+            "output_modalities": [
+              "text"
+            ],
+            "category": "General"
+          }
+        ]
+      },
+      {
+        "family_name": "GPT-4.1",
+        "common_description": "OpenAI의 GPT-4.1 시리즈 모델입니다.",
+        "created_at": "2026-03-26 16:32:48",
+        "models": [
+          {
+            "model_name": "GPT-4.1 mini",
+            "api_id": "openai/gpt-4.1-mini",
+            "context_window": 1047576,
+            "max_output_tokens": 32768,
+            "release_date": "2025-04-14",
+            "is_preview": false,
+            "model_image_url": "https://img.service.com/logos/openai.png",
+            "input_price": 0.4,
+            "output_price": 1.6,
+            "input_modalities": [
+              "image",
+              "text",
+              "file"
+            ],
+            "output_modalities": [
+              "text"
+            ],
+            "category": "General"
+          },
+          {
+            "model_name": "GPT-4.1",
+            "api_id": "openai/gpt-4.1",
+            "context_window": 1047576,
+            "max_output_tokens": 32768,
+            "release_date": "2025-04-14",
+            "is_preview": false,
+            "model_image_url": "https://img.service.com/logos/openai.png",
+            "input_price": 2,
+            "output_price": 8,
+            "input_modalities": [
+              "image",
+              "text",
+              "file"
+            ],
+            "output_modalities": [
+              "text"
+            ],
+            "category": "General"
+          },
+          {
+            "model_name": "GPT-4.1 nano",
+            "api_id": "openai/gpt-4.1-nano",
+            "context_window": 1047576,
+            "max_output_tokens": 32768,
+            "release_date": "2025-04-14",
+            "is_preview": false,
+            "model_image_url": "https://img.service.com/logos/openai.png",
+            "input_price": 0.1,
+            "output_price": 0.4,
+            "input_modalities": [
+              "image",
+              "text",
+              "file"
+            ],
+            "output_modalities": [
+              "text"
+            ],
+            "category": "General"
+          }
+        ]
+      },
+      {
+        "family_name": "O4",
+        "common_description": "OpenAI의 O4 시리즈 모델입니다.",
+        "created_at": "2026-03-26 16:32:48",
+        "models": [
+          {
+            "model_name": "o4-mini (high)",
+            "api_id": "openai/o4-mini",
+            "context_window": 200000,
+            "max_output_tokens": 100000,
+            "release_date": "2025-04-16",
+            "is_preview": false,
+            "model_image_url": "https://img.service.com/logos/openai.png",
+            "input_price": 1.1,
+            "output_price": 4.4,
+            "input_modalities": [
+              "image",
+              "text",
+              "file"
+            ],
+            "output_modalities": [
+              "text"
+            ],
+            "category": "General"
+          }
+        ]
+      },
+      {
+        "family_name": "GPT-5",
+        "common_description": "OpenAI의 GPT-5 시리즈 모델입니다.",
+        "created_at": "2026-03-26 16:32:48",
+        "models": [
+          {
+            "model_name": "GPT-5 (high)",
+            "api_id": "openai/gpt-5",
+            "context_window": 400000,
+            "max_output_tokens": 128000,
+            "release_date": "2025-08-07",
+            "is_preview": false,
+            "model_image_url": "https://img.service.com/logos/openai.png",
+            "input_price": 1.25,
+            "output_price": 10,
+            "input_modalities": [
+              "text",
+              "image",
+              "file"
+            ],
+            "output_modalities": [
+              "text"
+            ],
+            "category": "General"
+          },
+          {
+            "model_name": "GPT-5 mini (high)",
+            "api_id": "openai/gpt-5-mini",
+            "context_window": 400000,
+            "max_output_tokens": 128000,
+            "release_date": "2025-08-07",
+            "is_preview": false,
+            "model_image_url": "https://img.service.com/logos/openai.png",
+            "input_price": 0.25,
+            "output_price": 2,
+            "input_modalities": [
+              "text",
+              "image",
+              "file"
+            ],
+            "output_modalities": [
+              "text"
+            ],
+            "category": "General"
+          },
+          {
+            "model_name": "GPT-5 nano (high)",
+            "api_id": "openai/gpt-5-nano",
+            "context_window": 400000,
+            "max_output_tokens": 128000,
+            "release_date": "2025-08-07",
+            "is_preview": false,
+            "model_image_url": "https://img.service.com/logos/openai.png",
+            "input_price": 0.05,
+            "output_price": 0.4,
+            "input_modalities": [
+              "text",
+              "image",
+              "file"
+            ],
+            "output_modalities": [
+              "text"
+            ],
+            "category": "General"
+          }
+        ]
+      },
+      {
+        "family_name": "GPT-5.2",
+        "common_description": "OpenAI의 GPT-5.2 시리즈 모델입니다.",
+        "created_at": "2026-03-26 16:32:48",
+        "models": [
+          {
+            "model_name": "GPT-5.2 (xhigh)",
+            "api_id": "openai/gpt-5.2",
+            "context_window": 400000,
+            "max_output_tokens": 128000,
+            "release_date": "2025-12-11",
+            "is_preview": false,
+            "model_image_url": "https://img.service.com/logos/openai.png",
+            "input_price": 1.75,
+            "output_price": 14,
+            "input_modalities": [
+              "file",
+              "image",
+              "text"
+            ],
+            "output_modalities": [
+              "text"
+            ],
+            "category": "General"
+          }
+        ]
+      },
+      {
+        "family_name": "GPT-5.1",
+        "common_description": "OpenAI의 GPT-5.1 시리즈 모델입니다.",
+        "created_at": "2026-03-26 16:32:48",
+        "models": [
+          {
+            "model_name": "GPT-5.1 (high)",
+            "api_id": "openai/gpt-5.1",
+            "context_window": 400000,
+            "max_output_tokens": 128000,
+            "release_date": "2025-11-13",
+            "is_preview": false,
+            "model_image_url": "https://img.service.com/logos/openai.png",
+            "input_price": 1.25,
+            "output_price": 10,
+            "input_modalities": [
+              "image",
+              "text",
+              "file"
+            ],
+            "output_modalities": [
+              "text"
+            ],
+            "category": "General"
+          }
+        ]
+      },
+      {
+        "family_name": "GPT-5.2-CODEX",
+        "common_description": "OpenAI의 GPT-5.2-CODEX 시리즈 모델입니다.",
+        "created_at": "2026-03-26 16:32:48",
+        "models": [
+          {
+            "model_name": "GPT-5.2 Codex (xhigh)",
+            "api_id": "openai/gpt-5.2-codex",
+            "context_window": 400000,
+            "max_output_tokens": 128000,
+            "release_date": "2025-12-11",
+            "is_preview": false,
+            "model_image_url": "https://img.service.com/logos/openai.png",
+            "input_price": 1.75,
+            "output_price": 14,
+            "input_modalities": [
+              "text",
+              "image"
+            ],
+            "output_modalities": [
+              "text"
+            ],
+            "category": "General"
+          }
+        ]
+      },
+      {
+        "family_name": "GPT-4",
+        "common_description": "OpenAI의 GPT-4 시리즈 모델입니다.",
+        "created_at": "2026-03-26 16:32:48",
+        "models": [
+          {
+            "model_name": "GPT-4",
+            "api_id": "openai/gpt-4",
+            "context_window": 8191,
+            "max_output_tokens": 4096,
+            "release_date": "2023-03-14",
+            "is_preview": false,
+            "model_image_url": "https://img.service.com/logos/openai.png",
+            "input_price": 30,
+            "output_price": 60,
+            "input_modalities": [
+              "text"
+            ],
+            "output_modalities": [
+              "text"
+            ],
+            "category": "General"
+          }
+        ]
+      },
+      {
+        "family_name": "GPT-5.1-CODEX",
+        "common_description": "OpenAI의 GPT-5.1-CODEX 시리즈 모델입니다.",
+        "created_at": "2026-03-26 16:32:48",
+        "models": [
+          {
+            "model_name": "GPT-5.1 Codex (high)",
+            "api_id": "openai/gpt-5.1-codex",
+            "context_window": 400000,
+            "max_output_tokens": 128000,
+            "release_date": "2025-11-13",
+            "is_preview": false,
+            "model_image_url": "https://img.service.com/logos/openai.png",
+            "input_price": 1.25,
+            "output_price": 10,
+            "input_modalities": [
+              "text",
+              "image"
+            ],
+            "output_modalities": [
+              "text"
+            ],
+            "category": "General"
+          },
+          {
+            "model_name": "GPT-5.1 Codex mini (high)",
+            "api_id": "openai/gpt-5.1-codex-mini",
+            "context_window": 400000,
+            "max_output_tokens": 100000,
+            "release_date": "2025-11-13",
+            "is_preview": false,
+            "model_image_url": "https://img.service.com/logos/openai.png",
+            "input_price": 0.25,
+            "output_price": 2,
+            "input_modalities": [
+              "image",
+              "text"
+            ],
+            "output_modalities": [
+              "text"
+            ],
+            "category": "General"
+          }
+        ]
+      },
+      {
+        "family_name": "GPT-5-CODEX",
+        "common_description": "OpenAI의 GPT-5-CODEX 시리즈 모델입니다.",
+        "created_at": "2026-03-26 16:32:48",
+        "models": [
+          {
+            "model_name": "GPT-5 Codex (high)",
+            "api_id": "openai/gpt-5-codex",
+            "context_window": 400000,
+            "max_output_tokens": 128000,
+            "release_date": "2025-09-23",
+            "is_preview": false,
+            "model_image_url": "https://img.service.com/logos/openai.png",
+            "input_price": 1.25,
+            "output_price": 10,
+            "input_modalities": [
+              "text",
+              "image"
+            ],
+            "output_modalities": [
+              "text"
+            ],
+            "category": "General"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Google",
+    "official_url": "https://ai.google.dev/",
+    "is_active": true,
+    "is_deprecated": false,
+    "families": [
+      {
+        "family_name": "GEMINI-3.1",
+        "common_description": "Google의 GEMINI-3.1 시리즈 모델입니다.",
+        "created_at": "2026-03-26 16:32:48",
+        "models": [
+          {
+            "model_name": "Gemini 3.1 Flash-Lite Preview",
+            "api_id": "google/gemini-3.1-flash-lite-preview",
+            "context_window": 1048576,
+            "max_output_tokens": 65536,
+            "release_date": "2026-03-03",
+            "is_preview": true,
+            "model_image_url": "https://img.service.com/logos/google.png",
+            "input_price": 0.25,
+            "output_price": 1.5,
+            "input_modalities": [
+              "text",
+              "image",
+              "video",
+              "file",
+              "audio"
+            ],
+            "output_modalities": [
+              "text"
+            ],
+            "category": "General"
+          },
+          {
+            "model_name": "Gemini 3.1 Pro Preview",
+            "api_id": "google/gemini-3.1-pro-preview",
+            "context_window": 1048576,
+            "max_output_tokens": 65536,
+            "release_date": "2026-02-19",
+            "is_preview": true,
+            "model_image_url": "https://img.service.com/logos/google.png",
+            "input_price": 2,
+            "output_price": 12,
+            "input_modalities": [
+              "audio",
+              "file",
+              "image",
+              "text",
+              "video"
+            ],
+            "output_modalities": [
+              "text"
+            ],
+            "category": "General"
+          }
+        ]
+      },
+      {
+        "family_name": "GEMINI-2.5",
+        "common_description": "Google의 GEMINI-2.5 시리즈 모델입니다.",
+        "created_at": "2026-03-26 16:32:48",
+        "models": [
+          {
+            "model_name": "Gemini 2.5 Flash-Lite Preview (Sep '25) (Non-reasoning)",
+            "api_id": "google/gemini-2.5-flash-lite-preview-09-2025",
+            "context_window": 1048576,
+            "max_output_tokens": 65536,
+            "release_date": "2025-09-25",
+            "is_preview": true,
+            "model_image_url": "https://img.service.com/logos/google.png",
+            "input_price": 0.1,
+            "output_price": 0.4,
+            "input_modalities": [
+              "text",
+              "image",
+              "file",
+              "audio",
+              "video"
+            ],
+            "output_modalities": [
+              "text"
+            ],
+            "category": "General"
+          },
+          {
+            "model_name": "Gemini 2.5 Pro",
+            "api_id": "google/gemini-2.5-pro",
+            "context_window": 1048576,
+            "max_output_tokens": 65536,
+            "release_date": "2025-06-05",
+            "is_preview": false,
+            "model_image_url": "https://img.service.com/logos/google.png",
+            "input_price": 1.25,
+            "output_price": 10,
+            "input_modalities": [
+              "text",
+              "image",
+              "file",
+              "audio",
+              "video"
+            ],
+            "output_modalities": [
+              "text"
+            ],
+            "category": "General"
+          },
+          {
+            "model_name": "Gemini 2.5 Flash-Lite (Non-reasoning)",
+            "api_id": "google/gemini-2.5-flash-lite",
+            "context_window": 1048576,
+            "max_output_tokens": 65535,
+            "release_date": "2025-06-17",
+            "is_preview": false,
+            "model_image_url": "https://img.service.com/logos/google.png",
+            "input_price": 0.1,
+            "output_price": 0.4,
+            "input_modalities": [
+              "text",
+              "image",
+              "file",
+              "audio",
+              "video"
+            ],
+            "output_modalities": [
+              "text"
+            ],
+            "category": "General"
+          },
+          {
+            "model_name": "Gemini 2.5 Flash (Non-reasoning)",
+            "api_id": "google/gemini-2.5-flash",
+            "context_window": 1048576,
+            "max_output_tokens": 65535,
+            "release_date": "2025-05-20",
+            "is_preview": false,
+            "model_image_url": "https://img.service.com/logos/google.png",
+            "input_price": 0.3,
+            "output_price": 2.5,
+            "input_modalities": [
+              "file",
+              "image",
+              "text",
+              "audio",
+              "video"
+            ],
+            "output_modalities": [
+              "text"
+            ],
+            "category": "General"
+          }
+        ]
+      },
+      {
+        "family_name": "GEMINI-2.0",
+        "common_description": "Google의 GEMINI-2.0 시리즈 모델입니다.",
+        "created_at": "2026-03-26 16:32:48",
+        "models": [
+          {
+            "model_name": "Gemini 2.0 Flash-Lite (Feb '25)",
+            "api_id": "google/gemini-2.0-flash-lite-001",
+            "context_window": 1048576,
+            "max_output_tokens": 8192,
+            "release_date": "2025-02-25",
+            "is_preview": false,
+            "model_image_url": "https://img.service.com/logos/google.png",
+            "input_price": 0,
+            "output_price": 0,
+            "input_modalities": [
+              "text",
+              "image",
+              "file",
+              "audio",
+              "video"
+            ],
+            "output_modalities": [
+              "text"
+            ],
+            "category": "General"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Anthropic",
+    "official_url": "https://platform.claude.com/docs/ko/home",
+    "is_active": true,
+    "is_deprecated": false,
+    "families": [
+      {
+        "family_name": "CLAUDE-OPUS-4.6",
+        "common_description": "Anthropic의 CLAUDE-OPUS-4.6 시리즈 모델입니다.",
+        "created_at": "2026-03-26 16:32:48",
+        "models": [
+          {
+            "model_name": "Claude Opus 4.6 (Non-reasoning, High Effort)",
+            "api_id": "anthropic/claude-opus-4.6",
+            "context_window": 1000000,
+            "max_output_tokens": 128000,
+            "release_date": "2026-02-05",
+            "is_preview": false,
+            "model_image_url": "https://img.service.com/logos/anthropic.png",
+            "input_price": 5,
+            "output_price": 25,
+            "input_modalities": [
+              "text",
+              "image"
+            ],
+            "output_modalities": [
+              "text"
+            ],
+            "category": "General"
+          }
+        ]
+      },
+      {
+        "family_name": "CLAUDE-SONNET-4.6",
+        "common_description": "Anthropic의 CLAUDE-SONNET-4.6 시리즈 모델입니다.",
+        "created_at": "2026-03-26 16:32:48",
+        "models": [
+          {
+            "model_name": "Claude Sonnet 4.6 (Non-reasoning, High Effort)",
+            "api_id": "anthropic/claude-sonnet-4.6",
+            "context_window": 1000000,
+            "max_output_tokens": 128000,
+            "release_date": "2026-02-17",
+            "is_preview": false,
+            "model_image_url": "https://img.service.com/logos/anthropic.png",
+            "input_price": 3,
+            "output_price": 15,
+            "input_modalities": [
+              "text",
+              "image"
+            ],
+            "output_modalities": [
+              "text"
+            ],
+            "category": "General"
+          }
+        ]
+      },
+      {
+        "family_name": "CLAUDE-3.5-SONNET",
+        "common_description": "Anthropic의 CLAUDE-3.5-SONNET 시리즈 모델입니다.",
+        "created_at": "2026-03-26 16:32:48",
+        "models": [
+          {
+            "model_name": "Claude 3.5 Sonnet (Oct '24)",
+            "api_id": "anthropic/claude-3.5-sonnet",
+            "context_window": 200000,
+            "max_output_tokens": 8192,
+            "release_date": "2024-10-22",
+            "is_preview": false,
+            "model_image_url": "https://img.service.com/logos/anthropic.png",
+            "input_price": 3,
+            "output_price": 15,
+            "input_modalities": [
+              "text",
+              "image",
+              "file"
+            ],
+            "output_modalities": [
+              "text"
+            ],
+            "category": "General"
+          }
+        ]
+      },
+      {
+        "family_name": "CLAUDE-3.5-HAIKU",
+        "common_description": "Anthropic의 CLAUDE-3.5-HAIKU 시리즈 모델입니다.",
+        "created_at": "2026-03-26 16:32:48",
+        "models": [
+          {
+            "model_name": "Claude 3.5 Haiku",
+            "api_id": "anthropic/claude-3.5-haiku",
+            "context_window": 200000,
+            "max_output_tokens": 8192,
+            "release_date": "2024-10-22",
+            "is_preview": false,
+            "model_image_url": "https://img.service.com/logos/anthropic.png",
+            "input_price": 0.8,
+            "output_price": 4,
+            "input_modalities": [
+              "text",
+              "image"
+            ],
+            "output_modalities": [
+              "text"
+            ],
+            "category": "General"
+          }
+        ]
+      },
+      {
+        "family_name": "CLAUDE-3-HAIKU",
+        "common_description": "Anthropic의 CLAUDE-3-HAIKU 시리즈 모델입니다.",
+        "created_at": "2026-03-26 16:32:48",
+        "models": [
+          {
+            "model_name": "Claude 3 Haiku",
+            "api_id": "anthropic/claude-3-haiku",
+            "context_window": 200000,
+            "max_output_tokens": 4096,
+            "release_date": "2024-03-04",
+            "is_preview": false,
+            "model_image_url": "https://img.service.com/logos/anthropic.png",
+            "input_price": 0.25,
+            "output_price": 1.25,
+            "input_modalities": [
+              "text",
+              "image"
+            ],
+            "output_modalities": [
+              "text"
+            ],
+            "category": "General"
+          }
+        ]
+      },
+      {
+        "family_name": "CLAUDE-3.7-SONNET",
+        "common_description": "Anthropic의 CLAUDE-3.7-SONNET 시리즈 모델입니다.",
+        "created_at": "2026-03-26 16:32:48",
+        "models": [
+          {
+            "model_name": "Claude 3.7 Sonnet (Reasoning)",
+            "api_id": "anthropic/claude-3.7-sonnet:thinking",
+            "context_window": 200000,
+            "max_output_tokens": 64000,
+            "release_date": "2025-02-24",
+            "is_preview": false,
+            "model_image_url": "https://img.service.com/logos/anthropic.png",
+            "input_price": 3,
+            "output_price": 15,
+            "input_modalities": [
+              "text",
+              "image",
+              "file"
+            ],
+            "output_modalities": [
+              "text"
+            ],
+            "category": "General"
+          },
+          {
+            "model_name": "Claude 3.7 Sonnet (Non-reasoning)",
+            "api_id": "anthropic/claude-3.7-sonnet",
+            "context_window": 200000,
+            "max_output_tokens": 64000,
+            "release_date": "2025-02-24",
+            "is_preview": false,
+            "model_image_url": "https://img.service.com/logos/anthropic.png",
+            "input_price": 3,
+            "output_price": 15,
+            "input_modalities": [
+              "text",
+              "image",
+              "file"
+            ],
+            "output_modalities": [
+              "text"
+            ],
+            "category": "General"
+          }
+        ]
+      },
+      {
+        "family_name": "CLAUDE-OPUS-4.5",
+        "common_description": "Anthropic의 CLAUDE-OPUS-4.5 시리즈 모델입니다.",
+        "created_at": "2026-03-26 16:32:48",
+        "models": [
+          {
+            "model_name": "Claude Opus 4.5 (Non-reasoning)",
+            "api_id": "anthropic/claude-opus-4.5",
+            "context_window": 200000,
+            "max_output_tokens": 64000,
+            "release_date": "2025-11-24",
+            "is_preview": false,
+            "model_image_url": "https://img.service.com/logos/anthropic.png",
+            "input_price": 5,
+            "output_price": 25,
+            "input_modalities": [
+              "file",
+              "image",
+              "text"
+            ],
+            "output_modalities": [
+              "text"
+            ],
+            "category": "General"
+          }
+        ]
+      }
+    ]
+  }
+]
