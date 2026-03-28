@@ -5,9 +5,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Map;
 
 @Getter
 @NoArgsConstructor
@@ -17,11 +15,11 @@ import java.util.Map;
 public class PromptRepoItem {
 
     @JsonProperty("repository")
-    private RepositoryData repository;
+    private RepositoryDto repository;
 
     @JsonProperty("skills")
-    private List<SkillData> skills;
+    private List<SkillDto> skills;
 
     @JsonProperty("agent")
-    private AgentData agent;
+    private AgentDto agent;
 }

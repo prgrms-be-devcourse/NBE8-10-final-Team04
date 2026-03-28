@@ -7,30 +7,28 @@ import java.util.Map;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.util.ReflectionTestUtils;
 
-@SpringBootTest
-class SkillDataTest {
+class AgentDtoTest {
 
     @Test
     @DisplayName("rawMetadata getter는 설정된 맵 값을 그대로 반환한다")
     void getRawMetadataReturnsAssignedValue() {
-        SkillData skillData = new SkillData();
-        Map<String, Object> rawMetadata = new HashMap<>(Map.of("k", "v"));
-        ReflectionTestUtils.setField(skillData, "rawMetadata", rawMetadata);
+        AgentDto agentDto = new AgentDto();
+        Map<String, Object> rawMetadata = new HashMap<>(Map.of("a", 1));
+        ReflectionTestUtils.setField(agentDto, "rawMetadata", rawMetadata);
 
-        Map<String, Object> returned = skillData.getRawMetadata();
+        Map<String, Object> returned = agentDto.getRawMetadata();
 
         assertThat(returned).isSameAs(rawMetadata);
-        assertThat(returned).containsEntry("k", "v");
+        assertThat(returned).containsEntry("a", 1);
     }
 
     @Test
     @DisplayName("rawMetadata가 null이면 null을 반환한다")
     void getRawMetadataReturnsNullWhenNull() {
-        SkillData skillData = new SkillData();
+        AgentDto agentDto = new AgentDto();
 
-        assertThat(skillData.getRawMetadata()).isNull();
+        assertThat(agentDto.getRawMetadata()).isNull();
     }
 }

@@ -1,6 +1,6 @@
 package back.domain.prompt.controller;
 
-import back.domain.prompt.service.PromptServiceImpl;
+import back.domain.prompt.service.PromptService;
 import back.global.response.RsData;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -12,11 +12,11 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 @RequestMapping("/api/prompts")
 public class PromptController {
-    private final PromptServiceImpl promptServiceImpl;
+    private final PromptService promptService;
 
     @PostMapping("/run")
-    public ResponseEntity<RsData<Void>> run() throws InterruptedException {
-        promptServiceImpl.run();
+    public ResponseEntity<RsData<Void>> run() {
+        promptService.run();
 
         return ResponseEntity.ok(new RsData<>("데이터 적재 완료"));
     }

@@ -1,33 +1,34 @@
 package back.domain.info.controller;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
-import back.domain.info.service.AiInfoServiceImpl;
-import back.domain.info.service.StatServiceImpl;
+import back.domain.info.service.AiInfoService;
+import back.domain.info.service.StatService;
 import back.global.response.RsData;
 
-@ActiveProfiles("test")
-@SpringBootTest
 class AiInfoControllerTest {
 
-    @MockitoBean
-    private AiInfoServiceImpl aiInfoService;
+    private AiInfoService aiInfoService;
 
-    @MockitoBean
-    private StatServiceImpl statService;
+    private StatService statService;
 
-    @Autowired
     private AiInfoController aiInfoController;
+
+    @BeforeEach
+    void setUp() {
+        aiInfoService = mock(AiInfoService.class);
+        statService = mock(StatService.class);
+        aiInfoController = new AiInfoController(aiInfoService, statService);
+    }
 
     @Test
     @DisplayName("run 호출 시 두 서비스를 실행하고 성공 응답을 반환한다")

@@ -2,8 +2,8 @@ package back.domain.info.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -19,12 +19,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.mockito.ArgumentCaptor;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.SpringBootConfiguration;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Import;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import back.domain.info.entity.CategoryStat;
@@ -36,37 +30,31 @@ import back.domain.info.repository.CategoryStatRepository;
 import back.domain.info.repository.ModelBenchmarkRepository;
 import tools.jackson.databind.ObjectMapper;
 
-@SpringBootTest(classes = StatServiceImplTest.TestConfig.class)
 class StatServiceImplTest {
-
-    @SpringBootConfiguration
-    @Import({StatServiceImpl.class, ModelStatMapper.class})
-    static class TestConfig {
-
-        @Bean
-        ObjectMapper objectMapper() {
-            return new ObjectMapper();
-        }
-    }
 
     @TempDir
     Path tempDir;
 
-    @Autowired
     private StatServiceImpl statService;
 
-    @MockitoBean
     private CategoryStatRepository categoryStatRepository;
 
-    @MockitoBean
     private ModelBenchmarkRepository modelBenchmarkRepository;
 
-    @MockitoBean
     private AiModelRepository aiModelRepository;
 
     @BeforeEach
     void setUp() {
-        reset(categoryStatRepository, modelBenchmarkRepository, aiModelRepository);
+        categoryStatRepository = mock(CategoryStatRepository.class);
+        modelBenchmarkRepository = mock(ModelBenchmarkRepository.class);
+        aiModelRepository = mock(AiModelRepository.class);
+        statService = new StatServiceImpl(
+                categoryStatRepository,
+                modelBenchmarkRepository,
+                aiModelRepository,
+                new ModelStatMapper(),
+                new ObjectMapper()
+        );
     }
 
     @Test

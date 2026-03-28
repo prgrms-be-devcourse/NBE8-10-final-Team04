@@ -6,7 +6,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
-import java.util.HashMap;
 import java.util.Map;
 
 @Getter
@@ -14,7 +13,7 @@ import java.util.Map;
 @SuppressFBWarnings(
         value = "EI_EXPOSE_REP",
         justification = "Jackson DTO는 JSON 컬렉션/맵 값을 그대로 전달한다.")
-public class RepositoryData {
+public class RepositoryDto {
 
     @JsonProperty("github_id")
     private Long githubId;

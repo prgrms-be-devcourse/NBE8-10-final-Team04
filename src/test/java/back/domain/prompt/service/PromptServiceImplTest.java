@@ -7,7 +7,6 @@ import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -25,32 +24,25 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.mockito.ArgumentCaptor;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Primary;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import back.domain.prompt.dto.SkillData;
+import back.domain.prompt.dto.SkillDto;
 import back.domain.prompt.entity.Repository;
 import back.domain.prompt.enums.OwnerType;
+import tools.jackson.databind.ObjectMapper;
 
-@SpringBootTest
 class PromptServiceImplTest {
 
     @TempDir
     Path tempDir;
 
-    @Autowired
+    private SkillNormalizeService normalizeService;
     private PromptServiceImpl promptServiceImpl;
-
-    @Autowired
-    private SkillNormalizeServiceImpl normalizeService;
 
     @BeforeEach
     void setUp() {
-        reset(normalizeService);
+        normalizeService = mock(SkillNormalizeService.class);
+        promptServiceImpl = new PromptServiceImpl(normalizeService, new ObjectMapper());
     }
 
     @Test
@@ -68,10 +60,10 @@ class PromptServiceImplTest {
                         && "owner/repo".equals(item.getRepository().getSourceRepo()))
         );
 
-        ArgumentCaptor<SkillData> skillCaptor = ArgumentCaptor.forClass(SkillData.class);
+        ArgumentCaptor<SkillDto> skillCaptor = ArgumentCaptor.forClass(SkillDto.class);
         verify(normalizeService, times(2)).normalizeSkill(same(repository), skillCaptor.capture());
         assertThat(skillCaptor.getAllValues())
-                .extracting(SkillData::getName)
+                .extracting(SkillDto::getName)
                 .containsExactly("alpha", "beta");
 
         verify(normalizeService).normalizeAgent(
@@ -257,15 +249,5 @@ class PromptServiceImplTest {
                   }
                 }
                 """;
-    }
-
-    @TestConfiguration
-    static class TestConfig {
-
-        @Bean
-        @Primary
-        SkillNormalizeServiceImpl mockSkillNormalizeService() {
-            return mock(SkillNormalizeServiceImpl.class);
-        }
     }
 }

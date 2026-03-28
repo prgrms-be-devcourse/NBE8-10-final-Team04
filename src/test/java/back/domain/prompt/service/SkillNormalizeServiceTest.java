@@ -2,9 +2,7 @@ package back.domain.prompt.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -14,20 +12,19 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Primary;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import back.domain.prompt.dto.AgentData;
+import back.domain.prompt.dto.AgentDto;
 import back.domain.prompt.dto.PromptRepoItem;
-import back.domain.prompt.dto.SkillData;
+import back.domain.prompt.dto.RepositoryDto;
+import back.domain.prompt.dto.SkillDto;
 import back.domain.prompt.entity.Agent;
 import back.domain.prompt.entity.Repository;
 import back.domain.prompt.entity.Skill;
@@ -36,25 +33,20 @@ import back.domain.prompt.repository.AgentRepository;
 import back.domain.prompt.repository.RepositoryRepository;
 import back.domain.prompt.repository.SkillRepository;
 
-@SpringBootTest
+@ExtendWith(MockitoExtension.class)
 class SkillNormalizeServiceTest {
 
-    @Autowired
+    @InjectMocks
     private SkillNormalizeServiceImpl skillNormalizeService;
 
-    @Autowired
+    @Mock
     private RepositoryRepository repositoryRepository;
 
-    @Autowired
+    @Mock
     private SkillRepository skillRepository;
 
-    @Autowired
+    @Mock
     private AgentRepository agentRepository;
-
-    @BeforeEach
-    void setUp() {
-        reset(repositoryRepository, skillRepository, agentRepository);
-    }
 
     @Test
     @DisplayName("normalizeRepository는 정규화된 태그와 함께 새 repository를 저장한다")
@@ -156,11 +148,11 @@ class SkillNormalizeServiceTest {
                 "etag-old",
                 LocalDateTime.parse("2026-03-26T10:00:00")
         );
-        SkillData skillData = skillData("alpha", "skills/alpha.md", "alpha content", "alpha-hash");
+        SkillDto skillDto = skillData("alpha", "skills/alpha.md", "alpha content", "alpha-hash");
         when(skillRepository.findByRepositoryIdAndName(1L, "alpha")).thenReturn(Optional.empty());
         when(skillRepository.save(any(Skill.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        Skill saved = skillNormalizeService.normalizeSkill(repository, skillData);
+        Skill saved = skillNormalizeService.normalizeSkill(repository, skillDto);
 
         ArgumentCaptor<Skill> skillCaptor = ArgumentCaptor.forClass(Skill.class);
         verify(skillRepository).save(skillCaptor.capture());
@@ -192,10 +184,10 @@ class SkillNormalizeServiceTest {
                 .contentHash("old-hash")
                 .filePath("skills/alpha.md")
                 .build();
-        SkillData skillData = skillData("alpha", "skills/alpha.md", "new content", "new-hash");
+        SkillDto skillDto = skillData("alpha", "skills/alpha.md", "new content", "new-hash");
         when(skillRepository.findByRepositoryIdAndName(1L, "alpha")).thenReturn(Optional.of(existing));
 
-        Skill result = skillNormalizeService.normalizeSkill(repository, skillData);
+        Skill result = skillNormalizeService.normalizeSkill(repository, skillDto);
 
         assertThat(result).isSameAs(existing);
         assertThat(existing.getContentMd()).isEqualTo("new content");
@@ -215,11 +207,11 @@ class SkillNormalizeServiceTest {
                 "etag-old",
                 LocalDateTime.parse("2026-03-26T10:00:00")
         );
-        AgentData agentData = agentData("codex", "AGENTS.md", "agent content", "agent-hash");
+        AgentDto agentDto = agentData("codex", "AGENTS.md", "agent content", "agent-hash");
         when(agentRepository.findByRepositoryId(1L)).thenReturn(Optional.empty());
         when(agentRepository.save(any(Agent.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        Agent saved = skillNormalizeService.normalizeAgent(repository, agentData);
+        Agent saved = skillNormalizeService.normalizeAgent(repository, agentDto);
 
         ArgumentCaptor<Agent> agentCaptor = ArgumentCaptor.forClass(Agent.class);
         verify(agentRepository).save(agentCaptor.capture());
@@ -249,10 +241,10 @@ class SkillNormalizeServiceTest {
                 .contentHash("old-agent-hash")
                 .filePath("AGENTS.md")
                 .build();
-        AgentData agentData = agentData("codex", "AGENTS.md", "new agent content", "new-agent-hash");
+        AgentDto agentDto = agentData("codex", "AGENTS.md", "new agent content", "new-agent-hash");
         when(agentRepository.findByRepositoryId(1L)).thenReturn(Optional.of(existing));
 
-        Agent result = skillNormalizeService.normalizeAgent(repository, agentData);
+        Agent result = skillNormalizeService.normalizeAgent(repository, agentDto);
 
         assertThat(result).isSameAs(existing);
         assertThat(existing.getContentMd()).isEqualTo("new agent content");
@@ -284,48 +276,48 @@ class SkillNormalizeServiceTest {
         return promptRepoItem;
     }
 
-    private back.domain.prompt.dto.RepositoryData repositoryData(
+    private RepositoryDto repositoryData(
             Long githubId,
             LocalDateTime sourceUpdatedAt,
             Integer starCount,
             Integer forkCount,
             String etag
     ) {
-        back.domain.prompt.dto.RepositoryData repositoryData = new back.domain.prompt.dto.RepositoryData();
-        ReflectionTestUtils.setField(repositoryData, "githubId", githubId);
-        ReflectionTestUtils.setField(repositoryData, "name", "demo-repo");
-        ReflectionTestUtils.setField(repositoryData, "sourceRepo", "owner/repo");
-        ReflectionTestUtils.setField(repositoryData, "sourceUrl", "https://example.com/owner/repo");
-        ReflectionTestUtils.setField(repositoryData, "summary", "demo summary");
-        ReflectionTestUtils.setField(repositoryData, "starCount", starCount);
-        ReflectionTestUtils.setField(repositoryData, "forkCount", forkCount);
-        ReflectionTestUtils.setField(repositoryData, "size", 50);
-        ReflectionTestUtils.setField(repositoryData, "license", "MIT");
-        ReflectionTestUtils.setField(repositoryData, "ownerType", "user");
-        ReflectionTestUtils.setField(repositoryData, "isOfficial", true);
-        ReflectionTestUtils.setField(repositoryData, "defaultBranch", "main");
-        ReflectionTestUtils.setField(repositoryData, "etag", etag);
-        ReflectionTestUtils.setField(repositoryData, "sourceUpdatedAt", sourceUpdatedAt);
-        ReflectionTestUtils.setField(repositoryData, "active", true);
-        return repositoryData;
+        RepositoryDto repositoryDto = new RepositoryDto();
+        ReflectionTestUtils.setField(repositoryDto, "githubId", githubId);
+        ReflectionTestUtils.setField(repositoryDto, "name", "demo-repo");
+        ReflectionTestUtils.setField(repositoryDto, "sourceRepo", "owner/repo");
+        ReflectionTestUtils.setField(repositoryDto, "sourceUrl", "https://example.com/owner/repo");
+        ReflectionTestUtils.setField(repositoryDto, "summary", "demo summary");
+        ReflectionTestUtils.setField(repositoryDto, "starCount", starCount);
+        ReflectionTestUtils.setField(repositoryDto, "forkCount", forkCount);
+        ReflectionTestUtils.setField(repositoryDto, "size", 50);
+        ReflectionTestUtils.setField(repositoryDto, "license", "MIT");
+        ReflectionTestUtils.setField(repositoryDto, "ownerType", "user");
+        ReflectionTestUtils.setField(repositoryDto, "isOfficial", true);
+        ReflectionTestUtils.setField(repositoryDto, "defaultBranch", "main");
+        ReflectionTestUtils.setField(repositoryDto, "etag", etag);
+        ReflectionTestUtils.setField(repositoryDto, "sourceUpdatedAt", sourceUpdatedAt);
+        ReflectionTestUtils.setField(repositoryDto, "active", true);
+        return repositoryDto;
     }
 
-    private SkillData skillData(String name, String filePath, String contentMd, String contentHash) {
-        SkillData skillData = new SkillData();
-        ReflectionTestUtils.setField(skillData, "name", name);
-        ReflectionTestUtils.setField(skillData, "filePath", filePath);
-        ReflectionTestUtils.setField(skillData, "contentMd", contentMd);
-        ReflectionTestUtils.setField(skillData, "contentHash", contentHash);
-        return skillData;
+    private SkillDto skillData(String name, String filePath, String contentMd, String contentHash) {
+        SkillDto skillDto = new SkillDto();
+        ReflectionTestUtils.setField(skillDto, "name", name);
+        ReflectionTestUtils.setField(skillDto, "filePath", filePath);
+        ReflectionTestUtils.setField(skillDto, "contentMd", contentMd);
+        ReflectionTestUtils.setField(skillDto, "contentHash", contentHash);
+        return skillDto;
     }
 
-    private AgentData agentData(String name, String filePath, String contentMd, String contentHash) {
-        AgentData agentData = new AgentData();
-        ReflectionTestUtils.setField(agentData, "name", name);
-        ReflectionTestUtils.setField(agentData, "filePath", filePath);
-        ReflectionTestUtils.setField(agentData, "contentMd", contentMd);
-        ReflectionTestUtils.setField(agentData, "contentHash", contentHash);
-        return agentData;
+    private AgentDto agentData(String name, String filePath, String contentMd, String contentHash) {
+        AgentDto agentDto = new AgentDto();
+        ReflectionTestUtils.setField(agentDto, "name", name);
+        ReflectionTestUtils.setField(agentDto, "filePath", filePath);
+        ReflectionTestUtils.setField(agentDto, "contentMd", contentMd);
+        ReflectionTestUtils.setField(agentDto, "contentHash", contentHash);
+        return agentDto;
     }
 
     private Repository repository(
@@ -363,25 +355,4 @@ class SkillNormalizeServiceTest {
         return repository;
     }
 
-    @TestConfiguration
-    static class TestConfig {
-
-        @Bean
-        @Primary
-        RepositoryRepository mockRepositoryRepository() {
-            return mock(RepositoryRepository.class);
-        }
-
-        @Bean
-        @Primary
-        SkillRepository mockSkillRepository() {
-            return mock(SkillRepository.class);
-        }
-
-        @Bean
-        @Primary
-        AgentRepository mockAgentRepository() {
-            return mock(AgentRepository.class);
-        }
-    }
 }

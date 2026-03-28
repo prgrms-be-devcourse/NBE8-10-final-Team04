@@ -1,7 +1,7 @@
 package back.domain.info.controller;
 
-import back.domain.info.service.AiInfoServiceImpl;
-import back.domain.info.service.StatServiceImpl;
+import back.domain.info.service.AiInfoService;
+import back.domain.info.service.StatService;
 import back.global.response.RsData;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -13,8 +13,8 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 @RequestMapping("/api/info/")
 public class AiInfoController {
-    private final AiInfoServiceImpl inforService;
-    private final StatServiceImpl statService;
+    private final AiInfoService inforService;
+    private final StatService statService;
 
     @PostMapping("/run")
     public ResponseEntity<RsData<Void>> run() throws InterruptedException {

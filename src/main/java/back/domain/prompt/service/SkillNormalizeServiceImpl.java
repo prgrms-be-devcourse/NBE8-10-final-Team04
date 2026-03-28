@@ -1,9 +1,9 @@
 package back.domain.prompt.service;
 
-import back.domain.prompt.dto.AgentData;
+import back.domain.prompt.dto.AgentDto;
 import back.domain.prompt.dto.PromptRepoItem;
-import back.domain.prompt.dto.RepositoryData;
-import back.domain.prompt.dto.SkillData;
+import back.domain.prompt.dto.RepositoryDto;
+import back.domain.prompt.dto.SkillDto;
 import back.domain.prompt.entity.Agent;
 import back.domain.prompt.entity.Repository;
 import back.domain.prompt.entity.Skill;
@@ -36,7 +36,7 @@ public class SkillNormalizeServiceImpl implements SkillNormalizeService {
     @Override
     @Transactional
     public Repository normalizeRepository(PromptRepoItem repoItem) {
-        RepositoryData data = repoItem.getRepository();
+        RepositoryDto data = repoItem.getRepository();
 
         return repositoryRepository.findByGithubId(data.getGithubId())
                 .map(existing -> {
@@ -45,7 +45,14 @@ public class SkillNormalizeServiceImpl implements SkillNormalizeService {
                                 data.getStarCount(),
                                 data.getForkCount(),
                                 data.getEtag(),
-                                data.getSourceUpdatedAt()
+                                data.getSourceUpdatedAt(),
+                                data.getSummary(),
+                                data.getHomepage(),
+                                data.getLicense(),
+                                data.getOwnerAvatarUrl(),
+                                data.getActive(),
+                                data.getRawMetadata(),
+                                data.getLanguageStats()
                         );
                     }
                     return existing;
@@ -79,14 +86,14 @@ public class SkillNormalizeServiceImpl implements SkillNormalizeService {
 
     @Override
     @Transactional
-    public Skill normalizeSkill(Repository repository, SkillData skillData) {
-        String name = skillData.getName();
-        String rawContent = skillData.getContentMd();
+    public Skill normalizeSkill(Repository repository, SkillDto skillDto) {
+        String name = skillDto.getName();
+        String rawContent = skillDto.getContentMd();
 
         return skillRepository.findByRepositoryIdAndName(repository.getId(), name)
                 .map(existing -> {
-                    if (!existing.getContentHash().equals(skillData.getContentHash())) {
-                        existing.update(rawContent, skillData.getContentHash());
+                    if (!existing.getContentHash().equals(skillDto.getContentHash())) {
+                        existing.update(rawContent, skillDto.getContentHash());
                         log.info("Skill updated: {}/{}", repository.getSourceRepo(), name);
                     }
                     return existing;
@@ -96,21 +103,21 @@ public class SkillNormalizeServiceImpl implements SkillNormalizeService {
                                 .repository(repository)
                                 .name(name)
                                 .contentMd(rawContent)
-                                .contentHash(skillData.getContentHash())
-                                .filePath(skillData.getFilePath())
+                                .contentHash(skillDto.getContentHash())
+                                .filePath(skillDto.getFilePath())
                                 .build()
                 ));
     }
 
     @Override
     @Transactional
-    public Agent normalizeAgent(Repository repository, AgentData agentData) {
-        String rawContent = agentData.getContentMd();
+    public Agent normalizeAgent(Repository repository, AgentDto agentDto) {
+        String rawContent = agentDto.getContentMd();
 
         return agentRepository.findByRepositoryId(repository.getId())
                 .map(existing -> {
-                    if (!existing.getContentHash().equals(agentData.getContentHash())) {
-                        existing.update(rawContent, agentData.getContentHash());
+                    if (!existing.getContentHash().equals(agentDto.getContentHash())) {
+                        existing.update(rawContent, agentDto.getContentHash());
                         log.info("Agent updated: {}", repository.getSourceRepo());
                     }
                     return existing;
@@ -119,8 +126,8 @@ public class SkillNormalizeServiceImpl implements SkillNormalizeService {
                         Agent.builder()
                                 .repository(repository)
                                 .contentMd(rawContent)
-                                .contentHash(agentData.getContentHash())
-                                .filePath(agentData.getFilePath())
+                                .contentHash(agentDto.getContentHash())
+                                .filePath(agentDto.getFilePath())
                                 .build()
                 ));
     }
@@ -140,7 +147,7 @@ public class SkillNormalizeServiceImpl implements SkillNormalizeService {
 
     @Override
     public List<String> extractTags(String content) {
-        Pattern langPattern = Pattern.compile("```(\\w+)");
+        Pattern langPattern = Pattern.compile("```([a-zA-Z0-9+#-]+)");
         Matcher matcher = langPattern.matcher(content);
         Set<String> tags = new LinkedHashSet<>();
 
@@ -149,6 +156,6 @@ public class SkillNormalizeServiceImpl implements SkillNormalizeService {
         }
 
         List<String> result = new ArrayList<>(tags);
-        return result.subList(0, Math.min(result.size(), 10));
+        return result;
     }
 }

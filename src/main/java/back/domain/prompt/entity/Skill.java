@@ -39,6 +39,5 @@ public class Skill extends BaseEntity {
     public void update(String contentMd, String contentHash) {
         this.contentMd = contentMd;
         this.contentHash = contentHash;
-        setUpdatedAt(LocalDateTime.now());
     }
 }
