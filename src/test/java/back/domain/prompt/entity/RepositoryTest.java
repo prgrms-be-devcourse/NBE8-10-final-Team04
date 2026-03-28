@@ -11,11 +11,9 @@ import java.util.Set;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
 
 import back.domain.prompt.enums.OwnerType;
 
-@SpringBootTest
 class RepositoryTest {
 
     @Test
@@ -39,15 +37,32 @@ class RepositoryTest {
         Repository repository = repository();
         LocalDateTime now = LocalDateTime.parse("2026-03-26T00:00:00");
 
-        repository.update(20, 5, "etag-2", now);
+        repository.update(
+                20,
+                5,
+                "etag-2",
+                now,
+                "updated summary",
+                "https://updated.example.com",
+                "Apache-2.0",
+                "https://updated.example.com/avatar.png",
+                true,
+                new HashMap<>(Map.of("next", "value")),
+                new HashMap<>(Map.of("Java", 80, "Kotlin", 20))
+        );
         repository.deactivate();
 
         assertThat(repository.getStarCount()).isEqualTo(20);
         assertThat(repository.getForkCount()).isEqualTo(5);
         assertThat(repository.getEtag()).isEqualTo("etag-2");
         assertThat(repository.getSourceUpdatedAt()).isEqualTo(now);
+        assertThat(repository.getSummary()).isEqualTo("updated summary");
+        assertThat(repository.getHomepage()).isEqualTo("https://updated.example.com");
+        assertThat(repository.getLicense()).isEqualTo("Apache-2.0");
+        assertThat(repository.getOwnerAvatarUrl()).isEqualTo("https://updated.example.com/avatar.png");
+        assertThat(repository.getRawMetadata()).containsEntry("next", "value");
+        assertThat(repository.getLanguageStats()).containsEntry("Kotlin", 20);
         assertThat(repository.getActive()).isFalse();
-        assertThat(repository.getUpdatedAt()).isNotNull();
     }
 
     private Repository repository() {

@@ -7,20 +7,18 @@ import java.util.Map;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.util.ReflectionTestUtils;
 
-@SpringBootTest
-class SkillDataTest {
+class SkillDtoTest {
 
     @Test
     @DisplayName("rawMetadata getter는 설정된 맵 값을 그대로 반환한다")
     void getRawMetadataReturnsAssignedValue() {
-        SkillData skillData = new SkillData();
+        SkillDto skillDto = new SkillDto();
         Map<String, Object> rawMetadata = new HashMap<>(Map.of("k", "v"));
-        ReflectionTestUtils.setField(skillData, "rawMetadata", rawMetadata);
+        ReflectionTestUtils.setField(skillDto, "rawMetadata", rawMetadata);
 
-        Map<String, Object> returned = skillData.getRawMetadata();
+        Map<String, Object> returned = skillDto.getRawMetadata();
 
         assertThat(returned).isSameAs(rawMetadata);
         assertThat(returned).containsEntry("k", "v");
@@ -29,8 +27,8 @@ class SkillDataTest {
     @Test
     @DisplayName("rawMetadata가 null이면 null을 반환한다")
     void getRawMetadataReturnsNullWhenNull() {
-        SkillData skillData = new SkillData();
+        SkillDto skillDto = new SkillDto();
 
-        assertThat(skillData.getRawMetadata()).isNull();
+        assertThat(skillDto.getRawMetadata()).isNull();
     }
 }

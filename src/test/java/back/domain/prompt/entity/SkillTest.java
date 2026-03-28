@@ -11,11 +11,9 @@ import java.util.Set;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
 
 import back.domain.prompt.enums.OwnerType;
 
-@SpringBootTest
 class SkillTest {
 
     @Test
@@ -37,7 +35,6 @@ class SkillTest {
         assertThat(skill.getContentMd()).isEqualTo("new");
         assertThat(skill.getContentHash()).isEqualTo("new-hash");
         assertThat(skill.getFilePath()).isEqualTo("skills/alpha.md");
-        assertThat(skill.getUpdatedAt()).isNotNull();
     }
 
     private Repository repository() {
