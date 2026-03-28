@@ -147,7 +147,7 @@ public class SkillNormalizeServiceImpl implements SkillNormalizeService {
 
     @Override
     public List<String> extractTags(String content) {
-        Pattern langPattern = Pattern.compile("```(\\w+)");
+        Pattern langPattern = Pattern.compile("```([a-zA-Z0-9+#-]+)");
         Matcher matcher = langPattern.matcher(content);
         Set<String> tags = new LinkedHashSet<>();
 
@@ -156,6 +156,6 @@ public class SkillNormalizeServiceImpl implements SkillNormalizeService {
         }
 
         List<String> result = new ArrayList<>(tags);
-        return result.subList(0, Math.min(result.size(), 10));
+        return result;
     }
 }
