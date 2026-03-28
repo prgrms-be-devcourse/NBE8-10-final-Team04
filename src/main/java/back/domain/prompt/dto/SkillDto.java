@@ -5,7 +5,6 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.util.HashMap;
 import java.util.Map;
 
 @Getter
@@ -13,7 +12,7 @@ import java.util.Map;
 @SuppressFBWarnings(
         value = "EI_EXPOSE_REP",
         justification = "Jackson DTO는 JSON 맵 값을 그대로 전달한다.")
-public class SkillData {
+public class SkillDto {
 
     @JsonProperty("name")
     private String name;
