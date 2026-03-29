@@ -1,11 +1,11 @@
-package back.domain.prompt.service;
+package back.domain.prompt.prompt.service;
 
-import back.domain.prompt.dto.AgentDto;
-import back.domain.prompt.dto.PromptRepoItem;
-import back.domain.prompt.dto.SkillDto;
-import back.domain.prompt.entity.Agent;
-import back.domain.prompt.entity.Repository;
-import back.domain.prompt.entity.Skill;
+import back.domain.prompt.prompt.dto.AgentDto;
+import back.domain.prompt.prompt.dto.PromptRepoItem;
+import back.domain.prompt.prompt.dto.SkillDto;
+import back.domain.prompt.prompt.entity.Agent;
+import back.domain.prompt.prompt.entity.Repository;
+import back.domain.prompt.prompt.entity.Skill;
 
 import java.util.List;
 

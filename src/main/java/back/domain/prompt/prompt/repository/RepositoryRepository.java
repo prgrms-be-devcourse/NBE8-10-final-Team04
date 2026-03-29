@@ -1,9 +1,8 @@
-package back.domain.prompt.repository;
+package back.domain.prompt.prompt.repository;
 
-import back.domain.prompt.entity.Repository;
+import back.domain.prompt.prompt.entity.Repository;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import java.util.List;
 import java.util.Optional;
 
 public interface RepositoryRepository extends JpaRepository<Repository, Long> {

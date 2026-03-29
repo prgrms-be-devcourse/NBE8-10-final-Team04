@@ -1,8 +1,8 @@
-package back.domain.prompt.service;
+package back.domain.prompt.prompt.service;
 
-import back.domain.prompt.dto.PromptRepoItem;
-import back.domain.prompt.dto.SkillDto;
-import back.domain.prompt.entity.Repository;
+import back.domain.prompt.prompt.dto.PromptRepoItem;
+import back.domain.prompt.prompt.dto.SkillDto;
+import back.domain.prompt.prompt.entity.Repository;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

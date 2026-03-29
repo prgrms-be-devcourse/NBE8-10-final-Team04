@@ -1,6 +1,6 @@
-package back.domain.prompt.entity;
+package back.domain.prompt.prompt.entity;
 
-import back.domain.prompt.enums.OwnerType;
+import back.domain.prompt.prompt.enums.OwnerType;
 import back.global.jpa.entity.BaseEntity;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import jakarta.persistence.*;

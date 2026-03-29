@@ -1,6 +1,6 @@
-package back.domain.prompt.repository;
+package back.domain.prompt.prompt.repository;
 
-import back.domain.prompt.entity.Agent;
+import back.domain.prompt.prompt.entity.Agent;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;

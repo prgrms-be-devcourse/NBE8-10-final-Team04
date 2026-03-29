@@ -1,6 +1,6 @@
-package back.domain.prompt.controller;
+package back.domain.prompt.prompt.controller;
 
-import back.domain.prompt.service.PromptService;
+import back.domain.prompt.prompt.service.PromptService;
 import back.global.response.RsData;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;

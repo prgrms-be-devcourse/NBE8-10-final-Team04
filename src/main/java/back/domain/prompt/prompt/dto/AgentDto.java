@@ -1,4 +1,4 @@
-package back.domain.prompt.dto;
+package back.domain.prompt.prompt.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;

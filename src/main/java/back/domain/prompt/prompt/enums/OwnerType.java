@@ -1,4 +1,4 @@
-package back.domain.prompt.enums;
+package back.domain.prompt.prompt.enums;
 
 public enum OwnerType {
     USER,
