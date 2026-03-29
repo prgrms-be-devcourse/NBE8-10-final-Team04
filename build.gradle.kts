@@ -70,6 +70,9 @@ dependencies {
     runtimeOnly("org.postgresql:postgresql")
     // pgvector
     implementation("com.pgvector:pgvector:0.1.6")
+
+    // webflux
+    implementation("org.springframework.boot:spring-boot-starter-webflux")
 }
 
 tasks.withType<Test> {
