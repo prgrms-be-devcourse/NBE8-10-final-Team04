@@ -9,10 +9,12 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import back.domain.prompt.prompt.entity.Repository;
+import back.domain.prompt.prompt.entity.Skill;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import back.domain.prompt.enums.OwnerType;
+import back.domain.prompt.prompt.enums.OwnerType;
 
 class SkillTest {
 

@@ -12,6 +12,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+import back.domain.prompt.prompt.service.SkillNormalizeServiceImpl;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -21,17 +22,17 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import back.domain.prompt.dto.AgentDto;
-import back.domain.prompt.dto.PromptRepoItem;
-import back.domain.prompt.dto.RepositoryDto;
-import back.domain.prompt.dto.SkillDto;
-import back.domain.prompt.entity.Agent;
-import back.domain.prompt.entity.Repository;
-import back.domain.prompt.entity.Skill;
-import back.domain.prompt.enums.OwnerType;
-import back.domain.prompt.repository.AgentRepository;
-import back.domain.prompt.repository.RepositoryRepository;
-import back.domain.prompt.repository.SkillRepository;
+import back.domain.prompt.prompt.dto.AgentDto;
+import back.domain.prompt.prompt.dto.PromptRepoItem;
+import back.domain.prompt.prompt.dto.RepositoryDto;
+import back.domain.prompt.prompt.dto.SkillDto;
+import back.domain.prompt.prompt.entity.Agent;
+import back.domain.prompt.prompt.entity.Repository;
+import back.domain.prompt.prompt.entity.Skill;
+import back.domain.prompt.prompt.enums.OwnerType;
+import back.domain.prompt.prompt.repository.AgentRepository;
+import back.domain.prompt.prompt.repository.RepositoryRepository;
+import back.domain.prompt.prompt.repository.SkillRepository;
 
 @ExtendWith(MockitoExtension.class)
 class SkillNormalizeServiceTest {

@@ -19,6 +19,8 @@ import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.Set;
 
+import back.domain.prompt.prompt.service.PromptServiceImpl;
+import back.domain.prompt.prompt.service.SkillNormalizeService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -26,9 +28,9 @@ import org.junit.jupiter.api.io.TempDir;
 import org.mockito.ArgumentCaptor;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import back.domain.prompt.dto.SkillDto;
-import back.domain.prompt.entity.Repository;
-import back.domain.prompt.enums.OwnerType;
+import back.domain.prompt.prompt.dto.SkillDto;
+import back.domain.prompt.prompt.entity.Repository;
+import back.domain.prompt.prompt.enums.OwnerType;
 import tools.jackson.databind.ObjectMapper;
 
 class PromptServiceImplTest {
