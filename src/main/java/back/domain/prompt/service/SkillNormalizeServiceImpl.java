@@ -7,7 +7,9 @@ import back.domain.prompt.dto.SkillDto;
 import back.domain.prompt.entity.Agent;
 import back.domain.prompt.entity.Repository;
 import back.domain.prompt.entity.Skill;
+import back.domain.prompt.enums.Category;
 import back.domain.prompt.enums.OwnerType;
+import back.domain.prompt.parser.SkillNormalizeParser;
 import back.domain.prompt.repository.AgentRepository;
 import back.domain.prompt.repository.RepositoryRepository;
 import back.domain.prompt.repository.SkillRepository;
@@ -16,13 +18,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+
+import static back.domain.prompt.enums.Category.*;
 
 @Service
 @RequiredArgsConstructor
@@ -32,6 +33,7 @@ public class SkillNormalizeServiceImpl implements SkillNormalizeService {
     private final RepositoryRepository repositoryRepository;
     private final SkillRepository skillRepository;
     private final AgentRepository agentRepository;
+    private final SkillNormalizeParser parser;
 
     @Override
     @Transactional
@@ -64,7 +66,6 @@ public class SkillNormalizeServiceImpl implements SkillNormalizeService {
                                 .sourceRepo(data.getSourceRepo())
                                 .sourceUri(data.getSourceUrl())
                                 .summary(data.getSummary())
-                                .tagsJson(extractTagsByRule(repoItem))
                                 .starCount(data.getStarCount())
                                 .forkCount(data.getForkCount())
                                 .size(data.getSize())
@@ -88,12 +89,15 @@ public class SkillNormalizeServiceImpl implements SkillNormalizeService {
     @Transactional
     public Skill normalizeSkill(Repository repository, SkillDto skillDto) {
         String name = skillDto.getName();
+        String summary = repository.getSummary();
         String rawContent = skillDto.getContentMd();
+        Set<String> tags = parser.extractTags(summary, rawContent);
+        Category category = parser.extractCategory(summary, rawContent);
 
         return skillRepository.findByRepositoryIdAndName(repository.getId(), name)
                 .map(existing -> {
                     if (!existing.getContentHash().equals(skillDto.getContentHash())) {
-                        existing.update(rawContent, skillDto.getContentHash());
+                        existing.update(rawContent, skillDto.getContentHash(), tags, category);
                         log.info("Skill updated: {}/{}", repository.getSourceRepo(), name);
                     }
                     return existing;
@@ -105,6 +109,8 @@ public class SkillNormalizeServiceImpl implements SkillNormalizeService {
                                 .contentMd(rawContent)
                                 .contentHash(skillDto.getContentHash())
                                 .filePath(skillDto.getFilePath())
+                                .category(category)
+                                .tagsJson(tags)
                                 .build()
                 ));
     }
@@ -132,30 +138,4 @@ public class SkillNormalizeServiceImpl implements SkillNormalizeService {
                 ));
     }
 
-    private Set<String> extractTagsByRule(PromptRepoItem repoItem) {
-        if (repoItem.getSkills() == null || repoItem.getSkills().isEmpty()) {
-            return Set.of();
-        }
-
-        return repoItem.getSkills().stream()
-                .map(skill -> extractTags(skill.getContentMd()))
-                .flatMap(List::stream)
-                .filter(tag -> tag != null && !tag.isBlank())
-                .map(String::toLowerCase)
-                .collect(Collectors.toSet());
-    }
-
-    @Override
-    public List<String> extractTags(String content) {
-        Pattern langPattern = Pattern.compile("```([a-zA-Z0-9+#-]+)");
-        Matcher matcher = langPattern.matcher(content);
-        Set<String> tags = new LinkedHashSet<>();
-
-        while (matcher.find()) {
-            tags.add(matcher.group(1).toLowerCase());
-        }
-
-        List<String> result = new ArrayList<>(tags);
-        return result;
-    }
 }
