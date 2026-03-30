@@ -157,7 +157,6 @@ class PromptServiceImplTest {
                 .sourceRepo(sourceRepo)
                 .sourceUri("https://example.com/" + sourceRepo)
                 .summary("demo summary")
-                .tagsJson(Set.of("java"))
                 .starCount(10)
                 .forkCount(3)
                 .size(50)

@@ -1,35 +1,25 @@
 package back.domain.prompt.parser;
 
-import back.domain.prompt.dto.PromptRepoItem;
 import back.domain.prompt.enums.Category;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 import static back.domain.prompt.enums.Category.*;
-import static back.domain.prompt.enums.Category.BACKEND;
 
 @Component
 public class SkillNormalizeParser {
 
     public Set<String> extractTags(String summary, String content) {
         Set<String> tags = new LinkedHashSet<>();
+        String normalized = normalize(summary, content);
 
-        tags.addAll(extractKeywordTags(summary, content));
+        tags.addAll(extractKeywordTags(normalized));
 
         return tags;
     }
 
-    private List<String> extractKeywordTags(String summary, String content) {
-        String text = (summary == null ? "" : summary) + " "
-                + (content == null ? "" : content)
-                .toLowerCase()
-                .replace("-", " ")
-                .replace("_", " ");
-
+    private List<String> extractKeywordTags(String text) {
         Set<String> tags = new LinkedHashSet<>();
 
         for (var entry : tagRules().entrySet()) {
@@ -45,15 +35,7 @@ public class SkillNormalizeParser {
     }
 
     public Category extractCategory(String summary, String content) {
-        String text = (summary == null ? "" : summary) + " "
-                + (content == null ? "" : content)
-                .toLowerCase()
-                .replace("-", " ")
-                .replace("_", " ");
-
-        String normalized = text.toLowerCase()
-                .replace("-", " ")
-                .replace("_", " ");
+        String normalized = normalize(summary, content);
 
         Map<Category, Integer> scores = new HashMap<>();
 
@@ -67,7 +49,7 @@ public class SkillNormalizeParser {
             scores.put(entry.getKey(), score);
         }
 
-        if(Objects.equals(scores.get(BACKEND), scores.get(FRONTEND)))
+        if (scores.get(BACKEND) > 0 && Objects.equals(scores.get(BACKEND), scores.get(FRONTEND)))
             scores.put(FULLSTACK, scores.get(BACKEND) + 1);
 
         return scores.entrySet().stream()
@@ -76,6 +58,13 @@ public class SkillNormalizeParser {
                 .map(Map.Entry::getKey)
                 .findFirst()
                 .orElse(Category.OTHER);
+    }
+
+    private String normalize(String summary, String content) {
+        return ((summary == null ? "" : summary) + " " + (content == null ? "" : content))
+                .toLowerCase()
+                .replace("-", " ")
+                .replace("_", " ");
     }
 
     private Map<String, List<String>> tagRules() {
