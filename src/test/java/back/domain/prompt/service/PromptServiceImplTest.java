@@ -12,19 +12,27 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.mockito.ArgumentCaptor;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.test.util.ReflectionTestUtils;
+
+import com.oracle.bmc.objectstorage.ObjectStorage;
+import com.oracle.bmc.objectstorage.model.ListObjects;
+import com.oracle.bmc.objectstorage.model.ObjectSummary;
+import com.oracle.bmc.objectstorage.responses.GetObjectResponse;
+import com.oracle.bmc.objectstorage.responses.ListObjectsResponse;
 
 import back.domain.prompt.dto.SkillDto;
 import back.domain.prompt.entity.Repository;
@@ -37,46 +45,58 @@ class PromptServiceImplTest {
     Path tempDir;
 
     private SkillNormalizeService normalizeService;
+    private ObjectProvider<ObjectStorage> objectStorageProvider;
     private PromptServiceImpl promptServiceImpl;
 
     @BeforeEach
     void setUp() {
         normalizeService = mock(SkillNormalizeService.class);
-        promptServiceImpl = new PromptServiceImpl(normalizeService, new ObjectMapper());
+        objectStorageProvider = mock(ObjectProvider.class);
+        promptServiceImpl = new PromptServiceImpl(normalizeService, new ObjectMapper(), objectStorageProvider);
     }
 
     @Test
-    @DisplayName("run은 json 파일을 처리해 repository, skills, agent를 정규화한다")
-    void run_processesJsonFiles() throws IOException {
+    @DisplayName("run은 로컬 json 파일을 처리해 repository, skills, agent를 정규화한다")
+    void run_processesLocalJsonFiles() throws IOException {
         writeFile("prompt.json", validPromptJson());
         Repository repository = repository(1L, "owner/repo");
         when(normalizeService.normalizeRepository(any())).thenReturn(repository);
-        setPromptsBasePath(tempDir);
+        setLocalStorage(tempDir);
 
         promptServiceImpl.run();
 
-        verify(normalizeService).normalizeRepository(
-                argThat(item -> item.getRepository() != null
-                        && "owner/repo".equals(item.getRepository().getSourceRepo()))
-        );
-
-        ArgumentCaptor<SkillDto> skillCaptor = ArgumentCaptor.forClass(SkillDto.class);
-        verify(normalizeService, times(2)).normalizeSkill(same(repository), skillCaptor.capture());
-        assertThat(skillCaptor.getAllValues())
-                .extracting(SkillDto::getName)
-                .containsExactly("alpha", "beta");
-
-        verify(normalizeService).normalizeAgent(
-                same(repository),
-                argThat(agent -> agent != null && "agent-hash".equals(agent.getContentHash()))
-        );
+        verifyNormalized(repository);
     }
 
     @Test
-    @DisplayName("run은 repository payload가 없는 파일을 건너뛴다")
+    @DisplayName("run은 OCI json 객체를 처리해 repository, skills, agent를 정규화한다")
+    void run_processesOciJsonFiles() {
+        ObjectStorage objectStorage = mock(ObjectStorage.class);
+        ListObjectsResponse listObjectsResponse = mock(ListObjectsResponse.class);
+        ListObjects listObjects = mock(ListObjects.class);
+        GetObjectResponse getObjectResponse = mock(GetObjectResponse.class);
+        Repository repository = repository(1L, "owner/repo");
+
+        when(objectStorageProvider.getIfAvailable()).thenReturn(objectStorage);
+        when(objectStorage.listObjects(any())).thenReturn(listObjectsResponse);
+        when(listObjectsResponse.getListObjects()).thenReturn(listObjects);
+        when(listObjects.getObjects()).thenReturn(List.of(ObjectSummary.builder().name("data/prompts/prompt.json").build()));
+        when(listObjects.getNextStartWith()).thenReturn(null);
+        when(objectStorage.getObject(any())).thenReturn(getObjectResponse);
+        when(getObjectResponse.getInputStream()).thenReturn(new ByteArrayInputStream(validPromptJson().getBytes()));
+        when(normalizeService.normalizeRepository(any())).thenReturn(repository);
+        setOciStorage();
+
+        promptServiceImpl.run();
+
+        verifyNormalized(repository);
+    }
+
+    @Test
+    @DisplayName("run은 repository payload가 없으면 스킵한다")
     void run_skipsFileWithoutRepository() throws IOException {
         writeFile("prompt.json", missingRepositoryJson());
-        setPromptsBasePath(tempDir);
+        setLocalStorage(tempDir);
 
         promptServiceImpl.run();
 
@@ -84,7 +104,7 @@ class PromptServiceImplTest {
     }
 
     @Test
-    @DisplayName("run은 skill 하나의 정규화에 실패해도 나머지 skills와 agent 처리를 계속한다")
+    @DisplayName("run은 skill 하나 정규화에 실패해도 나머지 skills와 agent 처리를 계속한다")
     void run_continuesWhenSkillNormalizationFails() throws IOException {
         writeFile("prompt.json", validPromptJson());
         Repository repository = repository(1L, "owner/repo");
@@ -92,7 +112,7 @@ class PromptServiceImplTest {
         doThrow(new IllegalStateException("boom"))
                 .when(normalizeService)
                 .normalizeSkill(same(repository), argThat(skill -> "alpha".equals(skill.getName())));
-        setPromptsBasePath(tempDir);
+        setLocalStorage(tempDir);
 
         assertThatNoException().isThrownBy(() -> promptServiceImpl.run());
 
@@ -114,7 +134,7 @@ class PromptServiceImplTest {
     @DisplayName("run은 잘못된 json 파일을 무시한다")
     void run_ignoresInvalidJson() throws IOException {
         writeFile("broken.json", "{ not-valid-json");
-        setPromptsBasePath(tempDir);
+        setLocalStorage(tempDir);
 
         promptServiceImpl.run();
 
@@ -122,9 +142,9 @@ class PromptServiceImplTest {
     }
 
     @Test
-    @DisplayName("run은 프롬프트 디렉터리가 없으면 즉시 종료한다")
+    @DisplayName("run은 로컬 프롬프트 디렉터리가 없으면 종료한다")
     void run_returnsWhenPromptDirectoryMissing() {
-        setPromptsBasePath(tempDir.resolve("missing"));
+        setLocalStorage(tempDir.resolve("missing"));
 
         promptServiceImpl.run();
 
@@ -132,18 +152,44 @@ class PromptServiceImplTest {
     }
 
     @Test
-    @DisplayName("run은 프롬프트 디렉터리에 json 파일이 없으면 즉시 종료한다")
+    @DisplayName("run은 로컬 디렉터리에 json 파일이 없으면 종료한다")
     void run_returnsWhenNoJsonFilesExist() throws IOException {
         writeFile("notes.txt", "plain text");
-        setPromptsBasePath(tempDir);
+        setLocalStorage(tempDir);
 
         promptServiceImpl.run();
 
         verifyNoInteractions(normalizeService);
     }
 
-    private void setPromptsBasePath(Path path) {
+    private void verifyNormalized(Repository repository) {
+        verify(normalizeService).normalizeRepository(
+                argThat(item -> item.getRepository() != null
+                        && "owner/repo".equals(item.getRepository().getSourceRepo()))
+        );
+
+        ArgumentCaptor<SkillDto> skillCaptor = ArgumentCaptor.forClass(SkillDto.class);
+        verify(normalizeService, times(2)).normalizeSkill(same(repository), skillCaptor.capture());
+        assertThat(skillCaptor.getAllValues())
+                .extracting(SkillDto::getName)
+                .containsExactly("alpha", "beta");
+
+        verify(normalizeService).normalizeAgent(
+                same(repository),
+                argThat(agent -> agent != null && "agent-hash".equals(agent.getContentHash()))
+        );
+    }
+
+    private void setLocalStorage(Path path) {
+        ReflectionTestUtils.setField(promptServiceImpl, "storageType", "local");
         ReflectionTestUtils.setField(promptServiceImpl, "promptsBasePath", path.toString());
+    }
+
+    private void setOciStorage() {
+        ReflectionTestUtils.setField(promptServiceImpl, "storageType", "oci");
+        ReflectionTestUtils.setField(promptServiceImpl, "namespace", "ns");
+        ReflectionTestUtils.setField(promptServiceImpl, "bucket", "bucket");
+        ReflectionTestUtils.setField(promptServiceImpl, "promptsOciPrefix", "data/prompts/");
     }
 
     private void writeFile(String fileName, String content) throws IOException {
@@ -157,7 +203,6 @@ class PromptServiceImplTest {
                 .sourceRepo(sourceRepo)
                 .sourceUri("https://example.com/" + sourceRepo)
                 .summary("demo summary")
-                .tagsJson(Set.of("java"))
                 .starCount(10)
                 .forkCount(3)
                 .size(50)
