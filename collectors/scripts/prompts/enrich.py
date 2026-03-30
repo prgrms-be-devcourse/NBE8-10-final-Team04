@@ -77,14 +77,22 @@ def _ensure_content_pending(index: dict, gid_str: str) -> None:
         index["repos"][gid_str]["content_status"] = "pending"
 
 
+def _remove_from_content_pending(index: dict, gid_str: str) -> None:
+    """content_pending 큐에서 제거하고 content_status를 none으로 마킹."""
+    q = index["queue"]["content_pending"]
+    if gid_str in q:
+        q.remove(gid_str)
+    index["repos"][gid_str]["content_status"] = "none"
+
+
 # ── 단일 레포 enrich ───────────────────────────────────────────────────────────
 def enrich_one(
-    source_repo:     str,
-    file_entries:    list[dict],
-    index:           dict,
-    work_dir:        Path,
-    stored_etag:     str | None = None,
-    existing_skills: list | None = None,
+        source_repo:     str,
+        file_entries:    list[dict],
+        index:           dict,
+        work_dir:        Path,
+        stored_etag:     str | None = None,
+        existing_skills: list | None = None,
 ) -> dict | None:
     """
     레포 1개를 enrich하고 work_dir에 JSON 저장.
@@ -118,12 +126,13 @@ def enrich_one(
         logger.warning("  → 404 (삭제/이동): %s", source_repo)
         indexed = {meta["source_repo"]: gid for gid, meta in index["repos"].items()}
         gid_str = indexed.get(source_repo)
-        if gid_str:
+        if gid_str and gid_str in index["repos"]:
             index["repos"][gid_str].update({
                 "active":         False,
                 "enrich_status":  "done",
                 "content_status": "none",
             })
+            _remove_from_content_pending(index, gid_str)
         return None
 
     if status != 200 or body is None:
@@ -133,7 +142,16 @@ def enrich_one(
     # ── private / fork 제외 ───────────────────────────────────────────────────
     if body.get("private"):
         logger.info("  → private 레포 — 스킵: %s", source_repo)
+        indexed = {meta["source_repo"]: gid for gid, meta in index["repos"].items()}
+        gid_str = indexed.get(source_repo)
+        if gid_str and gid_str in index["repos"]:
+            index["repos"][gid_str].update({
+                "active":        False,
+                "enrich_status": "done",
+            })
+            _remove_from_content_pending(index, gid_str)
         return None
+
     if SKIP_FORKS and body.get("fork"):
         logger.info("  → fork 레포 — 스킵: %s", source_repo)
         return None
@@ -170,7 +188,7 @@ def enrich_one(
     save_json(
         {"repository": repo_meta, "skills": skills, "agent": None},
         work_dir / filename,
-    )
+        )
 
     # ── index 갱신 ────────────────────────────────────────────────────────────
     now = now_iso()

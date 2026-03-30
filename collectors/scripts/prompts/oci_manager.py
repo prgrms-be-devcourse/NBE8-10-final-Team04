@@ -54,7 +54,10 @@ class OciManager(BaseOciClient):
     def load_index(self) -> dict:
         content = self.get_object_bytes(OCI_INDEX_OBJECT)
         if content:
-            return json.loads(content)
+            index = json.loads(content)
+            # 구 스키마 호환: pending_file_entries 필드 없으면 추가
+            index.setdefault("pending_file_entries", {})
+            return index
 
         logger.info("index.json 없음 — 새로 생성")
         return {
@@ -66,8 +69,9 @@ class OciManager(BaseOciClient):
                 "enrich_pending":  [],
                 "content_pending": [],
             },
-            "repos":        {},
-            "failed_repos": {},
+            "repos":                {},
+            "pending_file_entries": {},  # 신규 레포 file_entries 임시 저장
+            "failed_repos":         {},  # enrich 실패 레포 관리
         }
 
     # ── 레포 JSON 업로드 ───────────────────────────────────────────────────────
@@ -96,12 +100,12 @@ class OciManager(BaseOciClient):
 
     # ── 인덱스 저장 ────────────────────────────────────────────────────────────
     def save_index(
-        self,
-        index: dict,
-        stats: dict | None = None,
-        elapsed_sec: float = 0.0,
-        history_max: int = 10,
-        checkpoint: bool = False,
+            self,
+            index: dict,
+            stats: dict | None = None,
+            elapsed_sec: float = 0.0,
+            history_max: int = 10,
+            checkpoint: bool = False,
     ) -> None:
         now = now_iso()
         index["last_updated"] = now

@@ -35,7 +35,7 @@ from collectors.scripts.prompts.notify import (
 )
 from collectors.scripts.prompts.oci_manager import OciManager
 from collectors.scripts.prompts.sourcegraph import collect_repos
-from collectors.scripts.shared.utils import setup_logging
+from collectors.scripts.shared.utils import load_json, setup_logging
 
 logger = logging.getLogger(__name__)
 
@@ -72,8 +72,9 @@ def _run(oci: OciManager, start_time: float) -> None:
     )
 
     # ── Sourcegraph 수집 (0시 실행만) ─────────────────────────────────────────
+    new_count = removed_count = 0
     if IS_MONDAY_MIDNIGHT:
-        _collect_and_enqueue(oci, index)
+        new_count, removed_count = _collect_and_enqueue(oci, index)
 
     if not q["enrich_pending"]:
         logger.info("enrich_pending 큐가 비어있습니다. 종료합니다.")
@@ -81,10 +82,13 @@ def _run(oci: OciManager, start_time: float) -> None:
 
     # ── enrich 처리 ───────────────────────────────────────────────────────────
     logger.info("=== enrich 처리 시작 ===")
-    stats      = {"enriched": 0, "skipped": 0, "failed": 0}
+    stats      = {"new": new_count, "updated": 0, "skipped": 0, "failed": 0, "removed": removed_count}
     new_failed = {}
     pending    = list(q["enrich_pending"])
     total      = len(pending)
+
+    # indexed 맵은 루프 전에 한 번만 생성
+    indexed = {meta["source_repo"]: gid for gid, meta in index["repos"].items()}
 
     for i, source_repo in enumerate(pending, 1):
         if time.time() - start_time > MAX_RUNTIME_SEC:
@@ -93,12 +97,16 @@ def _run(oci: OciManager, start_time: float) -> None:
 
         logger.info("[%d/%d] %s", i, total, source_repo)
 
-        fail_meta    = index["failed_repos"].get(source_repo, {})
-        file_entries = fail_meta.get("file_entries", [])
-        indexed      = {meta["source_repo"]: gid for gid, meta in index["repos"].items()}
-        gid_str      = indexed.get(source_repo)
-        stored_etag  = index["repos"].get(gid_str, {}).get("etag") if gid_str else None
-        result       = None
+        gid_str     = indexed.get(source_repo)
+        stored_etag = index["repos"].get(gid_str, {}).get("etag") if gid_str else None
+        result      = None
+
+        # ── file_entries 조회: 신규는 pending_file_entries, 기존은 work_dir에서 복원 ──
+        file_entries = index["pending_file_entries"].get(source_repo)
+        if file_entries is None and gid_str:
+            file_entries = _restore_file_entries(source_repo, gid_str, index, oci)
+
+        file_entries = file_entries or []
 
         try:
             result = enrich_one(
@@ -111,13 +119,18 @@ def _run(oci: OciManager, start_time: float) -> None:
 
             if result is None:
                 stats["failed"] += 1
-                new_failed[source_repo] = {
-                    "reason": "enrich 실패", "file_entries": file_entries
-                }
+                new_failed[source_repo] = {"reason": "enrich 실패"}
             else:
-                key = "enriched" if result["changed"] else "skipped"
-                stats[key] += 1
+                # notify_complete가 읽는 키(new/updated/skipped)로 분기
+                if result["changed"]:
+                    if gid_str:
+                        stats["updated"] += 1
+                    else:
+                        stats["new"] += 1
+                else:
+                    stats["skipped"] += 1
                 q["enrich_pending"].remove(source_repo)
+                index["pending_file_entries"].pop(source_repo, None)  # 임시 저장 정리
                 index["failed_repos"].pop(source_repo, None)
 
             notify_fail_warning(stats["failed"], total)
@@ -125,7 +138,7 @@ def _run(oci: OciManager, start_time: float) -> None:
         except Exception as e:
             logger.error("  ✗ %s: %s", source_repo, e)
             stats["failed"] += 1
-            new_failed[source_repo] = {"reason": str(e), "file_entries": file_entries}
+            new_failed[source_repo] = {"reason": str(e)}
 
         # OCI 업로드
         if result and result.get("changed") and result.get("filename"):
@@ -148,12 +161,36 @@ def _run(oci: OciManager, start_time: float) -> None:
 
     status = "중단 (다음 실행에서 재개)" if interrupted else "완료"
     logger.info(
-        "=== %s === enriched:%d skipped:%d failed:%d",
-        status, stats["enriched"], stats["skipped"], stats["failed"],
+        "=== %s === new:%d updated:%d skipped:%d failed:%d",
+        status, stats["new"], stats["updated"], stats["skipped"], stats["failed"],
     )
 
 
-def _collect_and_enqueue(oci: OciManager, index: dict) -> None:
+def _restore_file_entries(
+        source_repo: str, gid_str: str, index: dict, oci: OciManager
+) -> list[dict] | None:
+    """기존 레포의 file_entries를 work_dir JSON에서 복원."""
+    filename   = index["repos"].get(gid_str, {}).get("filename")
+    local_path = WORK_DIR / filename if filename else None
+
+    if local_path and not local_path.exists():
+        oci.download_file(filename, WORK_DIR)
+
+    if local_path and local_path.exists():
+        existing_data = load_json(local_path)
+        file_entries  = [
+            {"file_path": s["file_path"]}
+            for s in existing_data.get("skills", [])
+        ]
+        if file_entries:
+            logger.info("  → file_entries 복원 완료: %d개", len(file_entries))
+            return file_entries
+
+    logger.warning("  → file_entries 복원 실패 (skills 없음): %s", source_repo)
+    return None
+
+
+def _collect_and_enqueue(oci: OciManager, index: dict) -> tuple[int, int]:
     """Sourcegraph 수집 후 enrich_pending 큐 갱신."""
     logger.info("=== Sourcegraph 수집 ===")
     sg_repos = collect_repos()
@@ -165,13 +202,13 @@ def _collect_and_enqueue(oci: OciManager, index: dict) -> None:
 
     for source_repo, file_entries in sg_repos.items():
         if source_repo not in indexed_by_repo:
+            # 신규 레포: file_entries를 pending_file_entries에 저장
             if source_repo not in q["enrich_pending"]:
                 q["enrich_pending"].append(source_repo)
-                index["failed_repos"][source_repo] = {
-                    "file_entries": file_entries, "reason": None
-                }
+                index["pending_file_entries"][source_repo] = file_entries
             new_count += 1
         elif source_repo not in q["enrich_pending"]:
+            # 기존 레포: 큐에만 추가 (file_entries는 _run에서 work_dir JSON으로 복원)
             q["enrich_pending"].append(source_repo)
 
     sg_repos_set = set(sg_repos.keys())
@@ -186,6 +223,8 @@ def _collect_and_enqueue(oci: OciManager, index: dict) -> None:
     )
     notify_start(new_count, len(indexed_by_repo), removed_count)
     oci.save_index(index, checkpoint=True)
+
+    return new_count, removed_count
 
 
 def _cleanup() -> None:
