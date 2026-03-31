@@ -1,6 +1,7 @@
 package back.domain.prompt.search.repository;
 
 import back.domain.prompt.search.dto.chunk.SkillChunkVectorSearchRowDto;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
@@ -10,6 +11,10 @@ import java.util.List;
 
 @Repository
 @RequiredArgsConstructor
+@SuppressFBWarnings(
+        value = "EI_EXPOSE_REP2",
+        justification = "공유 JdbcTemplate 빈은 스프링이 주입하고 관리한다."
+)
 public class SkillChunkVectorSearchRepository {
 
     private final JdbcTemplate jdbcTemplate;

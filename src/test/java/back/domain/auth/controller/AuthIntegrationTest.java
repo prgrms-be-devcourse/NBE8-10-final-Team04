@@ -139,12 +139,7 @@ class AuthIntegrationTest {
 
         MvcResult refreshResult = mockMvc.perform(post("/api/v1/auth/token/refresh")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {
-                                  "refreshToken": "%s"
-                                }
-                                """
-                                .formatted(tokenFixture.refreshToken())))
+                        .content("{\"refreshToken\":\"%s\"}".formatted(tokenFixture.refreshToken())))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message").value("토큰 재발급 성공"))
                 .andExpect(jsonPath("$.data.accessToken").isNotEmpty())
@@ -157,12 +152,7 @@ class AuthIntegrationTest {
 
         mockMvc.perform(post("/api/v1/auth/token/refresh")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {
-                                  "refreshToken": "%s"
-                                }
-                                """
-                                .formatted(tokenFixture.refreshToken())))
+                        .content("{\"refreshToken\":\"%s\"}".formatted(tokenFixture.refreshToken())))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.message").value("유효하지 않은 토큰입니다."));
     }
@@ -176,12 +166,7 @@ class AuthIntegrationTest {
         mockMvc.perform(post("/api/v1/auth/token/refresh")
                         .header(HttpHeaders.AUTHORIZATION, "Bearer invalid-access-token")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {
-                                  "refreshToken": "%s"
-                                }
-                                """
-                                .formatted(tokenFixture.refreshToken())))
+                        .content("{\"refreshToken\":\"%s\"}".formatted(tokenFixture.refreshToken())))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message").value("토큰 재발급 성공"))
                 .andExpect(jsonPath("$.data.accessToken").isNotEmpty())
@@ -245,12 +230,7 @@ class AuthIntegrationTest {
         mockMvc.perform(post("/api/v1/auth/logout")
                         .header(HttpHeaders.AUTHORIZATION, "Bearer %s".formatted(attackerTokenFixture.accessToken()))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {
-                                  "refreshToken": "%s"
-                                }
-                                """
-                                .formatted(ownerTokenFixture.refreshToken())))
+                        .content("{\"refreshToken\":\"%s\"}".formatted(ownerTokenFixture.refreshToken())))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.message").value("본인 토큰이 아닙니다."));
     }
@@ -302,7 +282,8 @@ class AuthIntegrationTest {
 
         @GetMapping("/api/v1/security/probe")
         tools.jackson.databind.node.ObjectNode securityProbe() {
-            tools.jackson.databind.node.JsonNodeFactory jsonNodeFactory = tools.jackson.databind.node.JsonNodeFactory.instance;
+            tools.jackson.databind.node.JsonNodeFactory jsonNodeFactory =
+                    tools.jackson.databind.node.JsonNodeFactory.instance;
             tools.jackson.databind.node.ObjectNode objectNode = jsonNodeFactory.objectNode();
             objectNode.put("message", "보호 리소스 접근 성공");
             return objectNode;

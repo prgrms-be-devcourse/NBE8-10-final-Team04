@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
@@ -66,6 +67,6 @@ class SkillEmbeddingDevControllerTest {
         assertThat(response.getHeaders().getFirst(HttpHeaders.CONTENT_DISPOSITION))
                 .contains("skills_for_embedding.json");
         assertThat(response.getHeaders().getContentType()).isEqualTo(MediaType.APPLICATION_JSON);
-        assertThat(new String(response.getBody())).contains("\"skill_id\":1");
+        assertThat(new String(response.getBody(), StandardCharsets.UTF_8)).contains("\"skill_id\":1");
     }
 }

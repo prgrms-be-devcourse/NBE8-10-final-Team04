@@ -6,6 +6,7 @@ import back.domain.prompt.embedding.dto.SkillChunkImportDto;
 import back.domain.prompt.embedding.entity.SkillChunk;
 import back.domain.prompt.embedding.repository.SkillChunkRepository;
 import back.domain.prompt.search.util.VectorUtils;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -22,6 +23,10 @@ import java.util.stream.Collectors;
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@SuppressFBWarnings(
+        value = "EI_EXPOSE_REP2",
+        justification = "공유 Repository와 ObjectMapper 빈은 스프링이 주입하고 관리한다."
+)
 public class SkillChunkImportService {
 
     private final SkillRepository skillRepository;

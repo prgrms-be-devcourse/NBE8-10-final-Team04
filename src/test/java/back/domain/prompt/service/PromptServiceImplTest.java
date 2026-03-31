@@ -14,6 +14,7 @@ import static org.mockito.Mockito.when;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
@@ -80,10 +81,14 @@ class PromptServiceImplTest {
         when(objectStorageProvider.getIfAvailable()).thenReturn(objectStorage);
         when(objectStorage.listObjects(any())).thenReturn(listObjectsResponse);
         when(listObjectsResponse.getListObjects()).thenReturn(listObjects);
-        when(listObjects.getObjects()).thenReturn(List.of(ObjectSummary.builder().name("data/prompts/prompt.json").build()));
+        when(listObjects.getObjects()).thenReturn(
+                List.of(ObjectSummary.builder().name("data/prompts/prompt.json").build())
+        );
         when(listObjects.getNextStartWith()).thenReturn(null);
         when(objectStorage.getObject(any())).thenReturn(getObjectResponse);
-        when(getObjectResponse.getInputStream()).thenReturn(new ByteArrayInputStream(validPromptJson().getBytes()));
+        when(getObjectResponse.getInputStream()).thenReturn(
+                new ByteArrayInputStream(validPromptJson().getBytes(StandardCharsets.UTF_8))
+        );
         when(normalizeService.normalizeRepository(any())).thenReturn(repository);
         setOciStorage();
 

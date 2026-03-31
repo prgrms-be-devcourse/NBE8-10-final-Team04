@@ -84,7 +84,6 @@ class RepositoryTest {
                 .active(true)
                 .rawMetadata(new HashMap<>(Map.of("k", "v")))
                 .skills(new ArrayList<>())
-                .build()
-                ;
+                .build();
     }
 }

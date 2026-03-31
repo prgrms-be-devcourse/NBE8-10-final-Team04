@@ -3,6 +3,7 @@ package back.domain.prompt.embedding.service;
 import back.domain.prompt.prompt.entity.Skill;
 import back.domain.prompt.prompt.repository.SkillRepository;
 import back.domain.prompt.embedding.dto.SkillEmbeddingExportDto;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -18,6 +19,10 @@ import java.util.List;
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@SuppressFBWarnings(
+        value = "EI_EXPOSE_REP2",
+        justification = "공유 Repository와 ObjectMapper 빈은 스프링이 주입하고 관리한다."
+)
 public class SkillEmbeddingExportService {
 
     private final SkillRepository skillRepository;

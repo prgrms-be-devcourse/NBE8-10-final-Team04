@@ -2,6 +2,7 @@ package back.domain.prompt.embedding.entity;
 
 import back.domain.prompt.prompt.entity.Skill;
 import back.global.jpa.entity.BaseEntity;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -13,6 +14,10 @@ import java.time.OffsetDateTime;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Builder
+@SuppressFBWarnings(
+        value = {"EI_EXPOSE_REP", "EI_EXPOSE_REP2"},
+        justification = "JPA 엔티티의 가변 참조는 영속성 컨텍스트에서 관리한다."
+)
 public class SkillChunk extends BaseEntity {
 
     // 원본 Skill (N:1)
