@@ -1,11 +1,15 @@
 package back.domain.prompt.provider;
 
 import back.domain.prompt.enums.Category;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.Map;
 
+@SuppressFBWarnings(
+        value = {"EI_EXPOSE_REP", "EI_EXPOSE_REP2"},
+        justification = "정적 규칙 맵으로 외부 수정이 없음")
 @Component
 public class KeywordRuleProvider {
 

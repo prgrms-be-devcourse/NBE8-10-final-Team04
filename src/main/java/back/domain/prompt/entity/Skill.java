@@ -57,7 +57,7 @@ public class Skill extends BaseEntity {
         this.category = category;
     }
 
-     public void updateTagAndCategory (Set<String> tagsJson, Category category)  {
+    public void updateTagAndCategory(Set<String> tagsJson, Category category) {
         this.tagsJson = tagsJson;
         this.category = category;
     }

@@ -58,8 +58,9 @@ public class SkillNormalizeParser {
             scores.put(entry.getKey(), score);
         }
 
-        if (scores.get(BACKEND) > 0 && Objects.equals(scores.get(BACKEND), scores.get(FRONTEND)))
+        if (scores.get(BACKEND) > 0 && Objects.equals(scores.get(BACKEND), scores.get(FRONTEND))) {
             scores.put(FULLSTACK, scores.get(BACKEND) + 1);
+        }
 
         return scores.entrySet().stream()
                 .filter(e -> e.getValue() > 0)
