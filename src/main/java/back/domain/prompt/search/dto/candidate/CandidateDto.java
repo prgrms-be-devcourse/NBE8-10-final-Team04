@@ -21,6 +21,7 @@ public class CandidateDto {
     @JsonProperty("repository_url")
     private String repositoryUrl;
 
+    @JsonProperty("content_md")
     private String contentMd;
 
     private Category category;

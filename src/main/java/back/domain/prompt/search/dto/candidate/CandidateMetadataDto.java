@@ -12,6 +12,7 @@ public class CandidateMetadataDto {
 
     private Integer forks;
 
+    @JsonProperty("updated_at")
     private String updatedAt;
 
 }
