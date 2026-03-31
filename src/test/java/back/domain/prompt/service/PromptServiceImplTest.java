@@ -252,13 +252,13 @@ class PromptServiceImplTest {
                   },
                   "skills": [
                     {
-                      "name": "alpha",
+                      "skill_name": "alpha",
                       "file_path": "skills/alpha.md",
                       "content_md": "alpha content",
                       "content_hash": "alpha-hash"
                     },
                     {
-                      "name": "beta",
+                      "skill_name": "beta",
                       "file_path": "skills/beta.md",
                       "content_md": "beta content",
                       "content_hash": "beta-hash"
@@ -280,7 +280,7 @@ class PromptServiceImplTest {
                   "repository": null,
                   "skills": [
                     {
-                      "name": "alpha",
+                      "skill_name": "alpha",
                       "file_path": "skills/alpha.md",
                       "content_md": "alpha content",
                       "content_hash": "alpha-hash"
