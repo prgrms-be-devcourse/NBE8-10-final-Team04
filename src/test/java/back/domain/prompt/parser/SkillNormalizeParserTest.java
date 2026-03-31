@@ -8,10 +8,11 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import back.domain.prompt.enums.Category;
+import back.domain.prompt.provider.KeywordRuleProvider;
 
 class SkillNormalizeParserTest {
 
-    private final SkillNormalizeParser parser = new SkillNormalizeParser();
+    private final SkillNormalizeParser parser = new SkillNormalizeParser(new KeywordRuleProvider());
 
     @Test
     @DisplayName("summary와 content에서 키워드 기반 태그를 추출한다")
