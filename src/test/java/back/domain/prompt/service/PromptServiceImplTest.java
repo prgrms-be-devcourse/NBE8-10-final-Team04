@@ -17,7 +17,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.util.Map;
-import java.util.Set;
 
 import back.domain.prompt.prompt.service.PromptServiceImpl;
 import back.domain.prompt.prompt.service.SkillNormalizeService;
@@ -159,7 +158,6 @@ class PromptServiceImplTest {
                 .sourceRepo(sourceRepo)
                 .sourceUri("https://example.com/" + sourceRepo)
                 .summary("demo summary")
-                .tagsJson(Set.of("java"))
                 .starCount(10)
                 .forkCount(3)
                 .size(50)

@@ -39,9 +39,9 @@ public class Repository extends BaseEntity {
     @Column(name = "summary", columnDefinition = "TEXT")
     private String summary;
 
-    @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "tags_json", columnDefinition = "jsonb")
-    private Set<String> tagsJson = new HashSet<>();
+//    @JdbcTypeCode(SqlTypes.JSON)
+//    @Column(name = "tags_json", columnDefinition = "jsonb")
+//    private Set<String> tagsJson = new HashSet<>();
 
     @Column(name = "star_count")
     private Integer starCount;

@@ -7,8 +7,6 @@ import back.domain.prompt.prompt.entity.Agent;
 import back.domain.prompt.prompt.entity.Repository;
 import back.domain.prompt.prompt.entity.Skill;
 
-import java.util.List;
-
 public interface SkillNormalizeService {
 
     Repository normalizeRepository(PromptRepoItem repoItem);
@@ -17,5 +15,4 @@ public interface SkillNormalizeService {
 
     Agent normalizeAgent(Repository repository, AgentDto agentDto);
 
-    List<String> extractTags(String content);
 }

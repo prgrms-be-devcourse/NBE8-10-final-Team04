@@ -1,10 +1,16 @@
 package back.domain.prompt.prompt.entity;
 
+import back.domain.prompt.prompt.enums.Category;
 import back.global.jpa.entity.BaseEntity;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Table(name = "skills")
@@ -34,8 +40,23 @@ public class Skill extends BaseEntity {
     @Column(name = "file_path", nullable = false, length = 500)
     private String filePath;
 
-    public void update(String contentMd, String contentHash) {
+    @Enumerated(EnumType.STRING)
+    @Column(name = "category", nullable = false, length = 20)
+    private Category category;
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "tags_json", columnDefinition = "jsonb")
+    private Set<String> tagsJson = new HashSet<>();
+
+    public void update(String contentMd, String contentHash, Set<String> tagsJson, Category category) {
         this.contentMd = contentMd;
         this.contentHash = contentHash;
+        this.tagsJson = tagsJson;
+        this.category = category;
+    }
+
+    public void updateTagAndCategory(Set<String> tagsJson, Category category) {
+        this.tagsJson = tagsJson;
+        this.category = category;
     }
 }
