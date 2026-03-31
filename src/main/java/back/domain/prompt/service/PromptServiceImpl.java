@@ -116,6 +116,12 @@ public class PromptServiceImpl implements PromptService {
             return;
         }
 
+        if (bucket == null || bucket.isBlank() || namespace == null || namespace.isBlank()) {
+            log.warn("OCI 버킷 또는 네임스페이스가 설정되지 않아 프롬프트 실행을 건너뜁니다. bucket='{}', namespace='{}'",
+                    bucket, namespace);
+            return;
+        }
+
         List<String> objectNames = listJsonObjectNames(objectStorage);
         if (objectNames.isEmpty()) {
             log.warn("OCI Object Storage에서 처리할 JSON 파일이 없습니다. bucket={}, prefix={}", bucket, normalizePrefix());
