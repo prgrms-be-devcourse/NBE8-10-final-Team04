@@ -1,4 +1,4 @@
-package back.domain.prompt.service;
+package back.domain.prompt.prompt.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -34,7 +34,6 @@ import back.domain.prompt.prompt.parser.SkillNormalizeParser;
 import back.domain.prompt.prompt.repository.AgentRepository;
 import back.domain.prompt.prompt.repository.RepositoryRepository;
 import back.domain.prompt.prompt.repository.SkillRepository;
-import back.domain.prompt.prompt.service.SkillNormalizeServiceImpl;
 
 @ExtendWith(MockitoExtension.class)
 class SkillNormalizeServiceTest {

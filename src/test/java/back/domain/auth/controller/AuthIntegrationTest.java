@@ -104,7 +104,12 @@ class AuthIntegrationTest {
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
     @DisplayName("구글 로그인 재시도 시 동일 sub 회원은 이름/이메일을 최신값으로 갱신한다")
     void googleLogin_existingMemberUpdateProfile() throws Exception {
-        memberRepository.save(Member.createUser("google-sub-303", "old303@example.com", "Old 303"));
+        memberRepository.findByGoogleSub("google-sub-303").ifPresent(memberRepository::delete);
+        memberRepository.findByEmail("old303@example.com").ifPresent(memberRepository::delete);
+        memberRepository.findByEmail("new303@example.com").ifPresent(memberRepository::delete);
+        memberRepository.flush();
+
+        memberRepository.saveAndFlush(Member.createUser("google-sub-303", "old303@example.com", "Old 303"));
 
         mockMvc.perform(post("/api/v1/auth/google/login")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -121,6 +126,9 @@ class AuthIntegrationTest {
         Member updatedMember = memberRepository.findByGoogleSub("google-sub-303").orElseThrow();
         assertThat(updatedMember.getEmail()).isEqualTo("new303@example.com");
         assertThat(updatedMember.getName()).isEqualTo("New 303");
+
+        memberRepository.delete(updatedMember);
+        memberRepository.flush();
     }
 
     @Test

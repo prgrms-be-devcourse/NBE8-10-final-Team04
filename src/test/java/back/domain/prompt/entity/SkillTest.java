@@ -1,4 +1,4 @@
-package back.domain.prompt.entity;
+package back.domain.prompt.prompt.entity;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -11,8 +11,6 @@ import java.util.Set;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import back.domain.prompt.prompt.entity.Repository;
-import back.domain.prompt.prompt.entity.Skill;
 import back.domain.prompt.prompt.enums.Category;
 import back.domain.prompt.prompt.enums.OwnerType;
 

@@ -1,10 +1,9 @@
-package back.domain.prompt.parser;
+package back.domain.prompt.prompt.parser;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.Set;
 
-import back.domain.prompt.prompt.parser.SkillNormalizeParser;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 

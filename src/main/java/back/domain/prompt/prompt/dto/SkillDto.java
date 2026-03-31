@@ -14,7 +14,7 @@ import java.util.Map;
         justification = "Jackson DTO는 JSON 맵 값을 그대로 전달한다.")
 public class SkillDto {
 
-    @JsonProperty("name")
+    @JsonProperty("skill_name")
     private String name;
 
     @JsonProperty("file_path")

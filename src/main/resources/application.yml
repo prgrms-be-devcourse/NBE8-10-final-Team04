@@ -29,14 +29,21 @@ spring:
       max-request-size: 5MB
 
 app:
+  prompts:
+    base-path: ${APP_PROMPTS_BASE_PATH:data/prompts}
+    oci-prefix: ${OCI_OBJECT_STORAGE_PROMPTS_PREFIX:data/prompts/}
   storage:
-    type: ${APP_STORAGE_TYPE:local}
+    type: ${APP_STORAGE_TYPE:oci}
     local:
       upload-dir: ${APP_STORAGE_LOCAL_UPLOAD_DIR:./uploads}
     oci:
       bucket: ${OCI_OBJECT_STORAGE_BUCKET:}
       namespace: ${OCI_OBJECT_STORAGE_NAMESPACE:}
-      prefix: ${OCI_OBJECT_STORAGE_PREFIX:prod/}
+      prefix: ${OCI_OBJECT_STORAGE_PREFIX:data/}
+      auth-type: ${OCI_AUTH_TYPE:config-file}
+      config-file-path: ${OCI_CONFIG_FILE_PATH:~/.oci/config}
+      profile: ${OCI_CONFIG_PROFILE:DEFAULT}
+      region: ${OCI_REGION:}
 
 custom:
   jwt:
