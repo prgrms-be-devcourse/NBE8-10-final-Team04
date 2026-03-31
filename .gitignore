@@ -42,3 +42,7 @@ out/
 !/Readme.md
 
 .env
+
+## venv ##
+venv/
+ai-service/venv/
