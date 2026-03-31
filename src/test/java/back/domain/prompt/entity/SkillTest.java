@@ -5,13 +5,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import back.domain.prompt.enums.Category;
 import back.domain.prompt.enums.OwnerType;
 
 class SkillTest {
@@ -26,15 +26,19 @@ class SkillTest {
                 .contentMd("old")
                 .contentHash("old-hash")
                 .filePath("skills/alpha.md")
+                .category(Category.BACKEND)
+                .tagsJson(Set.of("spring"))
                 .build();
 
-        skill.update("new", "new-hash");
+        skill.update("new", "new-hash", Set.of("java", "spring"), Category.FULLSTACK);
 
         assertThat(skill.getRepository()).isSameAs(repository);
         assertThat(skill.getName()).isEqualTo("alpha");
         assertThat(skill.getContentMd()).isEqualTo("new");
         assertThat(skill.getContentHash()).isEqualTo("new-hash");
         assertThat(skill.getFilePath()).isEqualTo("skills/alpha.md");
+        assertThat(skill.getTagsJson()).containsExactlyInAnyOrder("java", "spring");
+        assertThat(skill.getCategory()).isEqualTo(Category.FULLSTACK);
     }
 
     private Repository repository() {
@@ -44,7 +48,6 @@ class SkillTest {
                 .sourceRepo("owner/repo")
                 .sourceUri("https://example.com/owner/repo")
                 .summary("summary")
-                .tagsJson(new HashSet<>(Set.of("java")))
                 .starCount(10)
                 .forkCount(2)
                 .size(100)
