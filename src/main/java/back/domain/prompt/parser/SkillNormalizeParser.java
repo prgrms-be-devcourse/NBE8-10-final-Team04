@@ -4,12 +4,14 @@ import back.domain.prompt.enums.Category;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
+import java.util.regex.Pattern;
 
 import static back.domain.prompt.enums.Category.*;
 
 @Component
 public class SkillNormalizeParser {
 
+    // 태그 추출
     public Set<String> extractTags(String summary, String content) {
         Set<String> tags = new LinkedHashSet<>();
         String normalized = normalize(summary, content);
@@ -19,6 +21,7 @@ public class SkillNormalizeParser {
         return tags;
     }
 
+    // tagRules() 기반 태그 추출
     private List<String> extractKeywordTags(String text) {
         Set<String> tags = new LinkedHashSet<>();
 
@@ -34,6 +37,7 @@ public class SkillNormalizeParser {
         return new ArrayList<>(tags);
     }
 
+    // 카테고리 추출
     public Category extractCategory(String summary, String content) {
         String normalized = normalize(summary, content);
 
@@ -42,8 +46,8 @@ public class SkillNormalizeParser {
         for (var entry : categoryRules().entrySet()) {
             int score = 0;
             for (String keyword : entry.getValue()) {
-                if (normalized.contains(keyword)) {
-                    score += keyword.length() >= 8 ? 2 : 1;
+                if (containsToken(normalized, keyword)) {
+                    score++;
                 }
             }
             scores.put(entry.getKey(), score);
@@ -65,6 +69,19 @@ public class SkillNormalizeParser {
                 .toLowerCase()
                 .replace("-", " ")
                 .replace("_", " ");
+    }
+
+    private boolean containsToken(String text, String keyword) {
+        if (text == null || keyword == null) {
+            return false;
+        }
+
+        // keyword 앞뒤에 영어/숫자가 붙어있지 않을 때만 매칭
+        String regex = "(?i)(?<![a-z0-9])"
+                + Pattern.quote(keyword)
+                + "(?![a-z0-9])";
+
+        return Pattern.compile(regex).matcher(text).find();
     }
 
     private Map<String, List<String>> tagRules() {
