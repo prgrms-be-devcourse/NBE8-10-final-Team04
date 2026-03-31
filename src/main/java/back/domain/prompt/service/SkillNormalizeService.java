@@ -17,5 +17,4 @@ public interface SkillNormalizeService {
 
     Agent normalizeAgent(Repository repository, AgentDto agentDto);
 
-    List<String> extractTags(String content);
 }
