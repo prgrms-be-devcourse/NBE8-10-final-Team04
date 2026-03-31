@@ -42,6 +42,7 @@ public class SkillNormalizeServiceImpl implements SkillNormalizeService {
 
         return repositoryRepository.findByGithubId(data.getGithubId())
                 .map(existing -> {
+                    // getSourceUpatedAt()으로 레포지터리 메타데이터 변경 감지
                     if (!existing.getSourceUpdatedAt().equals(data.getSourceUpdatedAt())) {
                         existing.update(
                                 data.getStarCount(),
@@ -56,6 +57,17 @@ public class SkillNormalizeServiceImpl implements SkillNormalizeService {
                                 data.getRawMetadata(),
                                 data.getLanguageStats()
                         );
+
+                        // 레포 메타데이터 변경 -> skills tag와 category 업데이트
+                        existing.getSkills().forEach(skill -> {
+                            String summary = existing.getSummary() == null ? "" : existing.getSummary();
+
+                            Set<String> tags = parser.extractTags(summary, skill.getContentMd());
+                            Category category = parser.extractCategory(summary, skill.getContentMd());
+
+                            skill.updateTagAndCategory(tags, category);
+                        });
+
                     }
                     return existing;
                 })
@@ -89,7 +101,7 @@ public class SkillNormalizeServiceImpl implements SkillNormalizeService {
     @Transactional
     public Skill normalizeSkill(Repository repository, SkillDto skillDto) {
         String name = skillDto.getName();
-        String summary = repository.getSummary();
+        String summary = repository.getSummary() == null ? "" : repository.getSummary();
         String rawContent = skillDto.getContentMd();
         Set<String> tags = parser.extractTags(summary, rawContent);
         Category category = parser.extractCategory(summary, rawContent);

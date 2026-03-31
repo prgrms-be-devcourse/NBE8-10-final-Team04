@@ -8,6 +8,7 @@ import lombok.*;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+import org.stringtemplate.v4.ST;
 
 import java.time.LocalDateTime;
 import java.util.HashSet;
@@ -52,6 +53,11 @@ public class Skill extends BaseEntity {
     public void update(String contentMd, String contentHash, Set<String> tagsJson, Category category) {
         this.contentMd = contentMd;
         this.contentHash = contentHash;
+        this.tagsJson = tagsJson;
+        this.category = category;
+    }
+
+     public void updateTagAndCategory (Set<String> tagsJson, Category category)  {
         this.tagsJson = tagsJson;
         this.category = category;
     }
