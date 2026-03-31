@@ -43,7 +43,7 @@ app:
       auth-type: ${OCI_AUTH_TYPE:config-file}
       config-file-path: ${OCI_CONFIG_FILE_PATH:~/.oci/config}
       profile: ${OCI_CONFIG_PROFILE:DEFAULT}
-      region: ${OCI_REGION:ap-chuncheon-1}
+      region: ${OCI_REGION:}
 
 custom:
   jwt:
