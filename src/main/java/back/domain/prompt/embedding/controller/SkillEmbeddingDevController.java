@@ -17,6 +17,8 @@ import java.util.List;
 @RequiredArgsConstructor
 public class SkillEmbeddingDevController {
 
+    // [개발용] 임베딩 용 skill을 추출하고 파일로 저장하는 개발용 컨트롤러로, 홈서버와 연동 시 삭제됩니다.
+
     private final SkillEmbeddingExportService skillEmbeddingExportService;
 
     /**

@@ -1,5 +1,6 @@
 package back.domain.prompt.search.dto.candidate;
 
+import back.domain.prompt.prompt.enums.Category;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -19,6 +20,10 @@ public class CandidateDto {
 
     @JsonProperty("repository_url")
     private String repositoryUrl;
+
+    private String contentMd;
+
+    private Category category;
 
     private String summary;
 

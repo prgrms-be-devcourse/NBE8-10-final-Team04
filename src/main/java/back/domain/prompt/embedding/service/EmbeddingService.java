@@ -26,6 +26,6 @@ public class EmbeddingService {
             throw new IllegalStateException("임베딩 응답이 비어 있습니다.");
         }
 
-        return response.embeddings().get(0);
+        return response.embeddings().getFirst();
     }
 }

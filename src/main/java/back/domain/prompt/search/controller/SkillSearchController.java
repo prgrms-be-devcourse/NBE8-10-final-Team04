@@ -13,12 +13,10 @@ public class SkillSearchController {
 
     private final SkillSearchService skillSearchService;
 
-    // 사실상 필요 없음?
     @GetMapping("/api/skills/search")
     public SkillChunkSearchResultDto search(
-            @RequestParam String query,
-            @RequestParam(defaultValue = "5") int topK
+            @RequestParam String query
     ) {
-        return skillSearchService.search(query, topK);
+        return skillSearchService.search(query);
     }
 }

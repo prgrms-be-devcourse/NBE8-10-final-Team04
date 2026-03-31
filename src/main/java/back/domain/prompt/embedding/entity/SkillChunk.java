@@ -33,18 +33,9 @@ public class SkillChunk extends BaseEntity {
     private String sectionPath;
 
 
-    // chunk 원본 markdown
-//    @Column(name = "content_md", nullable = false, columnDefinition = "TEXT")
-//    private String contentMd;
-
     // 임베딩용 텍스트 (정제된 텍스트)
     @Column(name = "search_text", nullable = false, columnDefinition = "TEXT")
     private String searchText;
-
-//    // 미리보기 텍스트 (UI용)
-//    @Column(name = "preview_text", length = 500)
-//    private String previewText;
-
 
     // 문자 길이
     @Column(name = "char_count")
@@ -62,7 +53,7 @@ public class SkillChunk extends BaseEntity {
     /**
      * 임베딩 벡터 (pgvector)
      *
-     * 👉 중요:
+     * 중요:
      * Hibernate에서 vector 타입을 직접 지원 안 해서
      * float[] + SqlTypes.OTHER 로 매핑
      */

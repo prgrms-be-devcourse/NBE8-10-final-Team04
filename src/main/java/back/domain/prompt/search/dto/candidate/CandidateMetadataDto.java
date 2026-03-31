@@ -7,9 +7,11 @@ import lombok.Getter;
 @Getter
 @AllArgsConstructor
 public class CandidateMetadataDto {
+
     private Integer stars;
+
     private Integer forks;
 
-    @JsonProperty("updated_at")
     private String updatedAt;
+
 }

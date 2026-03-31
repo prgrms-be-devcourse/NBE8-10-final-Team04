@@ -1,4 +1,4 @@
-package back.domain.prompt.search.controller;
+package back.domain.prompt.embedding.controller;
 
 
 import back.domain.prompt.embedding.service.SkillChunkImportService;
@@ -10,6 +10,8 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/dev/skill-chunks")
 @RequiredArgsConstructor
 public class SkillChunkDevController {
+
+    // [개발용] skill_chunks JSONL 파일을 저장하는 개발용 컨트롤러로, 홈서버와 연동 시 삭제됩니다.
 
     private final SkillChunkImportService skillChunkImportService;
 

@@ -23,14 +23,8 @@ public class SkillChunkImportDto {
     @JsonProperty("section_path")
     private String sectionPath;
 
-//    @JsonProperty("content_md")
-//    private String contentMd;
-
     @JsonProperty("search_text")
     private String searchText;
-
-//    @JsonProperty("preview_text")
-//    private String previewText;
 
     @JsonProperty("char_count")
     private Integer charCount;
