@@ -1,0 +1,26 @@
+version: "3.8"
+
+services:
+  app-dev:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: app-dev
+    env_file:
+      - ../.env
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+
+  nginx:
+    image: nginx:latest
+    container_name: nginx
+    depends_on:
+      - app-dev
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    restart: unless-stopped
