@@ -73,3 +73,20 @@ management:
     health:
       probes:
         enabled: true
+
+oci:
+  namespace: ${OCI_NAMESPACE}
+  bucket: ${OCI_BUCKET}
+  prefix: data/ai-info/
+
+gemini:
+  api-key: ${CRAWL_GEMINI_API_KEY}
+  model: gemini-3.1-flash-lite-preview              # 매칭용 gemini-2.5-flash limit으로 변경
+  description-model: gemini-3.1-flash-lite-preview  # description 생성용
+
+ai-model:
+  webhook-secret: ${SPRING_WEBHOOK_SECRET}
+  target-vendors:
+    - openai
+    - anthropic
+    - google
