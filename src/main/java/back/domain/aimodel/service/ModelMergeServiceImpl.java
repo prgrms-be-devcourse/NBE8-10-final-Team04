@@ -217,7 +217,9 @@ public class ModelMergeServiceImpl implements ModelMergeService {
                 
                 Input:
                 %s
-                """.formatted(context);
+                """
+                .replace("\n", "%n")
+                .formatted(context);
 
         try {
             GenerateContentResponse response = geminiClient.models.generateContent(
