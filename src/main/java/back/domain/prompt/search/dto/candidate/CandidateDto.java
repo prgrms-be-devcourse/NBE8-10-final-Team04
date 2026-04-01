@@ -2,34 +2,31 @@ package back.domain.prompt.search.dto.candidate;
 
 import back.domain.prompt.prompt.enums.Category;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
 
-@Getter
-@AllArgsConstructor
-public class CandidateDto {
+public record CandidateDto(
 
-    @JsonProperty("skill_id")
-    private Long skillId;
+        @JsonProperty("skill_id")
+        Long skillId,
 
-    @JsonProperty("skill_name")
-    private String skillName;
+        @JsonProperty("skill_name")
+        String skillName,
 
-    @JsonProperty("repository_name")
-    private String repositoryName;
+        @JsonProperty("repository_name")
+        String repositoryName,
 
-    @JsonProperty("repository_url")
-    private String repositoryUrl;
+        @JsonProperty("repository_url")
+        String repositoryUrl,
 
-    @JsonProperty("content_md")
-    private String contentMd;
+        @JsonProperty("content_md")
+        String contentMd,
 
-    private Category category;
+        Category category,
 
-    private String summary;
+        String summary,
 
-    @JsonProperty("primary_score")
-    private float primaryScore;
+        @JsonProperty("primary_score")
+        float primaryScore,
 
-    private CandidateMetadataDto metadata;
-}
+        CandidateMetadataDto metadata
+
+) {}

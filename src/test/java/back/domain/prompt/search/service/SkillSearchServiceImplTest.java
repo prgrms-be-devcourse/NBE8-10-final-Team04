@@ -20,7 +20,7 @@ import back.domain.prompt.search.dto.chunk.SkillChunkVectorSearchRowDto;
 import back.domain.prompt.search.repository.SkillChunkVectorSearchRepository;
 
 @ExtendWith(MockitoExtension.class)
-class SkillSearchServiceTest {
+class SkillSearchServiceImplTest {
 
     @Mock
     private EmbeddingService embeddingService;
@@ -31,8 +31,8 @@ class SkillSearchServiceTest {
     @Test
     @DisplayName("search는 chunk 결과를 skill 기준으로 묶고 점수 순으로 반환한다")
     void search_groupsAndSortsCandidates() {
-        SkillSearchService skillSearchService =
-                new SkillSearchService(embeddingService, skillChunkVectorSearchRepository);
+        SkillSearchServiceImpl skillSearchService =
+                new SkillSearchServiceImpl(embeddingService, skillChunkVectorSearchRepository);
 
         when(embeddingService.embed("spring search")).thenReturn(List.of(0.1f, 0.2f));
         when(skillChunkVectorSearchRepository.searchTopK("[0.1,0.2]", 90)).thenReturn(List.of(
@@ -47,15 +47,15 @@ class SkillSearchServiceTest {
         verify(skillChunkVectorSearchRepository).searchTopK("[0.1,0.2]", 90);
         assertThat(result.getCandidates()).hasSize(2);
 
-        assertThat(result.getCandidates().get(0).getSkillId()).isEqualTo(1L);
-        assertThat(result.getCandidates().get(0).getCategory()).isEqualTo(Category.BACKEND);
-        assertThat(result.getCandidates().get(0).getSummary()).isNull();
-        assertThat(result.getCandidates().get(0).getPrimaryScore()).isEqualTo(0.82f);
+        assertThat(result.getCandidates().get(0).skillId()).isEqualTo(1L);
+        assertThat(result.getCandidates().get(0).category()).isEqualTo(Category.BACKEND);
+        assertThat(result.getCandidates().get(0).summary()).isNull();
+        assertThat(result.getCandidates().get(0).primaryScore()).isEqualTo(0.82f);
 
-        assertThat(result.getCandidates().get(1).getSkillId()).isEqualTo(2L);
-        assertThat(result.getCandidates().get(1).getCategory()).isEqualTo(Category.FRONTEND);
-        assertThat(result.getCandidates().get(1).getSummary()).isEqualTo("frontend summary");
-        assertThat(result.getCandidates().get(1).getMetadata().getUpdatedAt())
+        assertThat(result.getCandidates().get(1).skillId()).isEqualTo(2L);
+        assertThat(result.getCandidates().get(1).category()).isEqualTo(Category.FRONTEND);
+        assertThat(result.getCandidates().get(1).summary()).isEqualTo("frontend summary");
+        assertThat(result.getCandidates().get(1).metadata().getUpdatedAt())
                 .isEqualTo("2026-04-01T00:00");
     }
 
