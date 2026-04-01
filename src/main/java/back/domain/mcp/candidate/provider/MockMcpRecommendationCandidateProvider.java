@@ -29,7 +29,6 @@ import tools.jackson.databind.ObjectMapper;
 @RequiredArgsConstructor
 public class MockMcpRecommendationCandidateProvider implements McpRecommendationCandidateProvider {
     private static final String MOCK_CLASS_PATH = "classpath:mock/primary-recommendation.json";
-    private static final String MOCK_FILE_PATH = "file:mock/primary-recommendation.json";
     private static final String CANDIDATE_LOAD_FAILED_MESSAGE = "추천 후보 조회 중 오류가 발생했습니다.";
 
     private final ObjectMapper objectMapper;
@@ -59,15 +58,10 @@ public class MockMcpRecommendationCandidateProvider implements McpRecommendation
             return classpathResource;
         }
 
-        Resource fileSystemResource = resourceLoader.getResource(MOCK_FILE_PATH);
-        if (fileSystemResource.exists()) {
-            return fileSystemResource;
-        }
-
         throw new ServiceException(
                 CommonErrorCode.INTERNAL_SERVER_ERROR,
                 "[MockMcpRecommendationCandidateProvider#resolveMockResource] "
-                        + "mock candidate file not found (classpath/file)",
+                        + "mock candidate file not found (classpath)",
                 CANDIDATE_LOAD_FAILED_MESSAGE);
     }
 }
