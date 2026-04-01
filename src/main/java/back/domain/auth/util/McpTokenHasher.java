@@ -7,6 +7,9 @@ import java.util.HexFormat;
 
 import org.springframework.stereotype.Component;
 
+import back.global.exception.CommonErrorCode;
+import back.global.exception.ServiceException;
+
 @Component
 public class McpTokenHasher {
     private static final String HASH_ALGORITHM = "SHA-256";
@@ -21,7 +24,10 @@ public class McpTokenHasher {
             byte[] digested = messageDigest.digest(rawToken.getBytes(StandardCharsets.UTF_8));
             return HexFormat.of().formatHex(digested);
         } catch (NoSuchAlgorithmException e) {
-            throw new IllegalStateException("SHA-256 algorithm is unavailable", e);
+            throw new ServiceException(
+                    CommonErrorCode.INTERNAL_SERVER_ERROR,
+                    "[McpTokenHasher#hash] SHA-256 algorithm unavailable",
+                    CommonErrorCode.INTERNAL_SERVER_ERROR.defaultMessage());
         }
     }
 }
