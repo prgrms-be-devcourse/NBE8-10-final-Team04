@@ -71,43 +71,6 @@ def handle_chat(question: str) -> ChatResponse:
         )
 
     # [6] 정보형 질문 처리
-    # if q_type_str == "information":
-    #     if t_type_str == "ai_information":
-    #         ai_models = retrieve_ai_models(original_question)
-    #         if ai_models:
-    #             top_tool = ai_models[0]
-    #             try:
-    #                 message = generate_summary(original_question, top_tool, ai_models[:3], ai_models)
-    #             except Exception:
-    #                 message = f"{top_tool.get('title')}에 대한 정보를 가져왔어요."
-                
-    #             return ChatResponse(
-    #                 question=original_question,
-    #                 questionType=QuestionType.information,
-    #                 targetType=TargetType.ai_information,
-    #                 message=message,
-    #                 cards=[],
-    #                 topPick=None,
-    #                 nextActions=["비슷한 AI 추천받기", "사용법 보기"],
-    #                 outOfScope=False
-    #             )
-
-    #     try:
-    #         message = generate_information_answer(original_question)
-    #     except Exception:
-    #         message = "설명을 생성하는 중 문제가 발생했어요."
-
-    #     return ChatResponse(
-    #         question=original_question,
-    #         questionType=QuestionType.information,
-    #         targetType=TargetType.none,
-    #         message=message,
-    #         cards=[],
-    #         topPick=None,
-    #         nextActions=["관련 AI 추천받기"],
-    #         outOfScope=False
-    #     )
-
     if q_type_str == "information":
         # 사용자의 의도: DB를 타지 않고 제미나이가 바로 설명함
         try:
@@ -150,32 +113,6 @@ def handle_chat(question: str) -> ChatResponse:
         )
 
     # [8] 추천 처리 (AI 모델 / 스킬)
-    # if t_type_str == "ai_model":
-    #     ai_models = retrieve_ai_models(original_question)
-    #     if not ai_models:
-    #         return ChatResponse(
-    #             question=original_question, questionType=QuestionType.recommendation,
-    #             targetType=TargetType.ai_model, message="결과가 없어요.", cards=[], nextActions=[], outOfScope=False
-    #         )
-        
-    #     top_tool = ai_models[0]
-    #     raw_cards = ai_models[:3]
-        
-    #     # [수정] 필드 접근 시 에러 방지 (dict인지 확인)
-    #     def get_val(obj, key, default=""):
-    #         if isinstance(obj, dict): return obj.get(key, default)
-    #         return getattr(obj, key, default)
-
-    #     cards = [{
-    #         "id": get_val(c, "id"),
-    #         "title": str(get_val(c, "title")),
-    #         "description": str(get_val(c, "description")),
-    #         "reason": str(get_val(c, "reason", "추천된 AI 모델입니다.")),
-    #         "type": "ai_model"
-    #     } for c in raw_cards]
-
-    #     # ... (이하 ChatResponse 반환 로직)
-
     if t_type_str == "ai_model":
         ai_models = retrieve_ai_models(original_question)
         
@@ -229,54 +166,6 @@ def handle_chat(question: str) -> ChatResponse:
                 nextActions=["다른 AI 물어보기", "스킬 추천받기"],
                 outOfScope=False
             )
-
-    # [9] Skill 추천 처리 (로그 찍힌 바로 그 부분!)
-    # elif t_type_str == "skill":
-    #     question_embedding = create_embedding(original_question)
-    #     retrieval_result = retrieve_recommendations(original_question, question_embedding)
-    
-    # top_tool = retrieval_result.get("top_tool")
-    # raw_cards = retrieval_result.get("cards", [])
-
-    # if not top_tool or not raw_cards:
-    #     # 데이터가 없을 때의 처리
-    #     return ChatResponse(...)
-
-    # # [수정] DB에서 온 리스트 형태의 데이터를 안전하게 딕셔너리로 변환
-    # def safe_card(c):
-    #     # 만약 c 자체가 리스트라면 첫 번째 요소를 사용 (에러 방지 핵심!)
-    #     if isinstance(c, list): c = c[0] if c else {}
-    #     return {
-    #         "id": c.get("id", 0),
-    #         "title": str(c.get("title", "Unknown")),
-    #         "description": str(c.get("description", "")),
-    #         "reason": str(c.get("reason", "관련 스킬 추천")),
-    #         "type": "skill"
-    #     }
-
-    # cards = [safe_card(c) for c in raw_cards]
-    
-    # # top_pick도 안전하게 생성
-    # t = top_tool[0] if isinstance(top_tool, list) else top_tool
-    # top_pick = {
-    #     "id": t.get("id", 0),
-    #     "title": str(t.get("title", "")),
-    #     "description": str(t.get("description", "")),
-    #     "reason": str(t.get("reason", "")),
-    #     "howToUse": str(t.get("howToUse", "가이드를 확인하세요."))
-    # }
-
-    # # 최종 응답 생성 (여기서 lower() 에러가 날 수 있는 모든 변수를 str로 감쌈)
-    # return ChatResponse(
-    #     question=str(original_question),
-    #     questionType=QuestionType.recommendation,
-    #     targetType=TargetType.skill,
-    #     message="고객님의 요청에 맞는 스킬을 찾아보았습니다.",
-    #     cards=cards,
-    #     topPick=top_pick,
-    #     nextActions=["사용법 보기", "다른 추천"],
-    #     outOfScope=False
-    # )
 
     # [9] Skill 추천 처리
     elif t_type_str == "skill":

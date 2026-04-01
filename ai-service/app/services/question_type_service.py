@@ -50,7 +50,6 @@ def normalize_question_type(text) -> str:
     return "ambiguous"
 
 def normalize_target_type(text) -> str:
-    # [수정 핵심] 여기도 마찬가지
     text = safe_to_text(text).lower()
 
     for t in VALID_TARGET_TYPES:
@@ -130,7 +129,7 @@ def classify_by_rule(question: str) -> dict:
         "pick", "find", "suitable", "good", "useful", "get recommendation"
     ]
 
-    # [2] 판단 로직 (순서가 중요합니다)
+    # [2] 판단 로직
     if any(word in q for word in out_of_scope_keywords):
         return make_result("out_of_scope", "none")
 
@@ -200,16 +199,3 @@ def classify_question(question: str) -> dict:
         return rule_result
 
     return classify_by_llm(clean_question)
-    
-    # # 1. 규칙 기반 분류 먼저 실행
-    # rule_result = classify_by_rule(question)
-    
-    # print(f"DEBUG: Rule Result -> {rule_result}")
-
-    # # 2. 규칙에서 결과가 나왔다면 (ambiguous가 아니라면) 바로 반환
-    # if rule_result["questionType"] != "ambiguous":
-    #     return rule_result
-
-    # # 3. 만약 LLM 쿼타가 부족하다면 임시로 기본값 반환 (테스트용)
-    # print("DEBUG: Rule failed, but LLM is skipped due to Quota.")
-    # return {"questionType": "recommendation", "targetType": "skill"} # 강제 설정
