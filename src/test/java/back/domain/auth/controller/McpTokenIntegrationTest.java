@@ -154,6 +154,18 @@ class McpTokenIntegrationTest {
         assertThat(revokedToken.isRevoked()).isTrue();
     }
 
+    @Test
+    @DisplayName("존재하지 않는 MCP 토큰 폐기 요청은 404를 반환한다")
+    void revokeToken_whenTokenNotFound() throws Exception {
+        Member member = memberRepository.save(Member.createUser("google-sub-706", "u706@example.com", "User 706"));
+        String accessToken = issueAccessToken(member);
+
+        mockMvc.perform(delete("/api/v1/mcp/tokens/{tokenId}", 999_999L)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer %s".formatted(accessToken)))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message").value("토큰이 존재하지 않습니다."));
+    }
+
     private String issueAccessToken(Member member) {
         return jwtTokenProvider.generateAccessToken(member.getId(), member.getEmail(), member.getRole().name());
     }
