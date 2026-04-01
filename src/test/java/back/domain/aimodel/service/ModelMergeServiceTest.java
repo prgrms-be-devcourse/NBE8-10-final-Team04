@@ -5,8 +5,6 @@ import back.domain.aimodel.config.GeminiProperties;
 import back.domain.aimodel.dto.integrated.IntegratedVendor;
 import back.domain.aimodel.dto.openrouter.OrModelsResponse;
 import back.domain.aimodel.dto.openrouter.OrModelsResponse.OrModel;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.genai.Client;
 import com.google.genai.Models;
 import com.google.genai.types.GenerateContentResponse;
@@ -19,6 +17,8 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -36,7 +36,7 @@ class ModelMergeServiceTest {
 
     @Mock AiModelProperties       props;
     @Mock GeminiProperties        geminiProperties;
-    @Mock ObjectMapper            objectMapper;
+    @Mock JsonMapper              jsonMapper;
     @Mock Client                  geminiClient;
     @Mock Models                  geminiModels;
     @Mock GenerateContentResponse geminiResponse;
@@ -45,7 +45,7 @@ class ModelMergeServiceTest {
 
     @BeforeEach
     void setUp() throws Exception {
-        mergeService = new ModelMergeServiceImpl(props, geminiProperties, objectMapper);
+        mergeService = new ModelMergeServiceImpl(props, geminiProperties, jsonMapper);
 
         Field clientField = ModelMergeServiceImpl.class.getDeclaredField("geminiClient");
         clientField.setAccessible(true);
@@ -191,7 +191,7 @@ class ModelMergeServiceTest {
             when(geminiResponse.text()).thenReturn("{}");
             when(geminiModels.generateContent(anyString(), anyString(), any()))
                     .thenReturn(geminiResponse);
-            when(objectMapper.readValue(anyString(), any(TypeReference.class)))
+            when(jsonMapper.readValue(anyString(), any(TypeReference.class)))
                     .thenReturn(Map.of("openai", Map.of("mini-nano-lite", "GPT-MINI")));
 
             List<IntegratedVendor> result = mergeService.merge(orResponse);
@@ -237,7 +237,7 @@ class ModelMergeServiceTest {
             when(geminiResponse.text()).thenReturn("{}");
             when(geminiModels.generateContent(anyString(), anyString(), any()))
                     .thenReturn(geminiResponse);
-            when(objectMapper.readValue(anyString(), any(TypeReference.class)))
+            when(jsonMapper.readValue(anyString(), any(TypeReference.class)))
                     .thenReturn(Map.of("openai", Map.of("mini-nano-lite", "")));
 
             assertThatCode(() -> mergeService.merge(orResponse)).doesNotThrowAnyException();
@@ -267,7 +267,7 @@ class ModelMergeServiceTest {
             when(geminiResponse.text()).thenReturn("{}");
             when(geminiModels.generateContent(anyString(), anyString(), any()))
                     .thenReturn(geminiResponse);
-            when(objectMapper.readValue(anyString(), any(TypeReference.class)))
+            when(jsonMapper.readValue(anyString(), any(TypeReference.class)))
                     .thenThrow(new RuntimeException("JSON 파싱 실패"));
 
             assertThatCode(() -> mergeService.merge(orResponse)).doesNotThrowAnyException();

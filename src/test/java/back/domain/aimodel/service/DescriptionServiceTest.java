@@ -3,7 +3,6 @@ package back.domain.aimodel.service;
 import back.domain.aimodel.config.GeminiProperties;
 import back.domain.aimodel.dto.integrated.IntegratedVendor;
 import back.domain.aimodel.dto.integrated.IntegratedVendor.IntegratedFamily;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.genai.Client;
 import com.google.genai.Models;
 import com.google.genai.types.GenerateContentResponse;
@@ -13,6 +12,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
@@ -28,7 +29,7 @@ class DescriptionServiceTest {
 
     @Mock OciStorageService ociStorageService;
     @Mock GeminiProperties  geminiProperties;
-    @Mock ObjectMapper      objectMapper;
+    @Mock JsonMapper        jsonMapper;
     @Mock Client            geminiClient;
     @Mock Models            geminiModels;
 
@@ -36,7 +37,7 @@ class DescriptionServiceTest {
 
     @BeforeEach
     void setUp() throws Exception {
-        descriptionService = new DescriptionServiceImpl(ociStorageService, geminiProperties, objectMapper);
+        descriptionService = new DescriptionServiceImpl(ociStorageService, geminiProperties, jsonMapper);
         
         // descriptionService.geminiClient 주입
         Field clientField = DescriptionServiceImpl.class.getDeclaredField("geminiClient");
@@ -60,7 +61,7 @@ class DescriptionServiceTest {
         Map<String, String> cache = Map.of("Anthropic/CLAUDE-OPUS", "기존 description");
         when(ociStorageService.objectName(anyString())).thenAnswer(i -> "data/ai-info/" + i.getArgument(0));
         when(ociStorageService.download(anyString())).thenReturn("{}".getBytes(StandardCharsets.UTF_8));
-        when(objectMapper.readValue(any(byte[].class), any(com.fasterxml.jackson.core.type.TypeReference.class)))
+        when(jsonMapper.readValue(any(byte[].class), any(TypeReference.class)))
                 .thenReturn(cache);
 
         List<IntegratedVendor> integrated = List.of(
@@ -115,7 +116,7 @@ class DescriptionServiceTest {
     }
 
     @Test
-    @DisplayName("description이 300자를 초과하면 마지막 문장까지만 잘린다")
+    @DisplayName("description이 500자를 초과하면 마지막 문장까지만 잘린다")
     void generateAndApply_longDescription_truncatedAtSentence() throws Exception {
         when(ociStorageService.objectName(anyString())).thenAnswer(i -> "data/ai-info/" + i.getArgument(0));
         when(ociStorageService.download(anyString())).thenThrow(new RuntimeException("캐시 없음"));
@@ -161,7 +162,7 @@ class DescriptionServiceTest {
         Map<String, String> cache = Map.of("Anthropic/CLAUDE-OPUS", "기존 description");
         when(ociStorageService.objectName(anyString())).thenAnswer(i -> "data/ai-info/" + i.getArgument(0));
         when(ociStorageService.download(anyString())).thenReturn("{}".getBytes(StandardCharsets.UTF_8));
-        when(objectMapper.readValue(any(byte[].class), any(com.fasterxml.jackson.core.type.TypeReference.class)))
+        when(jsonMapper.readValue(any(byte[].class), any(TypeReference.class)))
                 .thenReturn(cache);
 
         List<IntegratedVendor> integrated = List.of(

@@ -3,41 +3,29 @@ package back.domain.aimodel.service;
 import back.domain.aimodel.config.OciProperties;
 import back.global.exception.CommonErrorCode;
 import back.global.exception.ServiceException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.oracle.bmc.objectstorage.ObjectStorage;
 import com.oracle.bmc.objectstorage.requests.GetObjectRequest;
 import com.oracle.bmc.objectstorage.requests.PutObjectRequest;
 import com.oracle.bmc.objectstorage.responses.GetObjectResponse;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class OciStorageServiceImpl implements OciStorageService {
 
-    private final OciProperties                props;
-    private final ObjectMapper                 objectMapper;
+    private final OciProperties                 props;
+    private final JsonMapper                    jsonMapper;
     private final ObjectProvider<ObjectStorage> clientProvider;
-
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings(
-            value = "EI_EXPOSE_REP2",
-            justification = "스프링이 관리하는 ObjectMapper를 DI로 주입받아 서비스 내부에서만 사용한다."
-    )
-    public OciStorageServiceImpl(
-            OciProperties props,
-            ObjectMapper objectMapper,
-            ObjectProvider<ObjectStorage> clientProvider
-    ) {
-        this.props          = props;
-        this.objectMapper   = objectMapper;
-        this.clientProvider = clientProvider;
-    }
 
     private ObjectStorage client() {
         ObjectStorage client = clientProvider.getIfAvailable();
@@ -70,6 +58,7 @@ public class OciStorageServiceImpl implements OciStorageService {
         } catch (ServiceException e) {
             throw e;
         } catch (Exception e) {
+            log.error("[OCI_ERROR_DETAIL] 원인: ", e);
             throw new ServiceException(
                     CommonErrorCode.INTERNAL_SERVER_ERROR,
                     "[OciStorageService#download] OCI 다운로드 실패 - objectName: " + objectName,
@@ -82,8 +71,8 @@ public class OciStorageServiceImpl implements OciStorageService {
     public <T> T downloadJson(String objectName, Class<T> clazz) {
         byte[] bytes = download(objectName);
         try {
-            return objectMapper.readValue(bytes, clazz);
-        } catch (IOException e) {
+            return jsonMapper.readValue(bytes, clazz);
+        } catch (JacksonException e) {
             throw new ServiceException(
                     CommonErrorCode.INTERNAL_SERVER_ERROR,
                     "[OciStorageService#downloadJson] JSON 역직렬화 실패 - objectName: " + objectName,
@@ -123,11 +112,11 @@ public class OciStorageServiceImpl implements OciStorageService {
     @Override
     public void uploadJson(String objectName, Object data) {
         try {
-            byte[] bytes = objectMapper.writerWithDefaultPrettyPrinter()
+            byte[] bytes = jsonMapper.writerWithDefaultPrettyPrinter()
                     .writeValueAsString(data)
                     .getBytes(StandardCharsets.UTF_8);
             upload(objectName, bytes, "application/json");
-        } catch (IOException e) {
+        } catch (JacksonException e) {
             throw new ServiceException(
                     CommonErrorCode.INTERNAL_SERVER_ERROR,
                     "[OciStorageService#uploadJson] JSON 직렬화 실패 - objectName: " + objectName,

@@ -1,13 +1,10 @@
 package back.testUtil;
 
-import back.global.config.JacksonConfig;
 import back.global.security.BearerTokenResolver;
 import back.global.security.JwtTokenProvider;
 import back.global.security.RestAccessDeniedHandler;
 import back.global.security.RestAuthenticationEntryPoint;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Import;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -38,14 +35,10 @@ import org.springframework.test.web.servlet.MockMvc;
  * </pre>
  */
 
-@Import(JacksonConfig.class)
 public abstract class WebMvcTestSupport {
 
     @Autowired
     protected MockMvc mockMvc;
-
-    @Autowired
-    protected ObjectMapper objectMapper;
 
     // JwtAuthenticationFilter 구성에 필요한 빈 mock
     @MockitoBean

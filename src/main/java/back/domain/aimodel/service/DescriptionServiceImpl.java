@@ -3,19 +3,25 @@ package back.domain.aimodel.service;
 import back.domain.aimodel.config.GeminiProperties;
 import back.domain.aimodel.dto.integrated.IntegratedVendor;
 import back.domain.aimodel.dto.integrated.IntegratedVendor.IntegratedFamily;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.genai.Client;
+import com.google.genai.errors.ApiException;
+import com.google.genai.errors.GenAiIOException;
 import com.google.genai.types.GenerateContentResponse;
 import jakarta.annotation.PostConstruct;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.json.JsonMapper;
 
-import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class DescriptionServiceImpl implements DescriptionService {
 
     private static final String CACHE_FILE             = "description_cache.json";
@@ -25,27 +31,19 @@ public class DescriptionServiceImpl implements DescriptionService {
     private static final long   RETRY_AFTER_DEFAULT_MS = 60_000L;
     // 429 발생 시 최대 재시도 횟수
     private static final int    MAX_RETRY_COUNT        = 3;
+    private static final long   NETWORK_RETRY_DELAY_MS = 5_000L;
     private static final int    MAX_DESCRIPTION_LENGTH = 300;
 
     private final OciStorageService ociStorageService;
     private final GeminiProperties  geminiProperties;
-    private final ObjectMapper      objectMapper;
+    private final JsonMapper        jsonMapper;
 
     private Client geminiClient;
 
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings(
             value = "EI_EXPOSE_REP2",
-            justification = "스프링이 관리하는 ObjectMapper를 DI로 주입받아 서비스 내부에서만 사용한다."
+            justification = "스프링이 관리하는 JsonMapper를 DI로 주입받아 서비스 내부에서만 사용한다."
     )
-    public DescriptionServiceImpl(
-            OciStorageService ociStorageService,
-            GeminiProperties geminiProperties,
-            ObjectMapper objectMapper
-    ) {
-        this.ociStorageService = ociStorageService;
-        this.geminiProperties  = geminiProperties;
-        this.objectMapper      = objectMapper;
-    }
 
     @PostConstruct
     void init() {
@@ -120,10 +118,11 @@ public class DescriptionServiceImpl implements DescriptionService {
         return result;
     }
 
+
     private String generateWithGemini(String vendorName, String familyName) {
         String prompt = String.format(
                 "반드시 한국어로만 작성하세요. 영어 사용 금지.%n%n" +
-                        "\"%s %s\" AI 모델 패밀리에 대한 설명을 300자 이내로 작성하세요.%n%n" +
+                        "\"%s %s\" AI 모델 패밀리에 대한 설명을 500자 이내로 작성하세요.%n%n" +
                         "포함할 내용:%n" +
                         "- 이 모델 패밀리가 어떤 용도로 설계되었는지%n" +
                         "- 주요 기능 또는 강점%n" +
@@ -141,9 +140,15 @@ public class DescriptionServiceImpl implements DescriptionService {
                 return truncateToSentence(response.text().trim());
 
             } catch (RuntimeException e) {
-                long retryAfterMs = parseRetryAfterMs(e.getMessage());
+                long retryAfterMs = parseRetryAfterMs(e);
 
-                if (attempt < MAX_RETRY_COUNT && retryAfterMs > 0) {
+                if (retryAfterMs <= 0) {
+                    log.warn("Gemini not-429 오류, 재시도 없이 실패: {}/{} — {}",
+                            vendorName, familyName, e.getMessage());
+                    return null;
+                }
+
+                if (attempt < MAX_RETRY_COUNT) {
                     log.warn("Gemini 429 — {}/{}회 재시도, {}ms 대기: {}/{}",
                             attempt, MAX_RETRY_COUNT, retryAfterMs, vendorName, familyName);
                     try {
@@ -162,24 +167,42 @@ public class DescriptionServiceImpl implements DescriptionService {
     }
 
     /**
-     * Gemini 429 응답 메시지에서 retry 대기 시간을 파싱.
-     * "Please retry in 51.427279804s." 형태에서 초 단위를 추출해 ms로 변환.
-     * 파싱 실패 시 기본값 반환.
+     * Gemini API 호출 예외에서 재시도 대기 시간(ms)을 반환한다.
+     * <ul>
+     *   <li>{@link GenAiIOException} (네트워크/IO 오류): {@code NETWORK_RETRY_DELAY_MS} 반환</li>
+     *   <li>{@link ApiException} 429: 응답 메시지의 "retry in Xs" 파싱 성공 시 해당 값,
+     *       실패 시 {@code RETRY_AFTER_DEFAULT_MS} 반환</li>
+     *   <li>그 외 {@link ApiException} (400·401·403 등) 및 알 수 없는 예외: {@code 0} 반환</li>
+     * </ul>
+     *
+     * 호출부는 반환값이 {@code 0}이면 재시도 없이 즉시 실패 처리해야 한다.
+     *
+     * @param e Gemini API 호출 중 발생한 예외
+     * @return 재시도 전 대기 시간(ms), 재시도 불필요 시 {@code 0}
      */
-    private long parseRetryAfterMs(String errorMessage) {
-        if (errorMessage == null) return RETRY_AFTER_DEFAULT_MS;
-        java.util.regex.Matcher matcher = java.util.regex.Pattern
-                .compile("retry in ([\\d.]+)s")
-                .matcher(errorMessage);
-        if (matcher.find()) {
-            try {
-                double seconds = Double.parseDouble(matcher.group(1));
-                return (long) (seconds * 1_000);
-            } catch (NumberFormatException e) {
-                log.debug("retry 시간 파싱 실패 — 기본값 사용: {}", errorMessage);
-            }
+    private long parseRetryAfterMs(RuntimeException e) {
+        if (e instanceof GenAiIOException) {
+            return NETWORK_RETRY_DELAY_MS;
         }
-        return RETRY_AFTER_DEFAULT_MS;
+
+        if (e instanceof ApiException apiEx) {
+            if (apiEx.code() == 429) {
+                java.util.regex.Matcher matcher = java.util.regex.Pattern
+                        .compile("retry in ([\\d.]+)s")
+                        .matcher(apiEx.message());
+                if (matcher.find()) {
+                    try {
+                        return (long) (Double.parseDouble(matcher.group(1)) * 1_000);
+                    } catch (NumberFormatException ex) {
+                        log.debug("retry 시간 파싱 실패 — 기본값 사용: {}", apiEx.message());
+                    }
+                }
+                return RETRY_AFTER_DEFAULT_MS;
+            }
+            return 0;
+        }
+
+        return 0;
     }
 
     private String truncateToSentence(String text) {
@@ -201,8 +224,8 @@ public class DescriptionServiceImpl implements DescriptionService {
             byte[] bytes = ociStorageService.download(
                     ociStorageService.objectName(CACHE_FILE)
             );
-            return objectMapper.readValue(bytes, new TypeReference<>() {});
-        } catch (RuntimeException | IOException e) {
+            return jsonMapper.readValue(bytes, new TypeReference<>() {});
+        } catch (RuntimeException e) {
             log.info("description 캐시 없음 — 빈 캐시로 시작");
             return new HashMap<>();
         }

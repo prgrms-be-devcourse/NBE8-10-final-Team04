@@ -6,13 +6,14 @@ import back.domain.aimodel.dto.integrated.IntegratedVendor;
 import back.domain.aimodel.dto.integrated.IntegratedVendor.IntegratedFamily;
 import back.domain.aimodel.dto.openrouter.OrModelsResponse;
 import back.domain.aimodel.dto.openrouter.OrModelsResponse.OrModel;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.genai.Client;
 import com.google.genai.types.GenerateContentResponse;
 import jakarta.annotation.PostConstruct;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -22,6 +23,7 @@ import java.util.stream.Collectors;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class ModelMergeServiceImpl implements ModelMergeService {
     // Map, Set이 너무 길어질 시 ModelNameParser 유틸 클래스로 로직 분리하기
     // 현재는 Big 3만 다뤄 문제 X
@@ -75,23 +77,9 @@ public class ModelMergeServiceImpl implements ModelMergeService {
 
     private final AiModelProperties props;
     private final GeminiProperties  geminiProperties;
-    private final ObjectMapper      objectMapper;
+    private final JsonMapper        jsonMapper;
 
     private Client geminiClient;
-
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings(
-            value = "EI_EXPOSE_REP2",
-            justification = "스프링이 관리하는 ObjectMapper를 DI로 주입받아 서비스 내부에서만 사용한다."
-    )
-    public ModelMergeServiceImpl(
-            AiModelProperties props,
-            GeminiProperties geminiProperties,
-            ObjectMapper objectMapper
-    ) {
-        this.props            = props;
-        this.geminiProperties = geminiProperties;
-        this.objectMapper     = objectMapper;
-    }
 
     @PostConstruct
     void init() {
@@ -237,7 +225,7 @@ public class ModelMergeServiceImpl implements ModelMergeService {
                     .trim();
 
             // { vendorSlug: { modelName: familyName } } 구조로 파싱
-            Map<String, Map<String, String>> geminiResult = objectMapper.readValue(
+            Map<String, Map<String, String>> geminiResult = jsonMapper.readValue(
                     cleaned, new TypeReference<>() {}
             );
 

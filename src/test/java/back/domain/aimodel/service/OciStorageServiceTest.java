@@ -2,7 +2,6 @@ package back.domain.aimodel.service;
 
 import back.domain.aimodel.config.OciProperties;
 import back.global.exception.ServiceException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.oracle.bmc.objectstorage.ObjectStorage;
 import com.oracle.bmc.objectstorage.requests.GetObjectRequest;
 import com.oracle.bmc.objectstorage.requests.PutObjectRequest;
@@ -14,11 +13,13 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.ObjectProvider;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -29,12 +30,13 @@ class OciStorageServiceTest {
     @Mock ObjectStorage              storageClient;
     @Mock ObjectProvider<ObjectStorage> clientProvider;
 
+    JsonMapper            jsonMapper;
     OciStorageServiceImpl ociStorageService;
-    ObjectMapper          objectMapper = new ObjectMapper();
 
     @BeforeEach
     void setUp() {
-        ociStorageService = new OciStorageServiceImpl(props, objectMapper, clientProvider);
+        jsonMapper = JsonMapper.builder().build();
+        ociStorageService = new OciStorageServiceImpl(props, jsonMapper, clientProvider);
 
         lenient().when(clientProvider.getIfAvailable()).thenReturn(storageClient);
         lenient().when(props.namespace()).thenReturn("test-namespace");

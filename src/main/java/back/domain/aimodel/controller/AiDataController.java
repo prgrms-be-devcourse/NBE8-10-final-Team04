@@ -62,6 +62,7 @@ public class AiDataController {
      * 수동 실행용 (개발/테스트 환경에서만 사용).
      * POST /api/v1/ai-model/pipeline/run
      */
+    // TODO: admin만 실행할 수 있도록. hasRole Admin으로 변경 TM-135
     @PostMapping("/pipeline/run")
     public ResponseEntity<String> runManually() {
         log.info("수동 파이프라인 실행");
