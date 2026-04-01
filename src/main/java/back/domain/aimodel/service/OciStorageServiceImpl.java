@@ -7,7 +7,6 @@ import com.oracle.bmc.objectstorage.ObjectStorage;
 import com.oracle.bmc.objectstorage.requests.GetObjectRequest;
 import com.oracle.bmc.objectstorage.requests.PutObjectRequest;
 import com.oracle.bmc.objectstorage.responses.GetObjectResponse;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
@@ -20,12 +19,25 @@ import java.nio.charset.StandardCharsets;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class OciStorageServiceImpl implements OciStorageService {
 
     private final OciProperties                 props;
     private final JsonMapper                    jsonMapper;
     private final ObjectProvider<ObjectStorage> clientProvider;
+
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings(
+            value = "EI_EXPOSE_REP2",
+            justification = "스프링이 관리하는 ObjectMapper를 DI로 주입받아 서비스 내부에서만 사용한다."
+    )
+    public OciStorageServiceImpl(
+            OciProperties props,
+            JsonMapper jsonMapper,
+            ObjectProvider<ObjectStorage> clientProvider
+    ) {
+        this.props          = props;
+        this.jsonMapper     = jsonMapper;
+        this.clientProvider = clientProvider;
+    }
 
     private ObjectStorage client() {
         ObjectStorage client = clientProvider.getIfAvailable();

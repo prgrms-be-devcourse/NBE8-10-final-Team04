@@ -8,7 +8,6 @@ import com.google.genai.errors.ApiException;
 import com.google.genai.errors.GenAiIOException;
 import com.google.genai.types.GenerateContentResponse;
 import jakarta.annotation.PostConstruct;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import tools.jackson.core.type.TypeReference;
@@ -21,7 +20,6 @@ import java.util.Map;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class DescriptionServiceImpl implements DescriptionService {
 
     private static final String CACHE_FILE             = "description_cache.json";
@@ -42,8 +40,17 @@ public class DescriptionServiceImpl implements DescriptionService {
 
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings(
             value = "EI_EXPOSE_REP2",
-            justification = "스프링이 관리하는 JsonMapper를 DI로 주입받아 서비스 내부에서만 사용한다."
+            justification = "스프링이 관리하는 ObjectMapper를 DI로 주입받아 서비스 내부에서만 사용한다."
     )
+    public DescriptionServiceImpl(
+            OciStorageService ociStorageService,
+            GeminiProperties  geminiProperties,
+            JsonMapper        jsonMapper
+    ) {
+        this.ociStorageService = ociStorageService;
+        this.geminiProperties  = geminiProperties;
+        this.jsonMapper        = jsonMapper;
+    }
 
     @PostConstruct
     void init() {
