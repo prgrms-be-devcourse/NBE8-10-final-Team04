@@ -44,23 +44,6 @@ def _build_card_from_skill_row(row, question: str):
 
 
 def _search_by_chunks(db, question_embedding: list[float]):
-    # query = text("""
-    #     SELECT
-    #         s.id,
-    #         s.name,
-    #         s.content_md,
-    #         s.file_path,
-    #         sc.id AS chunk_id,
-    #         sc.skill_id,
-    #         sc.section_title,
-    #         sc.search_text,
-    #         sc.embedding <=> CAST(:question_embedding AS vector) AS distance
-    #     FROM skill_chunks sc
-    #     JOIN skills s ON s.id = sc.skill_id
-    #     ORDER BY sc.embedding <=> CAST(:question_embedding AS vector)
-    #     LIMIT 10;
-    # """)
-
     query = text("""
         SELECT 
             s.id, s.name, s.content_md,
