@@ -65,6 +65,8 @@ public class SecurityConfig {
                         .permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/auth/token/refresh")
                         .permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/mcp/template/start-agent")
+                        .permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/auth/logout")
                         .authenticated()
                         .requestMatchers("/api/v1/admin/**")
