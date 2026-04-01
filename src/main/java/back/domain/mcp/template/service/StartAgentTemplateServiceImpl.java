@@ -49,7 +49,9 @@ public class StartAgentTemplateServiceImpl implements StartAgentTemplateService 
             throw new ServiceException(
                     CommonErrorCode.INTERNAL_SERVER_ERROR,
                     "[StartAgentTemplateServiceImpl#readTemplateMarkdown] "
-                            + "template resource read failed: " + TEMPLATE_PATH,
+                            + "template resource read failed: " + TEMPLATE_PATH
+                            + " (cause: " + exception.getClass().getSimpleName()
+                            + ": " + exception.getMessage() + ")",
                     TEMPLATE_READ_FAILED_MESSAGE);
         }
     }
