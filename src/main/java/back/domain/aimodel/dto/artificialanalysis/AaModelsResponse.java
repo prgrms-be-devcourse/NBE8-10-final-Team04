@@ -2,12 +2,17 @@ package back.domain.aimodel.dto.artificialanalysis;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.List;
 
 /**
  * Artificial Analysis /api/v2/data/llms/models raw 응답 구조
  */
+@SuppressFBWarnings(
+        value = "EI_EXPOSE_REP",
+        justification = "생성자에서 List.copyOf를 통한 방어적 복사를 수행하여 내부 리스트의 불변성을 보장함"
+)
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record AaModelsResponse(
         List<AaModel> data

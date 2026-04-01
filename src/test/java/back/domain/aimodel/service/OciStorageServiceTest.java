@@ -97,7 +97,7 @@ class OciStorageServiceTest {
                 .thenThrow(new RuntimeException("OCI 업로드 실패"));
 
         assertThatThrownBy(() -> ociStorageService.upload(
-                "data/ai-info/test.json", "{}".getBytes(), "application/json"))
+                "data/ai-info/test.json", "{}".getBytes(StandardCharsets.UTF_8), "application/json"))
                 .isInstanceOf(ServiceException.class);
     }
 

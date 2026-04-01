@@ -15,10 +15,11 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.lang.reflect.Field;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
@@ -58,7 +59,7 @@ class DescriptionServiceTest {
     void generateAndApply_cacheHit_noGeminiCall() throws Exception {
         Map<String, String> cache = Map.of("Anthropic/CLAUDE-OPUS", "기존 description");
         when(ociStorageService.objectName(anyString())).thenAnswer(i -> "data/ai-info/" + i.getArgument(0));
-        when(ociStorageService.download(anyString())).thenReturn("{}".getBytes());
+        when(ociStorageService.download(anyString())).thenReturn("{}".getBytes(StandardCharsets.UTF_8));
         when(objectMapper.readValue(any(byte[].class), any(com.fasterxml.jackson.core.type.TypeReference.class)))
                 .thenReturn(cache);
 
@@ -159,7 +160,7 @@ class DescriptionServiceTest {
     void generateAndApply_onlyCacheHit_doesNotSaveCache() throws Exception {
         Map<String, String> cache = Map.of("Anthropic/CLAUDE-OPUS", "기존 description");
         when(ociStorageService.objectName(anyString())).thenAnswer(i -> "data/ai-info/" + i.getArgument(0));
-        when(ociStorageService.download(anyString())).thenReturn("{}".getBytes());
+        when(ociStorageService.download(anyString())).thenReturn("{}".getBytes(StandardCharsets.UTF_8));
         when(objectMapper.readValue(any(byte[].class), any(com.fasterxml.jackson.core.type.TypeReference.class)))
                 .thenReturn(cache);
 
