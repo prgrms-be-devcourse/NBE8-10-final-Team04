@@ -4,7 +4,6 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.List;
-import java.util.Map;
 
 /**
  * OpenRouter /api/v1/models raw 응답 구조
@@ -13,6 +12,10 @@ import java.util.Map;
 public record OrModelsResponse(
         List<OrModel> data
 ) {
+    public OrModelsResponse(List<OrModel> data) {
+        this.data = data == null ? List.of() : List.copyOf(data);
+    }
+
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record OrModel(
             String id,
@@ -35,7 +38,12 @@ public record OrModelsResponse(
 
                 @JsonProperty("output_modalities")
                 List<String> outputModalities
-        ) {}
+        ) {
+            public Architecture(List<String> inputModalities, List<String> outputModalities) {
+                this.inputModalities  = inputModalities  == null ? List.of() : List.copyOf(inputModalities);
+                this.outputModalities = outputModalities == null ? List.of() : List.copyOf(outputModalities);
+            }
+        }
 
         @JsonIgnoreProperties(ignoreUnknown = true)
         public record Pricing(

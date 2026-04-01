@@ -8,4 +8,9 @@ import java.util.List;
 public record AiModelProperties(
         String outputPrefix,
         List<String> targetVendors
-) {}
+) {
+    public AiModelProperties(String outputPrefix, List<String> targetVendors) {
+        this.outputPrefix  = outputPrefix;
+        this.targetVendors = targetVendors == null ? List.of() : List.copyOf(targetVendors);
+    }
+}

@@ -12,6 +12,10 @@ import java.util.List;
 public record AaModelsResponse(
         List<AaModel> data
 ) {
+    public AaModelsResponse(List<AaModel> data) {
+        this.data = data == null ? List.of() : List.copyOf(data);
+    }
+
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record AaModel(
             String slug,

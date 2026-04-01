@@ -22,14 +22,28 @@ public record IntegratedVendor(
 
         List<IntegratedFamily> families
 ) {
-        public record IntegratedFamily(
-                @JsonProperty("family_name")
-                String familyName,
+    public IntegratedVendor(
+            String name,
+            String officialUrl,
+            boolean isActive,
+            boolean isDeprecated,
+            List<IntegratedFamily> families
+    ) {
+        this.name         = name;
+        this.officialUrl  = officialUrl;
+        this.isActive     = isActive;
+        this.isDeprecated = isDeprecated;
+        this.families     = families == null ? List.of() : List.copyOf(families);
+    }
 
-                @JsonProperty("common_description")
-                String commonDescription,
+    public record IntegratedFamily(
+            @JsonProperty("family_name")
+            String familyName,
 
-                @JsonProperty("created_at")
-                String createdAt
-        ) {}
+            @JsonProperty("common_description")
+            String commonDescription,
+
+            @JsonProperty("created_at")
+            String createdAt
+    ) {}
 }

@@ -8,15 +8,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.genai.Client;
 import com.google.genai.types.GenerateContentResponse;
 import jakarta.annotation.PostConstruct;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
 import java.util.*;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class DescriptionServiceImpl implements DescriptionService {
 
     private static final String CACHE_FILE             = "description_cache.json";
@@ -33,6 +32,20 @@ public class DescriptionServiceImpl implements DescriptionService {
     private final ObjectMapper      objectMapper;
 
     private Client geminiClient;
+
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings(
+            value = "EI_EXPOSE_REP2",
+            justification = "스프링이 관리하는 ObjectMapper를 DI로 주입받아 서비스 내부에서만 사용한다."
+    )
+    public DescriptionServiceImpl(
+            OciStorageService ociStorageService,
+            GeminiProperties geminiProperties,
+            ObjectMapper objectMapper
+    ) {
+        this.ociStorageService = ociStorageService;
+        this.geminiProperties  = geminiProperties;
+        this.objectMapper      = objectMapper;
+    }
 
     @PostConstruct
     void init() {
@@ -108,18 +121,16 @@ public class DescriptionServiceImpl implements DescriptionService {
     }
 
     private String generateWithGemini(String vendorName, String familyName) {
-        String prompt = """
-                반드시 한국어로만 작성하세요. 영어 사용 금지.
-                
-                "%s %s" AI 모델 패밀리에 대한 설명을 300자 이내로 작성하세요.
-                
-                포함할 내용:
-                - 이 모델 패밀리가 어떤 용도로 설계되었는지
-                - 주요 기능 또는 강점
-                - 어떤 사용자에게 적합한지
-                
-                설명 텍스트만 반환하세요. 마크다운, 따옴표, 부연 설명 없이 순수 텍스트만 작성하세요.
-                """.formatted(vendorName, familyName);
+        String prompt = String.format(
+                "반드시 한국어로만 작성하세요. 영어 사용 금지.%n%n" +
+                        "\"%s %s\" AI 모델 패밀리에 대한 설명을 300자 이내로 작성하세요.%n%n" +
+                        "포함할 내용:%n" +
+                        "- 이 모델 패밀리가 어떤 용도로 설계되었는지%n" +
+                        "- 주요 기능 또는 강점%n" +
+                        "- 어떤 사용자에게 적합한지%n%n" +
+                        "설명 텍스트만 반환하세요. 마크다운, 따옴표, 부연 설명 없이 순수 텍스트만 작성하세요.",
+                vendorName, familyName
+        );
 
         for (int attempt = 1; attempt <= MAX_RETRY_COUNT; attempt++) {
             try {
@@ -129,7 +140,7 @@ public class DescriptionServiceImpl implements DescriptionService {
                 if (response.text() == null) return null;
                 return truncateToSentence(response.text().trim());
 
-            } catch (Exception e) {
+            } catch (RuntimeException e) {
                 long retryAfterMs = parseRetryAfterMs(e.getMessage());
 
                 if (attempt < MAX_RETRY_COUNT && retryAfterMs > 0) {
@@ -190,8 +201,8 @@ public class DescriptionServiceImpl implements DescriptionService {
             byte[] bytes = ociStorageService.download(
                     ociStorageService.objectName(CACHE_FILE)
             );
-            return objectMapper.readValue(bytes, new TypeReference<Map<String, String>>() {});
-        } catch (Exception e) {
+            return objectMapper.readValue(bytes, new TypeReference<>() {});
+        } catch (RuntimeException | IOException e) {
             log.info("description 캐시 없음 — 빈 캐시로 시작");
             return new HashMap<>();
         }
@@ -203,7 +214,7 @@ public class DescriptionServiceImpl implements DescriptionService {
                     ociStorageService.objectName(CACHE_FILE), cache
             );
             log.info("description 캐시 저장 완료: {}개 항목", cache.size());
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             log.warn("description 캐시 저장 실패 (무시): {}", e.getMessage());
         }
     }
