@@ -4,17 +4,13 @@ import back.domain.aimodel.config.OciProperties;
 import back.global.exception.CommonErrorCode;
 import back.global.exception.ServiceException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.oracle.bmc.auth.SimpleAuthenticationDetailsProvider;
-import com.oracle.bmc.objectstorage.ObjectStorageClient;
+import com.oracle.bmc.objectstorage.ObjectStorage;
 import com.oracle.bmc.objectstorage.requests.GetObjectRequest;
 import com.oracle.bmc.objectstorage.requests.PutObjectRequest;
 import com.oracle.bmc.objectstorage.responses.GetObjectResponse;
-import com.oracle.bmc.Region;
-import jakarta.annotation.PostConstruct;
-import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayInputStream;
@@ -25,45 +21,12 @@ import java.nio.charset.StandardCharsets;
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@ConditionalOnProperty(name = "app.storage.type", havingValue = "oci")
 public class OciStorageServiceImpl implements OciStorageService {
 
     private final OciProperties props;
     private final ObjectMapper  objectMapper;
-    private ObjectStorageClient client;
-
-    @Value("${OCI_TENANCY}")     private String tenancy;
-    @Value("${OCI_USER}")        private String user;
-    @Value("${OCI_FINGERPRINT}") private String fingerprint;
-    @Value("${OCI_REGION}")      private String region;
-    @Value("${OCI_KEY}")         private String privateKey;
-
-    // 로컬 동작을 위해 작성, OCI Compute Instance에서 구동 시 불필요
-    // TODO: Bean으로 등록하는 게 더 바람직하다고 하다. TM-135
-    @PostConstruct
-    void init() {
-        // 환경변수의 \n을 실제 개행으로 변환 (PEM 형식 유지)
-        // TODO: pem 키를 base64로 인코딩하고 디코딩하는 방식으로 바꾸기? TM-135
-        String pemKey = privateKey.replace("\\n", "\n");
-
-        SimpleAuthenticationDetailsProvider provider =
-                SimpleAuthenticationDetailsProvider.builder()
-                        .tenantId(tenancy)
-                        .userId(user)
-                        .fingerprint(fingerprint)
-                        .region(Region.fromRegionId(region))
-                        .privateKeySupplier(() -> new ByteArrayInputStream(
-                                pemKey.getBytes(StandardCharsets.UTF_8)
-                        ))
-                        .build();
-
-        this.client = ObjectStorageClient.builder().build(provider);
-        log.info("[OciStorageService#init] OCI ObjectStorage 클라이언트 초기화 완료 (환경변수 인증)");
-    }
-
-    @PreDestroy
-    void destroy() {
-        if (client != null) client.close();
-    }
+    private final ObjectStorage client;
 
     // ── 다운로드 ──────────────────────────────────────────────────────────────
 
@@ -122,7 +85,7 @@ public class OciStorageServiceImpl implements OciStorageService {
             client.putObject(request);
             log.info("[OciStorageService#upload] OCI 업로드 완료: {}", objectName);
         } catch (Exception e) {
-             throw new ServiceException(
+            throw new ServiceException(
                     CommonErrorCode.INTERNAL_SERVER_ERROR,
                     "[OciStorageService#upload] OCI 업로드 실패 - objectName: " + objectName,
                     "OCI 스토리지에 파일을 업로드하는데 실패했습니다."

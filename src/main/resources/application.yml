@@ -33,7 +33,7 @@ app:
     base-path: ${APP_PROMPTS_BASE_PATH:data/prompts}
     oci-prefix: ${OCI_OBJECT_STORAGE_PROMPTS_PREFIX:data/prompts/}
   storage:
-    type: ${APP_STORAGE_TYPE:oci}
+    type: ${APP_STORAGE_TYPE:local}
     local:
       upload-dir: ${APP_STORAGE_LOCAL_UPLOAD_DIR:./uploads}
     oci:

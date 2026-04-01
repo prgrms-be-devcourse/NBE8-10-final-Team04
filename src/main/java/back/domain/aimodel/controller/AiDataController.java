@@ -6,8 +6,12 @@ import back.global.exception.ServiceException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 /**
  * GitHub Actions에서 raw 데이터 업로드 완료 후 Webhook으로 호출.
@@ -15,6 +19,7 @@ import org.springframework.web.bind.annotation.*;
  */
 @RestController
 @RequestMapping("/api/v1/ai-model")
+@ConditionalOnProperty(name = "app.storage.type", havingValue = "oci")
 public class AiDataController {
 
     private static final Logger log = LoggerFactory.getLogger(AiDataController.class);

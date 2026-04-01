@@ -28,7 +28,7 @@ class AiDataControllerTest extends WebMvcTestSupport {
     @Test
     @DisplayName("올바른 secret으로 trigger 호출 시 200 반환")
     void trigger_validSecret_returns200() throws Exception {
-        mockMvc.perform(post("/api/ai-model/pipeline/trigger")
+        mockMvc.perform(post("/api/v1/ai-model/pipeline/trigger")
                         .with(csrf())
                         .header("X-Webhook-Secret", "test-secret"))
                 .andExpect(status().isOk())
@@ -38,7 +38,7 @@ class AiDataControllerTest extends WebMvcTestSupport {
     @Test
     @DisplayName("잘못된 secret으로 trigger 호출 시 403 반환")
     void trigger_invalidSecret_returns403() throws Exception {
-        mockMvc.perform(post("/api/ai-model/pipeline/trigger")
+        mockMvc.perform(post("/api/v1/ai-model/pipeline/trigger")
                         .with(csrf())
                         .header("X-Webhook-Secret", "wrong-secret"))
                 .andExpect(status().isForbidden())
@@ -48,7 +48,7 @@ class AiDataControllerTest extends WebMvcTestSupport {
     @Test
     @DisplayName("secret 헤더 없이 trigger 호출 시 403 반환")
     void trigger_missingSecret_returns403() throws Exception {
-        mockMvc.perform(post("/api/ai-model/pipeline/trigger")
+        mockMvc.perform(post("/api/v1/ai-model/pipeline/trigger")
                         .with(csrf()))
                 .andExpect(status().isForbidden())
                 .andExpect(RsDataMatcher.hasError(CommonErrorCode.FORBIDDEN));
@@ -62,7 +62,7 @@ class AiDataControllerTest extends WebMvcTestSupport {
             return null;
         }).when(pipelineService).run();
 
-        mockMvc.perform(post("/api/ai-model/pipeline/trigger")
+        mockMvc.perform(post("/api/v1/ai-model/pipeline/trigger")
                         .with(csrf())
                         .header("X-Webhook-Secret", "test-secret"))
                 .andExpect(status().isOk());
@@ -73,7 +73,7 @@ class AiDataControllerTest extends WebMvcTestSupport {
     @Test
     @DisplayName("수동 실행 엔드포인트 정상 동작")
     void runManually_returns200() throws Exception {
-        mockMvc.perform(post("/api/ai-model/pipeline/run")
+        mockMvc.perform(post("/api/v1/ai-model/pipeline/run")
                         .with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(content().string("Pipeline completed"));

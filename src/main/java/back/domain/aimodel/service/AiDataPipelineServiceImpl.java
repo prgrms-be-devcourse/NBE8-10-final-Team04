@@ -8,6 +8,7 @@ import back.global.exception.CommonErrorCode;
 import back.global.exception.ServiceException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -15,6 +16,7 @@ import java.util.List;
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@ConditionalOnProperty(name = "app.storage.type", havingValue = "oci")
 public class AiDataPipelineServiceImpl implements AiDataPipelineService {
 
     private static final String RAW_OR_FILE     = "models_info_raw.json";

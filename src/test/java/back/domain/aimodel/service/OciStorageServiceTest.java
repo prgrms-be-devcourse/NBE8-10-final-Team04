@@ -3,7 +3,7 @@ package back.domain.aimodel.service;
 import back.domain.aimodel.config.OciProperties;
 import back.global.exception.ServiceException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.oracle.bmc.objectstorage.ObjectStorageClient;
+import com.oracle.bmc.objectstorage.ObjectStorage;
 import com.oracle.bmc.objectstorage.requests.GetObjectRequest;
 import com.oracle.bmc.objectstorage.requests.PutObjectRequest;
 import com.oracle.bmc.objectstorage.responses.GetObjectResponse;
@@ -15,7 +15,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.io.ByteArrayInputStream;
-import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
 
 import static org.assertj.core.api.Assertions.*;
@@ -25,21 +24,16 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class OciStorageServiceTest {
 
-    @Mock OciProperties        props;
-    @Mock ObjectStorageClient  storageClient;
+    @Mock OciProperties props;
+    @Mock ObjectStorage storageClient;
 
     OciStorageServiceImpl ociStorageService;
     ObjectMapper          objectMapper = new ObjectMapper();
 
     @BeforeEach
-    void setUp() throws Exception {
-        ociStorageService = new OciStorageServiceImpl(props, objectMapper);
-        // OCI 클라이언트 직접 주입 (PostConstruct 우회)
-        Field field = OciStorageServiceImpl.class.getDeclaredField("client");
-        field.setAccessible(true);
-        field.set(ociStorageService, storageClient);
+    void setUp() {
+        ociStorageService = new OciStorageServiceImpl(props, objectMapper, storageClient);
 
-        // 테스트마다 불필요한 스터빙 경고가 발생하지 않도록 lenient() 적용
         lenient().when(props.namespace()).thenReturn("test-namespace");
         lenient().when(props.bucket()).thenReturn("test-bucket");
         lenient().when(props.prefix()).thenReturn("data/ai-info/");
@@ -106,7 +100,7 @@ class OciStorageServiceTest {
 
     @Test
     @DisplayName("uploadJson은 객체를 JSON으로 직렬화해서 업로드한다")
-    void uploadJson_serializesAndUploads() throws Exception {
+    void uploadJson_serializesAndUploads() {
         record TestDto(String key) {}
 
         ociStorageService.uploadJson("data/ai-info/test.json", new TestDto("value"));
