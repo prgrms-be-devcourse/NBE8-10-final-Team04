@@ -1,4 +1,4 @@
-package back.domain.prompt.dto;
+package back.domain.prompt.prompt.dto;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

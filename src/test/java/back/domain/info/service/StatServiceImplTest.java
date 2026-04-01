@@ -105,7 +105,8 @@ class StatServiceImplTest {
                 .thenReturn(java.util.Optional.empty());
         when(modelBenchmarkRepository.findByModelApiIdAndMetricType("claude-sonnet", MetricType.PRICE_BLENDED))
                 .thenReturn(java.util.Optional.empty());
-        when(modelBenchmarkRepository.save(any(ModelBenchmark.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(modelBenchmarkRepository.save(any(ModelBenchmark.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
 
         statService.run();
 

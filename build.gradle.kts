@@ -1,5 +1,3 @@
-import org.gradle.internal.impldep.org.apache.sshd.common.NamedResource.findByName
-
 plugins {
     java
     id("org.springframework.boot") version "4.0.3"
@@ -74,6 +72,9 @@ dependencies {
     runtimeOnly("org.postgresql:postgresql")
     // pgvector
     implementation("com.pgvector:pgvector:0.1.6")
+
+    // webflux
+    implementation("org.springframework.boot:spring-boot-starter-webflux")
 }
 
 tasks.withType<Test> {

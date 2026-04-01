@@ -56,7 +56,10 @@ public class SecurityConfig {
                                 "/actuator/health/**",
                                 "/actuator/info",
                                 "/api/prompts/run",
-                                "/api/info/run")
+                                "/api/info/run",
+                                "/dev/skills/**",
+                                "/dev/skill-chunks/**",
+                                "/api/skills/search")
                         .permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/auth/google/login")
                         .permitAll()

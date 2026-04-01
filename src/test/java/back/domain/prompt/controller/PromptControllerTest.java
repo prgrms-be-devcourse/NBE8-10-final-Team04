@@ -1,4 +1,4 @@
-package back.domain.prompt.controller;
+package back.domain.prompt.prompt.controller;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.isEmptyOrNullString;
@@ -19,7 +19,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
-import back.domain.prompt.service.PromptService;
+import back.domain.prompt.prompt.service.PromptService;
 import back.global.response.RsData;
 
 class PromptControllerTest {
