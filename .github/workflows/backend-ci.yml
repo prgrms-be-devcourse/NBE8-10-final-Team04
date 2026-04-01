@@ -52,6 +52,12 @@ jobs:
           DB_PASSWORD: password
           CUSTOM_JWT_SECRET_KEY: "start-ai-hub-default-secret-key-for-testing-purposes-only"
 
+          OCI_NAMESPACE: "test-namespace"
+          OCI_BUCKET: "test-bucket"
+
+          CRAWL_GEMINI_API_KEY: "test-gemini-api-key"
+          SPRING_WEBHOOK_SECRET: "test-webhook-secret"
+
       - name: Publish Unit Test Results
         if: always()
         uses: EnricoMi/publish-unit-test-result-action@v2
@@ -60,11 +66,10 @@ jobs:
           check_name: '테스트 결과 보고서 📊'
           comment_mode: 'always'
 
-# 사후 부석용
+      # 사후 분석용
       - name: Upload Test Report
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: test-reports
           path: build/reports/
-

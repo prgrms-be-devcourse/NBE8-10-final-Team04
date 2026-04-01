@@ -13,6 +13,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.ObjectProvider;
 
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
@@ -24,16 +25,18 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class OciStorageServiceTest {
 
-    @Mock OciProperties props;
-    @Mock ObjectStorage storageClient;
+    @Mock OciProperties              props;
+    @Mock ObjectStorage              storageClient;
+    @Mock ObjectProvider<ObjectStorage> clientProvider;
 
     OciStorageServiceImpl ociStorageService;
     ObjectMapper          objectMapper = new ObjectMapper();
 
     @BeforeEach
     void setUp() {
-        ociStorageService = new OciStorageServiceImpl(props, objectMapper, storageClient);
+        ociStorageService = new OciStorageServiceImpl(props, objectMapper, clientProvider);
 
+        lenient().when(clientProvider.getIfAvailable()).thenReturn(storageClient);
         lenient().when(props.namespace()).thenReturn("test-namespace");
         lenient().when(props.bucket()).thenReturn("test-bucket");
         lenient().when(props.prefix()).thenReturn("data/ai-info/");
@@ -106,5 +109,14 @@ class OciStorageServiceTest {
         ociStorageService.uploadJson("data/ai-info/test.json", new TestDto("value"));
 
         verify(storageClient, times(1)).putObject(any(PutObjectRequest.class));
+    }
+
+    @Test
+    @DisplayName("OCI 클라이언트가 없을 때 download 호출 시 ServiceException이 발생한다")
+    void download_noClient_throwsServiceException() {
+        when(clientProvider.getIfAvailable()).thenReturn(null);
+
+        assertThatThrownBy(() -> ociStorageService.download("data/ai-info/test.json"))
+                .isInstanceOf(ServiceException.class);
     }
 }

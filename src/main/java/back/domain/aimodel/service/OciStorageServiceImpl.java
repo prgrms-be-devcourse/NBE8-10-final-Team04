@@ -10,7 +10,7 @@ import com.oracle.bmc.objectstorage.requests.PutObjectRequest;
 import com.oracle.bmc.objectstorage.responses.GetObjectResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayInputStream;
@@ -21,12 +21,23 @@ import java.nio.charset.StandardCharsets;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-@ConditionalOnProperty(name = "app.storage.type", havingValue = "oci")
 public class OciStorageServiceImpl implements OciStorageService {
 
-    private final OciProperties props;
-    private final ObjectMapper  objectMapper;
-    private final ObjectStorage client;
+    private final OciProperties              props;
+    private final ObjectMapper               objectMapper;
+    private final ObjectProvider<ObjectStorage> clientProvider;
+
+    private ObjectStorage client() {
+        ObjectStorage client = clientProvider.getIfAvailable();
+        if (client == null) {
+            throw new ServiceException(
+                    CommonErrorCode.INTERNAL_SERVER_ERROR,
+                    "[OciStorageService] OCI 클라이언트가 초기화되지 않았습니다.",
+                    "OCI 스토리지를 사용할 수 없는 환경입니다."
+            );
+        }
+        return client;
+    }
 
     // ── 다운로드 ──────────────────────────────────────────────────────────────
 
@@ -40,10 +51,12 @@ public class OciStorageServiceImpl implements OciStorageService {
                 .build();
 
         try {
-            GetObjectResponse response = client.getObject(request);
+            GetObjectResponse response = client().getObject(request);
             try (InputStream is = response.getInputStream()) {
                 return is.readAllBytes();
             }
+        } catch (ServiceException e) {
+            throw e;
         } catch (Exception e) {
             throw new ServiceException(
                     CommonErrorCode.INTERNAL_SERVER_ERROR,
@@ -82,8 +95,10 @@ public class OciStorageServiceImpl implements OciStorageService {
                 .build();
 
         try {
-            client.putObject(request);
+            client().putObject(request);
             log.info("[OciStorageService#upload] OCI 업로드 완료: {}", objectName);
+        } catch (ServiceException e) {
+            throw e;
         } catch (Exception e) {
             throw new ServiceException(
                     CommonErrorCode.INTERNAL_SERVER_ERROR,
