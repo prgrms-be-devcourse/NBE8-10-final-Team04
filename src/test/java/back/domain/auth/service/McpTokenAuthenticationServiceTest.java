@@ -2,7 +2,6 @@ package back.domain.auth.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.LocalDateTime;
@@ -56,7 +55,6 @@ class McpTokenAuthenticationServiceTest {
 
         assertThat(memberId).isEqualTo(10L);
         assertThat(mcpToken.getLastUsedAt()).isNotNull();
-        verify(mcpTokenRepository).save(mcpToken);
     }
 
     @Test

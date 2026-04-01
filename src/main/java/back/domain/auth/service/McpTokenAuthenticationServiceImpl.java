@@ -43,7 +43,6 @@ public class McpTokenAuthenticationServiceImpl implements McpTokenAuthentication
         }
 
         mcpToken.touch(now);
-        mcpTokenRepository.save(mcpToken);
         return mcpToken.getMemberId();
     }
 
