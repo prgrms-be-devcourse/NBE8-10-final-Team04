@@ -150,4 +150,17 @@ class McpTokenServiceTest {
         verify(mcpTokenRepository).save(token);
         assertThat(token.isRevoked()).isTrue();
     }
+
+    @Test
+    @DisplayName("존재하지 않는 토큰 폐기 요청은 404 예외를 던진다")
+    void revokeToken_whenTokenNotFound_throwsNotFound() {
+        when(mcpTokenRepository.findById(999L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> mcpTokenService.revokeToken(10L, 999L))
+                .isInstanceOf(ServiceException.class)
+                .satisfies(exception -> {
+                    ServiceException serviceException = (ServiceException) exception;
+                    assertThat(serviceException.getErrorCode()).isEqualTo(CommonErrorCode.NOT_FOUND);
+                });
+    }
 }
