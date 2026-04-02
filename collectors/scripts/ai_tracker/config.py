@@ -101,4 +101,4 @@ SOURCES: list[dict[str, Any]] = [
 # ── OCI 설정 ───────────────────────────────────────────────────────────────────
 from collectors.scripts.shared.config import OCI_NAMESPACE, OCI_BUCKET  # noqa
 
-OBJECT_NAME: str = "data/ai-tracker/updates.json"
+OBJECT_NAME: str = "data/ai-tracker/updates_raw.json"
