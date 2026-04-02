@@ -1,122 +1,72 @@
 from sqlalchemy import text
 from app.db.database import SessionLocal
 
-
 def retrieve_ai_models(question: str):
     db = SessionLocal()
 
     try:
-        question_lower = question
+        # 1. 질문 키워드 추출 (이건 사용자의 의도를 파악하기 위해 필요함)
+        keywords = {
+            "code": ["코드", "개발", "에러", "코딩", "sql", "python", "programming"],
+            "image": ["이미지", "사진", "스크린샷", "영상", "그림"],
+            "fast": ["빠르게", "간단히", "짧게", "빨리", "가벼운"],
+            "logic": ["논리", "어려운", "수학", "추론", "분석", "깊게"]
+        }
 
-        wants_long_context = any(keyword in question_lower for keyword in ["긴 문서", "요약", "정리", "분석"])
-        wants_image = any(keyword in question_lower for keyword in ["이미지", "사진", "스크린샷", "영상"])
-        wants_fast = any(keyword in question_lower for keyword in ["빠르게", "간단히", "짧게"])
-        wants_code = any(keyword in question_lower for keyword in ["코드", "개발", "에러", "디버깅", "프로그래밍"])
-        wants_writing = any(keyword in question_lower for keyword in ["자소서", "자기소개서", "글쓰기", "문장", "첨삭", "이력서"])
-
+        # 2. DB에서 모든 활성 패밀리 가져오기
         query = text("""
-            SELECT
-                id,
-                model_name,
-                category,
-                context_window,
-                input_price,
-                output_price,
-                max_output_tokens,
-                input_modalities,
-                output_modalities,
-                is_preview
-            FROM ai_models
-            WHERE is_preview = false
-            ORDER BY context_window DESC NULLS LAST
-            LIMIT 30;
+            SELECT f.id, f.family_name, f.common_description, v.name as vendor_name
+            FROM ai_model_families f
+            JOIN ai_vendors v ON f.vendor_id = v.id
+            WHERE v.is_active = true
         """)
-
         rows = db.execute(query).fetchall()
 
-        scored_models = []
-
+        scored_families = []
         for row in rows:
             score = 0
             reasons = []
+            
+            # DB의 이름과 설명을 합쳐서 분석 대상으로 삼음
+            target_text = f"{row.family_name} {row.common_description}".lower()
 
-            input_modalities = (row.input_modalities or "")
-            output_modalities = (row.output_modalities or "")
-            category = (row.category or "")
+            # --- [자동 분석 로직] ---
+            
+            # 질문의 의도와 DB 텍스트가 매칭되는지 확인
+            for category, words in keywords.items():
+                if any(word in question for word in words): # 사용자가 이 카테고리를 원하는데
+                    # DB 설명/이름에 해당 키워드가 포함되어 있다면 점수 대폭 상승
+                    # (예: 설명에 'coding'이나 'vision' 같은 영문 키워드가 섞여 있을 확률이 높음)
+                    if any(word in target_text for word in words) or \
+                       (category == "code" and "code" in target_text) or \
+                       (category == "image" and ("vision" in target_text or "image" in target_text)):
+                        score += 10
+                        reasons.append(f"요청하신 {category} 관련 작업에 최적화된 모델입니다.")
 
-            if wants_long_context and row.context_window and row.context_window >= 100000:
-                score += 3
-                reasons.append("긴 문서나 많은 내용을 처리하기 좋음")
+            # 최신 모델에 대한 기본 점수 (숫자가 높을수록 최신일 확률이 높으므로 텍스트 기반 추출)
+            # 이름에 포함된 숫자가 높으면 약간의 가산점 (예: 5.4 > 3.5)
+            import re
+            numbers = re.findall(r'\d+\.?\d*', row.family_name)
+            if numbers:
+                score += float(numbers[0]) 
 
-            if wants_image and ("image" in input_modalities or "image" in output_modalities):
-                score += 3
-                reasons.append("이미지 관련 작업에 활용하기 좋음")
+            if not reasons:
+                reasons.append(f"{row.vendor_name}의 신뢰할 수 있는 모델 시리즈입니다.")
 
-            if wants_fast:
-                if row.input_price is not None and row.output_price is not None:
-                    if row.input_price < 1 and row.output_price < 5:
-                        score += 2
-                        reasons.append("비용 부담이 비교적 적고 가볍게 쓰기 좋음")
-
-            if wants_code and ("code" in category or "reason" in category or "chat" in category):
-                score += 2
-                reasons.append("코드나 문제 해결 질문에 잘 맞음")
-
-            if wants_writing and ("chat" in category or "reason" in category):
-                score += 2
-                reasons.append("글쓰기나 초안 작성에 활용하기 좋음")
-
-            if "chat" in category:
-                score += 1
-                reasons.append("대화형 작업에 무난함")
-
-            if row.max_output_tokens and row.max_output_tokens >= 8000:
-                score += 1
-                reasons.append("긴 답변 생성에 유리함")
-
-            description_parts = []
-
-            if row.category:
-                description_parts.append(f"카테고리: {row.category}")
-            if row.context_window:
-                description_parts.append(f"컨텍스트 크기: {row.context_window}")
-            if row.input_modalities:
-                description_parts.append(f"입력: {row.input_modalities}")
-            if row.output_modalities:
-                description_parts.append(f"출력: {row.output_modalities}")
-
-            description = " / ".join(description_parts) if description_parts else "AI 작업에 활용 가능한 모델"
-
-            scored_models.append({
+            scored_families.append({
                 "id": row.id,
-                "title": row.model_name,
-                "owner": None,
-                "star": None,
-                "description": description,
-                "uploadedAt": None,
-                "like": None,
+                "title": row.family_name,
+                "owner": row.vendor_name,
+                "description": row.common_description,
                 "score": score,
-                "reason": ", ".join(dict.fromkeys(reasons)) if reasons else "일반적인 대화형 작업에 무난함",
-                "type": "ai_model",
-                "howToUse": "먼저 간단한 요청으로 결과를 확인한 뒤, 원하는 방향으로 다시 수정 요청해보세요.",
-
-                # 필요하면 나중에 쓸 원본 데이터
-                "model_name": row.model_name,
-                "category": row.category,
-                "context_window": row.context_window,
-                "input_price": float(row.input_price) if row.input_price is not None else None,
-                "output_price": float(row.output_price) if row.output_price is not None else None,
-                "max_output_tokens": row.max_output_tokens,
-                "input_modalities": row.input_modalities,
-                "output_modalities": row.output_modalities,
+                "reason": reasons[0],
+                "type": "ai_model_family"
             })
 
-        scored_models.sort(
-            key=lambda x: (x["score"], x["context_window"] or 0),
-            reverse=True
-        )
+        # 점수 정렬 (높은 순)
+        scored_families.sort(key=lambda x: x["score"], reverse=True)
 
-        return scored_models[:3]
+        return scored_families[:3]
 
     finally:
         db.close()
