@@ -7,6 +7,7 @@ import back.domain.prompt.chunking.repository.SkillChunkRepository;
 import back.domain.prompt.prompt.entity.Skill;
 import back.domain.prompt.prompt.repository.SkillRepository;
 import back.domain.prompt.search.util.VectorUtils;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,6 +18,10 @@ import java.util.List;
 
 @Component
 @RequiredArgsConstructor
+@SuppressFBWarnings(
+        value = "EI_EXPOSE_REP2",
+        justification = "스프링 DI로 주입되는 공유 의존성을 서비스 내부 필드로 보관한다."
+)
 public class ChunkingProcessor {
 
     private static final String CHUNK_VERSION = "v1";
