@@ -33,10 +33,9 @@ public class SkillChunk extends BaseEntity {
     @Column(name = "section_title")
     private String sectionTitle;
 
-    // 섹션 경로 (예: Docker Setup > Install)
-    @Column(name = "section_path")
-    private String sectionPath;
-
+//    // 섹션 경로 (예: Docker Setup > Install)
+//    @Column(name = "section_path")
+//    private String sectionPath;
 
     // 임베딩용 텍스트 (정제된 텍스트)
     @Column(name = "search_text", nullable = false, columnDefinition = "TEXT")
@@ -45,7 +44,6 @@ public class SkillChunk extends BaseEntity {
     // 문자 길이
     @Column(name = "char_count")
     private Integer charCount;
-
 
     // chunk 전략 버전 (v1, v2 등)
     @Column(name = "chunk_version", length = 50)
@@ -62,7 +60,7 @@ public class SkillChunk extends BaseEntity {
      * Hibernate에서 vector 타입을 직접 지원 안 해서
      * float[] + SqlTypes.OTHER 로 매핑
      */
-    @Column(name = "embedding", columnDefinition = "vector")
+    @Column(name = "embedding", columnDefinition = "vector(1024)")
     private float[] embedding;
 
     // 임베딩 생성 시각

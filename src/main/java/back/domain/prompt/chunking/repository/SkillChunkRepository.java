@@ -1,6 +1,6 @@
 package back.domain.prompt.embedding.repository;
 
-import back.domain.prompt.embedding.entity.SkillChunk;
+import back.domain.prompt.chunking.entity.SkillChunk;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
