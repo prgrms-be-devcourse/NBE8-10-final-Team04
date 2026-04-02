@@ -1,11 +1,9 @@
-SYSTEM_PROMPT = """
-너는 비전공자 사용자를 돕는 AI 추천 도우미다.
-항상 쉬운 말로 설명해라.
-가장 적합한 top_tool을 먼저 설명해라.
-cards 3개는 비교하듯이 짧게 설명해라.
-cards 3개 중 가장 적합한 1개를 골라서 이유랑 README 정보를 바탕으로 사용 방법도 함께 설명해라.
-AI 모델도 함께 추천하고 이유를 설명해라.
-"""
+SYSTEM_PROMPT = """너는 비전공자 사용자를 돕는 친절한 AI 전문 도우미야.
+[공통 규칙]
+1. 초등학생도 이해할 수 있는 쉬운 단어를 쓰되, 성인에게 적합한 비유를 활용할 것.
+2. 질문 내용을 그대로 반복하며 답변을 시작하지 말 것.
+3. 제공된 데이터(Tool, Card, Model)에만 기반하여 답변하고, 모르는 것을 지어내지 말 것.
+4. 지정된 출력 형식을 반드시 준수할 것."""
 
 def format_card(cards: list[dict]) -> str:
     result = ""
@@ -37,28 +35,29 @@ def build_user_prompt(question: str, top_tool: dict, cards: list[dict], ai_model
     ai_models_str = format_ai_models(ai_models)
 
     return f"""
-사용자 질문:
-{question}
+        참고 데이터:
+        [Top Tool] {top_tool["title"]} ({top_tool["description"]})
+        [AI Models] {ai_models_str}
+        [Cards] {cards_str}
 
-가장 적합한 AI 툴:
-- 이름: {top_tool["title"]}
-- 설명: {top_tool["description"]}
-- 추천 이유: {top_tool["reason"]}
-- README 일부: {top_tool.get("readme", "")}
+        사용자 질문: "{question}"
 
-추천 AI 모델:
-{ai_models_str}
+        위 데이터를 바탕으로 아래 양식에 맞춰 답변해줘.
 
-추천 카드 목록:
-{cards_str}
-위 정보를 바탕으로
-1. 사용자가 하려는 작업이 무엇인지 한 줄로 설명
-2. 가장 적합한 AI 툴 설명
-3. 어떤 AI 모델을 쓰는 게 좋은지 추천
-4. 비전공자가 어떻게 시작하면 되는지
-5. 카드 3개 비교 설명
-간단하게 설명해줘.
-"""
+        ### 1. 핵심 요약
+        사용자가 하려는 작업을 한 줄로 정의해줘.
+
+        ### 2. 추천 AI 툴 및 모델
+        - 가장 적합한 툴: {top_tool["title"]}
+        - 추천 모델: (제시된 모델 중 가장 가성비 좋은 것 하나 선택)
+        - 이유: (비전공자 관점에서 설명)
+
+        ### 3. 시작 가이드
+        비전공자가 이 툴을 어떻게 처음 써보면 좋을지 단계별로 간단히 알려줘.
+
+        ### 4. 한눈에 비교
+        제공된 카드 3개의 특징을 한 문장씩 비교해서 표나 리스트로 보여줘.
+        """
 
 
 def build_full_prompt(question, top_tool, cards, ai_models):
@@ -70,16 +69,14 @@ INFORMATION_PROMPT = """
 항상 쉽고 간단하게 설명해라.
 """
 
+# [정보형] 규칙 중복 제거
 def build_information_prompt(question: str) -> str:
-    return f"""
-    사용자 질문:
-    {question}
+    return f"""질문: "{question}"
 
-    너는 비전공자를 위한 AI 기술 가이드야.
-    1. 전문 용어(예: 벡터 DB, 파라미터 등)가 나오면 반드시 비유를 들어서 초등학생도 이해할 수 있게 설명해.
-    2. 답변은 3줄 내외로 핵심만 간단하게 해줘.
-    3. 마지막에는 "더 궁금한 AI 기술이 있나요?"라고 친절하게 마무리해줘.
-    """
+        기술 가이드 답변 규칙:
+        1. 전문 용어는 반드시 일상적인 비유로 설명.
+        2. 3줄 내외로 핵심만 요약.
+        3. 마지막에 "더 궁금한 AI 기술이 있나요?" 문구 포함."""
 
 # 후속 질문형 프롬프트
 FOLLOWUP_PROMPT = """
