@@ -56,6 +56,14 @@ public class EmbeddingServiceImpl implements EmbeddingService {
             if (response == null || response.embeddings() == null) {
                 throw new IllegalStateException("임베딩 응답이 비어 있습니다. batchStart=" + i);
             }
+
+            // 배치 크기와 반환된 임베딩 크기가 일치하는지 확인
+            if (response.embeddings().size() != batch.size()) {
+                throw new IllegalStateException("임베딩 응답의 크기가 요청된 배치 크기와 일치하지 않습니다. " +
+                        "요청된 배치 크기: " + batch.size() + ", 반환된 임베딩 크기: " + response.embeddings().size() +
+                        ", batchStart=" + i);
+            }
+
             allEmbeddings.addAll(response.embeddings());
         }
 

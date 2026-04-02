@@ -12,4 +12,7 @@ public interface SkillChunkRepository extends JpaRepository<SkillChunk, Long> {
 
     List<SkillChunk> findBySkillId(Long skillId);
 
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("delete from SkillChunk sc where sc.skill.id = :skillId")
+    void deleteBySkillId(@Param("skillId") Long skillId);
 }
