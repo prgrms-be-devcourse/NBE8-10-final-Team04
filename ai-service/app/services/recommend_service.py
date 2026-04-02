@@ -197,8 +197,8 @@ def handle_chat(question: str) -> ChatResponse:
                 "title": str(c.get("title", "Unknown Skill")),
                 "description": str(c.get("description", "")),
                 "reason": str(c.get("reason", "비전공자도 사용하기 쉬운 스킬이에요!")),
-                "starCount": c.get("starCount", 0),
-                "githubId": c.get("githubId", "user"),
+                "starCount": c.get("star", 0),
+                "githubId": c.get("owner", "user"),
                 "type": "skill"
             }
 
