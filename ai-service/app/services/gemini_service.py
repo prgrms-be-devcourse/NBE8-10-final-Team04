@@ -20,7 +20,24 @@ if not api_key:
 genai.configure(api_key=api_key)
 
 # 한도 초과시 버전 변경
+# model = genai.GenerativeModel("gemini-3.1-flash-lite-preview")
+
+# 수정 전
 model = genai.GenerativeModel("gemini-3.1-flash-lite-preview")
+
+# 수정 후
+generation_config = {
+    "temperature": 0.7,        # 창의성 조절 (너무 높으면 헛소리를 함)
+    "top_p": 0.95,
+    "top_k": 40,
+    "max_output_tokens": 1024, # 답변 길이를 강제로 제한 (무한 루프 방지)
+    "response_mime_type": "text/plain",
+}
+
+model = genai.GenerativeModel(
+    model_name="gemini-3.1-flash-lite-preview",
+    generation_config=generation_config
+)
 
 
 def _safe_text(value) -> str:
@@ -42,8 +59,12 @@ def call_gemini(prompt: str) -> str:
         raw_text = getattr(response, "text", "")
         text = _safe_text(raw_text)
 
-        print("DEBUG Gemini raw_text:", raw_text, type(raw_text))
-        print("DEBUG Gemini final_text:", text, type(text))
+        # --------------------------------------------------
+        # 테스트 확인용
+        print("\n" + "="*50)
+        print(f"[Gemini Response]\n{text}")
+        print("="*50 + "\n")
+        # --------------------------------------------------
 
         return text
 
