@@ -1,4 +1,4 @@
-package back.domain.prompt.embedding.repository;
+package back.domain.prompt.chunking.repository;
 
 import back.domain.prompt.chunking.entity.SkillChunk;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -11,10 +11,5 @@ import java.util.List;
 public interface SkillChunkRepository extends JpaRepository<SkillChunk, Long> {
 
     List<SkillChunk> findBySkillId(Long skillId);
-
-    @Modifying
-    @Query("DELETE FROM SkillChunk sc WHERE sc.skill.id = :skillId")
-    void deleteBySkillId(@Param("skillId") Long skillId);
-
 
 }
