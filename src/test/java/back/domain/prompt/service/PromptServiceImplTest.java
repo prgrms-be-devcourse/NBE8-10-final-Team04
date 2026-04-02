@@ -45,13 +45,13 @@ class PromptServiceImplTest {
     @TempDir
     Path tempDir;
 
-    private SkillNormalizeService normalizeService;
+    private SkillUpsertService normalizeService;
     private ObjectProvider<ObjectStorage> objectStorageProvider;
     private PromptServiceImpl promptServiceImpl;
 
     @BeforeEach
     void setUp() {
-        normalizeService = mock(SkillNormalizeService.class);
+        normalizeService = mock(SkillUpsertService.class);
         objectStorageProvider = mock(ObjectProvider.class);
         promptServiceImpl = new PromptServiceImpl(normalizeService, new ObjectMapper(), objectStorageProvider);
     }
@@ -61,7 +61,7 @@ class PromptServiceImplTest {
     void run_processesLocalJsonFiles() throws IOException {
         writeFile("prompt.json", validPromptJson());
         Repository repository = repository(1L, "owner/repo");
-        when(normalizeService.normalizeRepository(any())).thenReturn(repository);
+        when(normalizeService.upsertRepository(any())).thenReturn(repository);
         setLocalStorage(tempDir);
 
         promptServiceImpl.run();
@@ -89,7 +89,7 @@ class PromptServiceImplTest {
         when(getObjectResponse.getInputStream()).thenReturn(
                 new ByteArrayInputStream(validPromptJson().getBytes(StandardCharsets.UTF_8))
         );
-        when(normalizeService.normalizeRepository(any())).thenReturn(repository);
+        when(normalizeService.upsertRepository(any())).thenReturn(repository);
         setOciStorage();
 
         promptServiceImpl.run();
@@ -113,23 +113,23 @@ class PromptServiceImplTest {
     void run_continuesWhenSkillNormalizationFails() throws IOException {
         writeFile("prompt.json", validPromptJson());
         Repository repository = repository(1L, "owner/repo");
-        when(normalizeService.normalizeRepository(any())).thenReturn(repository);
+        when(normalizeService.upsertRepository(any())).thenReturn(repository);
         doThrow(new IllegalStateException("boom"))
                 .when(normalizeService)
-                .normalizeSkill(same(repository), argThat(skill -> "alpha".equals(skill.getName())));
+                .upsertSkill(same(repository), argThat(skill -> "alpha".equals(skill.getName())));
         setLocalStorage(tempDir);
 
         assertThatNoException().isThrownBy(() -> promptServiceImpl.run());
 
-        verify(normalizeService).normalizeSkill(
+        verify(normalizeService).upsertSkill(
                 same(repository),
                 argThat(skill -> "alpha".equals(skill.getName()))
         );
-        verify(normalizeService).normalizeSkill(
+        verify(normalizeService).upsertSkill(
                 same(repository),
                 argThat(skill -> "beta".equals(skill.getName()))
         );
-        verify(normalizeService).normalizeAgent(
+        verify(normalizeService).upsertAgent(
                 same(repository),
                 argThat(agent -> "agent-hash".equals(agent.getContentHash()))
         );
@@ -168,18 +168,18 @@ class PromptServiceImplTest {
     }
 
     private void verifyNormalized(Repository repository) {
-        verify(normalizeService).normalizeRepository(
+        verify(normalizeService).upsertRepository(
                 argThat(item -> item.getRepository() != null
                         && "owner/repo".equals(item.getRepository().getSourceRepo()))
         );
 
         ArgumentCaptor<SkillDto> skillCaptor = ArgumentCaptor.forClass(SkillDto.class);
-        verify(normalizeService, times(2)).normalizeSkill(same(repository), skillCaptor.capture());
+        verify(normalizeService, times(2)).upsertSkill(same(repository), skillCaptor.capture());
         assertThat(skillCaptor.getAllValues())
                 .extracting(SkillDto::getName)
                 .containsExactly("alpha", "beta");
 
-        verify(normalizeService).normalizeAgent(
+        verify(normalizeService).upsertAgent(
                 same(repository),
                 argThat(agent -> agent != null && "agent-hash".equals(agent.getContentHash()))
         );

@@ -36,10 +36,10 @@ import back.domain.prompt.prompt.repository.RepositoryRepository;
 import back.domain.prompt.prompt.repository.SkillRepository;
 
 @ExtendWith(MockitoExtension.class)
-class SkillNormalizeServiceTest {
+class SkillUpsertServiceTest {
 
     @InjectMocks
-    private SkillNormalizeServiceImpl skillNormalizeService;
+    private SkillUpsertServiceImpl skillNormalizeService;
 
     @Mock
     private RepositoryRepository repositoryRepository;
@@ -66,7 +66,7 @@ class SkillNormalizeServiceTest {
         when(repositoryRepository.findByGithubId(100L)).thenReturn(Optional.empty());
         when(repositoryRepository.save(any(Repository.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        Repository saved = skillNormalizeService.normalizeRepository(repoItem);
+        Repository saved = skillNormalizeService.upsertRepository(repoItem);
 
         ArgumentCaptor<Repository> repositoryCaptor = ArgumentCaptor.forClass(Repository.class);
         verify(repositoryRepository).save(repositoryCaptor.capture());
@@ -100,7 +100,7 @@ class SkillNormalizeServiceTest {
 //        );
 //        when(repositoryRepository.findByGithubId(100L)).thenReturn(Optional.of(existing));
 //
-//        Repository result = skillNormalizeService.normalizeRepository(repoItem);
+//        Repository result = skillNormalizeService.upsertRepository(repoItem);
 //
 //        assertThat(result).isSameAs(existing);
 //        assertThat(existing.getStarCount()).isEqualTo(30);
@@ -131,7 +131,7 @@ class SkillNormalizeServiceTest {
         );
         when(repositoryRepository.findByGithubId(100L)).thenReturn(Optional.of(existing));
 
-        Repository result = skillNormalizeService.normalizeRepository(repoItem);
+        Repository result = skillNormalizeService.upsertRepository(repoItem);
 
         assertThat(result).isSameAs(existing);
         assertThat(existing.getStarCount()).isEqualTo(3);
@@ -158,7 +158,7 @@ class SkillNormalizeServiceTest {
         when(skillRepository.findByRepositoryIdAndName(1L, "alpha")).thenReturn(Optional.empty());
         when(skillRepository.save(any(Skill.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        Skill saved = skillNormalizeService.normalizeSkill(repository, skillDto);
+        Skill saved = skillNormalizeService.upsertSkill(repository, skillDto);
 
         ArgumentCaptor<Skill> skillCaptor = ArgumentCaptor.forClass(Skill.class);
         verify(skillRepository).save(skillCaptor.capture());
@@ -199,7 +199,7 @@ class SkillNormalizeServiceTest {
         when(parser.extractCategory("demo summary", "new content")).thenReturn(Category.FRONTEND);
         when(skillRepository.findByRepositoryIdAndName(1L, "alpha")).thenReturn(Optional.of(existing));
 
-        Skill result = skillNormalizeService.normalizeSkill(repository, skillDto);
+        Skill result = skillNormalizeService.upsertSkill(repository, skillDto);
 
         assertThat(result).isSameAs(existing);
         assertThat(existing.getContentMd()).isEqualTo("new content");
@@ -225,7 +225,7 @@ class SkillNormalizeServiceTest {
         when(agentRepository.findByRepositoryId(1L)).thenReturn(Optional.empty());
         when(agentRepository.save(any(Agent.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        Agent saved = skillNormalizeService.normalizeAgent(repository, agentDto);
+        Agent saved = skillNormalizeService.upsertAgent(repository, agentDto);
 
         ArgumentCaptor<Agent> agentCaptor = ArgumentCaptor.forClass(Agent.class);
         verify(agentRepository).save(agentCaptor.capture());
@@ -258,7 +258,7 @@ class SkillNormalizeServiceTest {
         AgentDto agentDto = agentData("codex", "AGENTS.md", "new agent content", "new-agent-hash");
         when(agentRepository.findByRepositoryId(1L)).thenReturn(Optional.of(existing));
 
-        Agent result = skillNormalizeService.normalizeAgent(repository, agentDto);
+        Agent result = skillNormalizeService.upsertAgent(repository, agentDto);
 
         assertThat(result).isSameAs(existing);
         assertThat(existing.getContentMd()).isEqualTo("new agent content");
