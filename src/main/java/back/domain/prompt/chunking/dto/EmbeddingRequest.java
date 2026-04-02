@@ -1,4 +1,4 @@
-package back.domain.prompt.embedding.dto;
+package back.domain.prompt.chunking.dto;
 
 import java.util.List;
 
