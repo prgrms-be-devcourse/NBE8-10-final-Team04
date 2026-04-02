@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/info/")
+@RequestMapping("/api/v1/info/")
 public class AiInfoController {
     private final AiInfoService inforService;
     private final StatService statService;

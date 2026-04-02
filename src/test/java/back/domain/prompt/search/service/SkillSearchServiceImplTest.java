@@ -13,7 +13,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import back.domain.prompt.embedding.service.EmbeddingService;
+import back.domain.prompt.chunking.service.EmbeddingService;
 import back.domain.prompt.prompt.enums.Category;
 import back.domain.prompt.search.dto.chunk.SkillChunkSearchResultDto;
 import back.domain.prompt.search.dto.chunk.SkillChunkVectorSearchRowDto;

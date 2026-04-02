@@ -48,11 +48,15 @@ public class Skill extends BaseEntity {
     @Column(name = "tags_json", columnDefinition = "jsonb")
     private Set<String> tagsJson = new HashSet<>();
 
+    @Column(name = "is_chunked")
+    private boolean isChunked = false;
+
     public void update(String contentMd, String contentHash, Set<String> tagsJson, Category category) {
         this.contentMd = contentMd;
         this.contentHash = contentHash;
         this.tagsJson = tagsJson;
         this.category = category;
+        this.isChunked = false;
     }
 
     public void updateTagAndCategory(Set<String> tagsJson, Category category) {
