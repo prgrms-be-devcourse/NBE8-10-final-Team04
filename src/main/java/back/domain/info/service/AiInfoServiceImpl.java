@@ -27,7 +27,8 @@ import java.util.List;
 @RequiredArgsConstructor
 @SuppressFBWarnings(
         value = "EI_EXPOSE_REP2",
-        justification = "스프링이 관리하는 ObjectMapper를 DI로 주입받아 서비스 내부에서만 사용한다.")
+        justification = "스프링이 관리하는 ObjectMapper를 DI로 주입받아 서비스 내부에서만 사용한다."
+)
 public class AiInfoServiceImpl implements AiInfoService {
 
     @Value("${app.info.json-path:data/ai-info/integrated_major_models.json}")

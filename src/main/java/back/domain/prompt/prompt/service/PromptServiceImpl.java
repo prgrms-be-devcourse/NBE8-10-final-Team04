@@ -41,7 +41,7 @@ public class PromptServiceImpl implements PromptService {
 
     private static final String STORAGE_TYPE_OCI = "oci";
 
-    private final SkillNormalizeService normalizeService;
+    private final SkillUpsertService skillUpsertService;
     private final ObjectMapper objectMapper;
     private final ObjectProvider<ObjectStorage> objectStorageProvider;
 
@@ -211,7 +211,7 @@ public class PromptServiceImpl implements PromptService {
                 return;
             }
 
-            Repository repository = normalizeService.normalizeRepository(repoItem);
+            Repository repository = skillUpsertService.upsertRepository(repoItem);
             String sourceRepo = repository.getSourceRepo();
 
             processSkills(repository, sourceRepo, repoItem.getSkills());
@@ -235,7 +235,7 @@ public class PromptServiceImpl implements PromptService {
             }
 
             try {
-                normalizeService.normalizeSkill(repository, skillDto);
+                skillUpsertService.upsertSkill(repository, skillDto);
             } catch (Exception e) {
                 log.error("Skill 처리 실패: {}/{}", sourceRepo, skillDto.getName(), e);
             }
@@ -254,7 +254,7 @@ public class PromptServiceImpl implements PromptService {
         }
 
         try {
-            normalizeService.normalizeAgent(repository, agent);
+            skillUpsertService.upsertAgent(repository, agent);
         } catch (Exception e) {
             log.error("Agent 처리 실패: {}", sourceRepo, e);
         }

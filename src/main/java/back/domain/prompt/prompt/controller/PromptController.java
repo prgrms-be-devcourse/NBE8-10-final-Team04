@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/prompts")
+@RequestMapping("/api/v1/prompts")
 public class PromptController {
     private final PromptService promptService;
 

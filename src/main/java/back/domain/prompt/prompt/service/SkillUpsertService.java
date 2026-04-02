@@ -7,12 +7,12 @@ import back.domain.prompt.prompt.entity.Agent;
 import back.domain.prompt.prompt.entity.Repository;
 import back.domain.prompt.prompt.entity.Skill;
 
-public interface SkillNormalizeService {
+public interface SkillUpsertService {
 
-    Repository normalizeRepository(PromptRepoItem repoItem);
+    Repository upsertRepository(PromptRepoItem repoItem);
 
-    Skill normalizeSkill(Repository repository, SkillDto skillDto);
+    Skill upsertSkill(Repository repository, SkillDto skillDto);
 
-    Agent normalizeAgent(Repository repository, AgentDto agentDto);
+    Agent upsertAgent(Repository repository, AgentDto agentDto);
 
 }

@@ -3,7 +3,7 @@ package back.domain.prompt.search.service;
 import java.util.Comparator;
 import java.util.stream.Collectors;
 
-import back.domain.prompt.embedding.service.EmbeddingService;
+import back.domain.prompt.chunking.service.EmbeddingService;
 import back.domain.prompt.prompt.enums.Category;
 import back.domain.prompt.search.dto.candidate.CandidateDto;
 import back.domain.prompt.search.dto.candidate.CandidateMetadataDto;

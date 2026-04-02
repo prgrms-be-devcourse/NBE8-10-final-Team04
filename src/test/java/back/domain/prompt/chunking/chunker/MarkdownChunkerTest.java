@@ -1,4 +1,4 @@
-package back.domain.prompt.chunking.parser;
+package back.domain.prompt.chunking.chunker;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

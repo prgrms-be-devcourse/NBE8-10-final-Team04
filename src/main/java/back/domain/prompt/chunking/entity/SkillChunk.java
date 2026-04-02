@@ -1,4 +1,4 @@
-package back.domain.prompt.embedding.entity;
+package back.domain.prompt.chunking.entity;
 
 import back.domain.prompt.prompt.entity.Skill;
 import back.global.jpa.entity.BaseEntity;
@@ -32,10 +32,6 @@ public class SkillChunk extends BaseEntity {
     // 섹션 제목 (예: Install, Usage 등)
     @Column(name = "section_title")
     private String sectionTitle;
-
-//    // 섹션 경로 (예: Docker Setup > Install)
-//    @Column(name = "section_path")
-//    private String sectionPath;
 
     // 임베딩용 텍스트 (정제된 텍스트)
     @Column(name = "search_text", nullable = false, columnDefinition = "TEXT")

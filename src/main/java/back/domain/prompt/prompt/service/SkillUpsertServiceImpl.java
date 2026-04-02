@@ -23,7 +23,7 @@ import java.util.*;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class SkillNormalizeServiceImpl implements SkillNormalizeService {
+public class SkillUpsertServiceImpl implements SkillUpsertService {
 
     private final RepositoryRepository repositoryRepository;
     private final SkillRepository skillRepository;
@@ -32,7 +32,7 @@ public class SkillNormalizeServiceImpl implements SkillNormalizeService {
 
     @Override
     @Transactional
-    public Repository normalizeRepository(PromptRepoItem repoItem) {
+    public Repository upsertRepository(PromptRepoItem repoItem) {
         RepositoryDto data = repoItem.getRepository();
 
         return repositoryRepository.findByGithubId(data.getGithubId())
@@ -94,7 +94,7 @@ public class SkillNormalizeServiceImpl implements SkillNormalizeService {
 
     @Override
     @Transactional
-    public Skill normalizeSkill(Repository repository, SkillDto skillDto) {
+    public Skill upsertSkill(Repository repository, SkillDto skillDto) {
         String name = skillDto.getName();
         String summary = repository.getSummary() == null ? "" : repository.getSummary();
         String rawContent = skillDto.getContentMd();
@@ -124,7 +124,7 @@ public class SkillNormalizeServiceImpl implements SkillNormalizeService {
 
     @Override
     @Transactional
-    public Agent normalizeAgent(Repository repository, AgentDto agentDto) {
+    public Agent upsertAgent(Repository repository, AgentDto agentDto) {
         String rawContent = agentDto.getContentMd();
 
         return agentRepository.findByRepositoryId(repository.getId())

@@ -23,7 +23,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import back.domain.prompt.chunking.dto.Section;
 import back.domain.prompt.chunking.entity.SkillChunk;
-import back.domain.prompt.chunking.parser.MarkdownChunker;
+import back.domain.prompt.chunking.chunker.MarkdownChunker;
 import back.domain.prompt.chunking.repository.SkillChunkRepository;
 import back.domain.prompt.prompt.entity.Repository;
 import back.domain.prompt.prompt.entity.Skill;
