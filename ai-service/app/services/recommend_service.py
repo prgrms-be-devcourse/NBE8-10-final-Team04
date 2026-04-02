@@ -234,3 +234,14 @@ def handle_chat(question: str) -> ChatResponse:
             nextActions=["AI 툴 추천받기", "웹사이트 만들기", "엑셀 자동화"],
             outOfScope=False
         )
+    
+    return ChatResponse(
+        question=original_question,
+        questionType=QuestionType.ambiguous,
+        targetType=TargetType.none,
+        message="어떤 것을 추천해 드릴까요? AI 모델이나 업무 자동화 스킬 중에서 선택해 주세요!",
+        cards=[],
+        topPick=None,
+        nextActions=["AI 모델 추천받기", "업무 자동화 스킬 추천"],
+        outOfScope=False
+    )
