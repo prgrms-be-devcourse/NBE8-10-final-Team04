@@ -1,4 +1,4 @@
-package back.domain.info.dto;
+package back.domain.info.dto.data;
 
 import back.domain.info.enums.MetricType;
 import com.fasterxml.jackson.annotation.JsonFormat;

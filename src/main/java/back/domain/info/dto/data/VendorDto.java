@@ -1,4 +1,4 @@
-package back.domain.info.dto;
+package back.domain.info.dto.data;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
