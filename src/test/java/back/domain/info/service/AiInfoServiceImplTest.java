@@ -1,66 +1,53 @@
 package back.domain.info.service;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
-import static org.mockito.Mockito.when;
-
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.time.LocalDate;
-
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
-import org.mockito.ArgumentCaptor;
-import org.springframework.test.util.ReflectionTestUtils;
-
-import back.domain.info.entity.AiModel;
 import back.domain.info.entity.AiModelFamily;
 import back.domain.info.entity.AiVendor;
 import back.domain.info.mapper.AiModelMapper;
 import back.domain.info.repository.AiModelFamilyRepository;
-import back.domain.info.repository.AiModelRepository;
 import back.domain.info.repository.AiVendorRepository;
+import back.global.storage.OciObjectStorageReader;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import tools.jackson.databind.ObjectMapper;
+
+import java.util.ArrayList;
+import java.util.Optional;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 
 class AiInfoServiceImplTest {
 
-    @TempDir
-    Path tempDir;
-
-    private AiInfoServiceImpl aiInfoService;
+    private static final String BASE_PATH = "data/ai-info/integrated_major_models.json";
 
     private AiVendorRepository aiVendorRepository;
-
     private AiModelFamilyRepository aiModelFamilyRepository;
-
-    private AiModelRepository aiModelRepository;
+    private OciObjectStorageReader storageReader;
+    private AiInfoServiceImpl service;
 
     @BeforeEach
     void setUp() {
         aiVendorRepository = mock(AiVendorRepository.class);
         aiModelFamilyRepository = mock(AiModelFamilyRepository.class);
-        aiModelRepository = mock(AiModelRepository.class);
-        aiInfoService = new AiInfoServiceImpl(
+        storageReader = mock(OciObjectStorageReader.class);
+        service = new AiInfoServiceImpl(
                 aiVendorRepository,
                 aiModelFamilyRepository,
-                aiModelRepository,
                 new AiModelMapper(),
-                new ObjectMapper()
+                new ObjectMapper(),
+                storageReader
         );
     }
 
     @Test
-    @DisplayName("새 벤더 계층을 읽으면 벤더, 패밀리, 모델을 각각 저장한다")
-    void run_createsVendorHierarchy() throws IOException {
-        Path jsonFile = writeJson(
-                """
+    void run_createsNewVendorFromOciJson() {
+        String json = """
                 [
                   {
                     "name": "OpenAI",
@@ -70,90 +57,44 @@ class AiInfoServiceImplTest {
                     "families": [
                       {
                         "family_name": "GPT-4.1",
-                        "common_description": "Flagship family",
-                        "models": [
-                          {
-                            "model_name": "GPT-4.1",
-                            "api_id": "gpt-4.1",
-                            "context_window": 128000,
-                            "max_output_tokens": 4096,
-                            "release_date": "2025-01-10",
-                            "is_preview": false,
-                            "model_image_url": "https://example.com/gpt-4.1.png",
-                            "input_price": 2.50,
-                            "output_price": 10.00,
-                            "input_modalities": ["text", "image"],
-                            "output_modalities": ["text"]
-                          }
-                        ]
+                        "common_description": "Flagship family"
                       }
                     ]
                   }
                 ]
-                """
-        );
-        ReflectionTestUtils.setField(aiInfoService, "jsonFilePath", jsonFile.toString());
-
-        when(aiVendorRepository.findByName("OpenAI")).thenReturn(java.util.Optional.empty());
+                """;
+        when(storageReader.readText(BASE_PATH)).thenReturn(json);
+        when(aiVendorRepository.findByName("OpenAI")).thenReturn(Optional.empty());
         when(aiVendorRepository.save(any(AiVendor.class))).thenAnswer(invocation -> invocation.getArgument(0));
-        when(aiModelRepository.findByApiId("gpt-4.1")).thenReturn(java.util.Optional.empty());
-        when(aiModelRepository.save(any(AiModel.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        aiInfoService.run();
+        service.run();
 
         ArgumentCaptor<AiVendor> vendorCaptor = ArgumentCaptor.forClass(AiVendor.class);
         verify(aiVendorRepository).save(vendorCaptor.capture());
         AiVendor savedVendor = vendorCaptor.getValue();
         assertThat(savedVendor.getName()).isEqualTo("OpenAI");
-        assertThat(savedVendor.getOfficialUrl()).isEqualTo("https://openai.com");
-        assertThat(savedVendor.getIsActive()).isTrue();
-        assertThat(savedVendor.getIsDeprecated()).isFalse();
-
-        AiModelFamily savedFamily = savedVendor.getModelFamilies().getFirst();
-        assertThat(savedFamily.getVendor()).isSameAs(savedVendor);
-        assertThat(savedFamily.getFamilyName()).isEqualTo("GPT-4.1");
-        assertThat(savedFamily.getCommonDescription()).isEqualTo("Flagship family");
-
-        ArgumentCaptor<AiModel> modelCaptor = ArgumentCaptor.forClass(AiModel.class);
-        verify(aiModelRepository).save(modelCaptor.capture());
-        AiModel savedModel = modelCaptor.getValue();
-        assertThat(savedModel.getFamily()).isSameAs(savedFamily);
-        assertThat(savedModel.getApiId()).isEqualTo("gpt-4.1");
-        assertThat(savedModel.getReleaseDate()).isEqualTo(LocalDate.of(2025, 1, 10));
-        assertThat(savedModel.getInputModalities()).containsExactly("text", "image");
-        assertThat(savedModel.getOutputModalities()).containsExactly("text");
+        assertThat(savedVendor.getModelFamilies()).hasSize(1);
+        assertThat(savedVendor.getModelFamilies().getFirst().getFamilyName()).isEqualTo("GPT-4.1");
+        verify(aiModelFamilyRepository, never()).save(any(AiModelFamily.class));
     }
 
     @Test
-    @DisplayName("이미 존재하는 벤더 계층은 중복 생성하지 않고 값을 갱신한다")
-    void run_updatesExistingVendorHierarchy() throws IOException {
+    void processJson_updatesExistingVendorAndExistingFamily() {
         AiVendor vendor = AiVendor.builder()
                 .name("OpenAI")
                 .officialUrl("https://old.example.com")
                 .isActive(false)
                 .isDeprecated(true)
+                .modelFamilies(new ArrayList<>())
                 .build();
         AiModelFamily family = AiModelFamily.builder()
                 .vendor(vendor)
                 .familyName("GPT-4.1")
-                .commonDescription("old family")
+                .commonDescription("Old family")
                 .build();
         vendor.getModelFamilies().add(family);
 
-        AiModel model = AiModel.builder()
-                .family(family)
-                .modelName("old-model")
-                .apiId("gpt-4.1")
-                .contextWindow(32000)
-                .maxOutputTokens(1024)
-                .releaseDate(LocalDate.of(2024, 1, 1))
-                .isPreview(true)
-                .modelImageUrl("https://old.example.com/model.png")
-                .build();
-        family.getModels().add(model);
-
-        Path jsonFile = writeJson(
-                """
+        String json = """
                 [
                   {
                     "name": "OpenAI",
@@ -163,69 +104,65 @@ class AiInfoServiceImplTest {
                     "families": [
                       {
                         "family_name": "GPT-4.1",
-                        "common_description": "Updated family",
-                        "models": [
-                          {
-                            "model_name": "GPT-4.1",
-                            "api_id": "gpt-4.1",
-                            "context_window": 128000,
-                            "max_output_tokens": 4096,
-                            "release_date": "2025-01-10",
-                            "is_preview": false,
-                            "model_image_url": "https://example.com/gpt-4.1.png",
-                            "input_price": 2.50,
-                            "output_price": 10.00,
-                            "input_modalities": ["text", "image"],
-                            "output_modalities": ["text"]
-                          }
-                        ]
+                        "common_description": "Updated family"
                       }
                     ]
                   }
                 ]
-                """
-        );
-        ReflectionTestUtils.setField(aiInfoService, "jsonFilePath", jsonFile.toString());
+                """;
+        when(aiVendorRepository.findByName("OpenAI")).thenReturn(Optional.of(vendor));
 
-        when(aiVendorRepository.findByName("OpenAI")).thenReturn(java.util.Optional.of(vendor));
-        when(aiModelRepository.findByApiId("gpt-4.1")).thenReturn(java.util.Optional.of(model));
-
-        aiInfoService.run();
+        service.processJson("ai-info.json", json);
 
         assertThat(vendor.getOfficialUrl()).isEqualTo("https://openai.com");
         assertThat(vendor.getIsActive()).isTrue();
         assertThat(vendor.getIsDeprecated()).isFalse();
         assertThat(family.getCommonDescription()).isEqualTo("Updated family");
-        assertThat(model.getModelName()).isEqualTo("GPT-4.1");
-        assertThat(model.getContextWindow()).isEqualTo(128000);
-        assertThat(model.getMaxOutputTokens()).isEqualTo(4096);
-        assertThat(model.getReleaseDate()).isEqualTo(LocalDate.of(2025, 1, 10));
-        assertThat(model.getIsPreview()).isFalse();
-        assertThat(model.getInputModalities()).containsExactly("text", "image");
-        assertThat(model.getOutputModalities()).containsExactly("text");
-
-        verify(aiVendorRepository, never()).save(any(AiVendor.class));
-        verify(aiModelFamilyRepository, never()).save(any(AiModelFamily.class));
-        verify(aiModelRepository, never()).save(any(AiModel.class));
+        verify(aiVendorRepository, never()).save(any());
+        verify(aiModelFamilyRepository, never()).save(any());
     }
 
     @Test
-    @DisplayName("JSON 파일을 읽지 못하면 저장 로직을 수행하지 않는다")
-    void run_whenJsonFileMissing_doesNothing() {
-        ReflectionTestUtils.setField(
-                aiInfoService,
-                "jsonFilePath",
-                tempDir.resolve("missing-ai-info.json").toString()
-        );
+    void processJson_createsMissingFamilyForExistingVendor() {
+        AiVendor vendor = AiVendor.builder()
+                .name("OpenAI")
+                .officialUrl("https://openai.com")
+                .isActive(true)
+                .isDeprecated(false)
+                .modelFamilies(new ArrayList<>())
+                .build();
+        String json = """
+                [
+                  {
+                    "name": "OpenAI",
+                    "official_url": "https://openai.com",
+                    "is_active": true,
+                    "is_deprecated": false,
+                    "families": [
+                      {
+                        "family_name": "GPT-4.5",
+                        "common_description": "New family"
+                      }
+                    ]
+                  }
+                ]
+                """;
+        when(aiVendorRepository.findByName("OpenAI")).thenReturn(Optional.of(vendor));
+        when(aiModelFamilyRepository.save(any(AiModelFamily.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        aiInfoService.run();
+        service.processJson("ai-info.json", json);
 
-        verifyNoInteractions(aiVendorRepository, aiModelFamilyRepository, aiModelRepository);
+        ArgumentCaptor<AiModelFamily> familyCaptor = ArgumentCaptor.forClass(AiModelFamily.class);
+        verify(aiModelFamilyRepository).save(familyCaptor.capture());
+        assertThat(familyCaptor.getValue().getVendor()).isSameAs(vendor);
+        assertThat(familyCaptor.getValue().getFamilyName()).isEqualTo("GPT-4.5");
+        assertThat(familyCaptor.getValue().getCommonDescription()).isEqualTo("New family");
     }
 
-    private Path writeJson(String json) throws IOException {
-        Path jsonFile = tempDir.resolve("ai-info.json");
-        Files.writeString(jsonFile, json);
-        return jsonFile;
+    @Test
+    void processJson_ignoresInvalidJson() {
+        service.processJson("broken.json", "{not-json}");
+
+        verifyNoInteractions(aiVendorRepository, aiModelFamilyRepository);
     }
 }

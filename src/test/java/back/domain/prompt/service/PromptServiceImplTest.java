@@ -1,5 +1,19 @@
 package back.domain.prompt.prompt.service;
 
+import back.domain.prompt.prompt.dto.SkillDto;
+import back.domain.prompt.prompt.entity.Repository;
+import back.domain.prompt.prompt.enums.OwnerType;
+import back.global.storage.OciObjectStorageReader;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
+import org.springframework.test.util.ReflectionTestUtils;
+import tools.jackson.databind.ObjectMapper;
+
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.mockito.ArgumentMatchers.any;
@@ -12,85 +26,27 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Map;
-
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
-import org.mockito.ArgumentCaptor;
-import org.springframework.beans.factory.ObjectProvider;
-import org.springframework.test.util.ReflectionTestUtils;
-
-import com.oracle.bmc.objectstorage.ObjectStorage;
-import com.oracle.bmc.objectstorage.model.ListObjects;
-import com.oracle.bmc.objectstorage.model.ObjectSummary;
-import com.oracle.bmc.objectstorage.responses.GetObjectResponse;
-import com.oracle.bmc.objectstorage.responses.ListObjectsResponse;
-
-import back.domain.prompt.prompt.dto.SkillDto;
-import back.domain.prompt.prompt.entity.Repository;
-import back.domain.prompt.prompt.enums.OwnerType;
-import tools.jackson.databind.ObjectMapper;
-
 class PromptServiceImplTest {
 
-    @TempDir
-    Path tempDir;
-
     private SkillUpsertService normalizeService;
-    private ObjectProvider<ObjectStorage> objectStorageProvider;
+    private OciObjectStorageReader objectStorageReader;
     private PromptServiceImpl promptServiceImpl;
 
     @BeforeEach
     void setUp() {
         normalizeService = mock(SkillUpsertService.class);
-        objectStorageProvider = mock(ObjectProvider.class);
-        promptServiceImpl = new PromptServiceImpl(normalizeService, new ObjectMapper(), objectStorageProvider);
+        objectStorageReader = mock(OciObjectStorageReader.class);
+        promptServiceImpl = new PromptServiceImpl(normalizeService, new ObjectMapper(), objectStorageReader);
+        ReflectionTestUtils.setField(promptServiceImpl, "promptsOciPrefix", "data/prompts/");
     }
 
     @Test
-    @DisplayName("run은 로컬 json 파일을 처리해 repository, skills, agent를 정규화한다")
-    void run_processesLocalJsonFiles() throws IOException {
-        writeFile("prompt.json", validPromptJson());
-        Repository repository = repository(1L, "owner/repo");
-        when(normalizeService.upsertRepository(any())).thenReturn(repository);
-        setLocalStorage(tempDir);
-
-        promptServiceImpl.run();
-
-        verifyNormalized(repository);
-    }
-
-    @Test
-    @DisplayName("run은 OCI json 객체를 처리해 repository, skills, agent를 정규화한다")
     void run_processesOciJsonFiles() {
-        ObjectStorage objectStorage = mock(ObjectStorage.class);
-        ListObjectsResponse listObjectsResponse = mock(ListObjectsResponse.class);
-        ListObjects listObjects = mock(ListObjects.class);
-        GetObjectResponse getObjectResponse = mock(GetObjectResponse.class);
         Repository repository = repository(1L, "owner/repo");
 
-        when(objectStorageProvider.getIfAvailable()).thenReturn(objectStorage);
-        when(objectStorage.listObjects(any())).thenReturn(listObjectsResponse);
-        when(listObjectsResponse.getListObjects()).thenReturn(listObjects);
-        when(listObjects.getObjects()).thenReturn(
-                List.of(ObjectSummary.builder().name("data/prompts/prompt.json").build())
-        );
-        when(listObjects.getNextStartWith()).thenReturn(null);
-        when(objectStorage.getObject(any())).thenReturn(getObjectResponse);
-        when(getObjectResponse.getInputStream()).thenReturn(
-                new ByteArrayInputStream(validPromptJson().getBytes(StandardCharsets.UTF_8))
-        );
+        when(objectStorageReader.listObjectNames("data/prompts/")).thenReturn(List.of("data/prompts/prompt.json"));
+        when(objectStorageReader.readText("data/prompts/prompt.json")).thenReturn(validPromptJson());
         when(normalizeService.upsertRepository(any())).thenReturn(repository);
-        setOciStorage();
 
         promptServiceImpl.run();
 
@@ -98,10 +54,9 @@ class PromptServiceImplTest {
     }
 
     @Test
-    @DisplayName("run은 repository payload가 없으면 스킵한다")
-    void run_skipsFileWithoutRepository() throws IOException {
-        writeFile("prompt.json", missingRepositoryJson());
-        setLocalStorage(tempDir);
+    void run_skipsFileWithoutRepository() {
+        when(objectStorageReader.listObjectNames("data/prompts/")).thenReturn(List.of("data/prompts/prompt.json"));
+        when(objectStorageReader.readText("data/prompts/prompt.json")).thenReturn(missingRepositoryJson());
 
         promptServiceImpl.run();
 
@@ -109,15 +64,14 @@ class PromptServiceImplTest {
     }
 
     @Test
-    @DisplayName("run은 skill 하나 정규화에 실패해도 나머지 skills와 agent 처리를 계속한다")
-    void run_continuesWhenSkillNormalizationFails() throws IOException {
-        writeFile("prompt.json", validPromptJson());
+    void run_continuesWhenSkillNormalizationFails() {
         Repository repository = repository(1L, "owner/repo");
+        when(objectStorageReader.listObjectNames("data/prompts/")).thenReturn(List.of("data/prompts/prompt.json"));
+        when(objectStorageReader.readText("data/prompts/prompt.json")).thenReturn(validPromptJson());
         when(normalizeService.upsertRepository(any())).thenReturn(repository);
         doThrow(new IllegalStateException("boom"))
                 .when(normalizeService)
                 .upsertSkill(same(repository), argThat(skill -> "alpha".equals(skill.getName())));
-        setLocalStorage(tempDir);
 
         assertThatNoException().isThrownBy(() -> promptServiceImpl.run());
 
@@ -136,10 +90,9 @@ class PromptServiceImplTest {
     }
 
     @Test
-    @DisplayName("run은 잘못된 json 파일을 무시한다")
-    void run_ignoresInvalidJson() throws IOException {
-        writeFile("broken.json", "{ not-valid-json");
-        setLocalStorage(tempDir);
+    void run_ignoresInvalidJson() {
+        when(objectStorageReader.listObjectNames("data/prompts/")).thenReturn(List.of("data/prompts/prompt.json"));
+        when(objectStorageReader.readText("data/prompts/prompt.json")).thenReturn("{ not-valid-json");
 
         promptServiceImpl.run();
 
@@ -147,20 +100,8 @@ class PromptServiceImplTest {
     }
 
     @Test
-    @DisplayName("run은 로컬 프롬프트 디렉터리가 없으면 종료한다")
-    void run_returnsWhenPromptDirectoryMissing() {
-        setLocalStorage(tempDir.resolve("missing"));
-
-        promptServiceImpl.run();
-
-        verifyNoInteractions(normalizeService);
-    }
-
-    @Test
-    @DisplayName("run은 로컬 디렉터리에 json 파일이 없으면 종료한다")
-    void run_returnsWhenNoJsonFilesExist() throws IOException {
-        writeFile("notes.txt", "plain text");
-        setLocalStorage(tempDir);
+    void run_returnsWhenNoJsonFilesExist() {
+        when(objectStorageReader.listObjectNames("data/prompts/")).thenReturn(List.of("data/prompts/readme.md"));
 
         promptServiceImpl.run();
 
@@ -183,22 +124,6 @@ class PromptServiceImplTest {
                 same(repository),
                 argThat(agent -> agent != null && "agent-hash".equals(agent.getContentHash()))
         );
-    }
-
-    private void setLocalStorage(Path path) {
-        ReflectionTestUtils.setField(promptServiceImpl, "storageType", "local");
-        ReflectionTestUtils.setField(promptServiceImpl, "promptsBasePath", path.toString());
-    }
-
-    private void setOciStorage() {
-        ReflectionTestUtils.setField(promptServiceImpl, "storageType", "oci");
-        ReflectionTestUtils.setField(promptServiceImpl, "namespace", "ns");
-        ReflectionTestUtils.setField(promptServiceImpl, "bucket", "bucket");
-        ReflectionTestUtils.setField(promptServiceImpl, "promptsOciPrefix", "data/prompts/");
-    }
-
-    private void writeFile(String fileName, String content) throws IOException {
-        Files.writeString(tempDir.resolve(fileName), content);
     }
 
     private Repository repository(Long id, String sourceRepo) {
