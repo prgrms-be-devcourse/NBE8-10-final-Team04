@@ -2,8 +2,21 @@ package back.domain.info.entity;
 
 import back.domain.info.enums.Status;
 import back.global.jpa.entity.BaseEntity;
-import jakarta.persistence.*;
-import lombok.*;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -15,6 +28,10 @@ import java.time.LocalDateTime;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Builder
+@SuppressFBWarnings(
+        value = {"EI_EXPOSE_REP", "EI_EXPOSE_REP2"},
+        justification = "JPA 엔티티의 연관 객체 참조는 영속성 컨텍스트에서 관리되며 방어적 복사를 사용하지 않는다."
+)
 public class UpdateRequest extends BaseEntity {
 
     private String sourceId;
@@ -39,10 +56,9 @@ public class UpdateRequest extends BaseEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
-    private Status status;  // PENDING, APPROVED, REJECTED
+    private Status status;
 
-    private LocalDate notifiedAt;// 업데이트 일시
+    private LocalDate notifiedAt; // 업데이트 일시
 
-    private LocalDateTime reviewedAt;   // 승인 / 반영 일시
+    private LocalDateTime reviewedAt; // 확인 및 반영 일시
 }
-
