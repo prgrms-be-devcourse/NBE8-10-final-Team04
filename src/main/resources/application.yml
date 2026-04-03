@@ -84,7 +84,7 @@ oci:
 
 gemini:
   api-key: ${CRAWL_GEMINI_API_KEY}
-  model: gemini-3.1-flash-lite-preview              # 매칭용 gemini-2.5-flash limit으로 변경
+  model: gemini-3.1-flash-lite-preview              # 매칭용 gemini-2.5-flash limit으로 인해 변경
   description-model: gemini-3.1-flash-lite-preview  # description 생성용
 
 ai-model:
@@ -93,3 +93,6 @@ ai-model:
     - openai
     - anthropic
     - google
+
+ai-tracker:
+  webhook-secret: ${SPRING_WEBHOOK_SECRET}
