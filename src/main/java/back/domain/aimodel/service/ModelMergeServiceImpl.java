@@ -44,8 +44,7 @@ public class ModelMergeServiceImpl implements ModelMergeService {
             "instruct", "chat", "free", "plus", "small", "medium", "large", "max",
             "nonreasoning", "high", "low",
             // 기능 suffix
-            "turbo", "audio", "search", "image", "vision", "codex", "realtime",
-            "safeguard", "oss"
+            "turbo", "search", "realtime", "safeguard", "oss"
     );
 
     // 복합 키워드 (하이픈 포함) — 분리 전에 미리 제거

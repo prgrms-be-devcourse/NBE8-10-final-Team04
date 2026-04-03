@@ -1,28 +1,26 @@
-name: collector-ai-info-and-stats
+name: Tracker-update
 
 on:
   # schedule:
-  # - cron: "0 15 * * *"   # 매일 오전 0시 KST (스프링부트 서버에서 API 호출해 실행)
+    # - cron: "0 3 * * *"   # 매일 오전 12시 KST (UTC 03:00) (스프링부트 서버에서 API 호출해 실행)
   workflow_dispatch:
     inputs:
       start_from:
         description: "재실행 시작 단계"
         required: false
-        default: "fetch_or_models"
+        default: "collect"
         type: choice
         options:
-          - fetch_or_models
-          - fetch_aa_benchmark
-          - upload_to_oci
+          - collect
           - webhook_trigger
 
 env:
   PYTHON_VERSION: "3.11"
-  SCRIPTS_PATH:   "collectors/scripts/ai_info"
+  SCRIPTS_PATH:   "collectors/scripts/ai_tracker"
 
 jobs:
   pipeline:
-    name: Run AI Model Data Pipeline
+    name: Run AI Tracker Pipeline
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
@@ -50,34 +48,23 @@ jobs:
           chmod 600 ~/.oci/config ~/.oci/key.pem
 
       # ── 파이프라인 실행 ──────────────────────────────────────────────────
-      - name: "1. Fetch OpenRouter Models"
+      - name: "1. Collect & Upload to OCI"
         if: |
           github.event_name == 'schedule' ||
-          contains(fromJSON('["fetch_or_models"]'), github.event.inputs.start_from)
-        run: python -m collectors.scripts.ai_info.fetch_or_models
-
-      - name: "2. Fetch Artificial Analysis Benchmark"
-        if: |
-          github.event_name == 'schedule' ||
-          contains(fromJSON('["fetch_or_models","fetch_aa_benchmark"]'), github.event.inputs.start_from)
+          contains(fromJSON('["collect"]'), github.event.inputs.start_from)
         env:
-          ARTIFICIAL_ANALYSIS_API_KEY: ${{ secrets.ARTIFICIAL_ANALYSIS_API_KEY }}
-        run: python -m collectors.scripts.ai_info.fetch_aa_benchmark
-
-      - name: "3. Upload Raw Data to OCI"
-        if: |
-          github.event_name == 'schedule' ||
-          contains(fromJSON('["fetch_or_models","fetch_aa_benchmark","upload_to_oci"]'), github.event.inputs.start_from)
-        env:
+          GITHUB_TOKEN:        ${{ secrets.GITHUB_TOKEN }}
+          CF_ACCOUNT_ID:       ${{ secrets.CF_ACCOUNT_ID }}
+          CF_API_TOKEN:        ${{ secrets.CF_API_TOKEN }}
           OCI_NAMESPACE:       ${{ secrets.OCI_NAMESPACE }}
           OCI_BUCKET:          ${{ secrets.OCI_BUCKET }}
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
-        run: python -m collectors.scripts.ai_info.upload_to_oci
+        run: python -m collectors.scripts.ai_tracker.pipeline
 
-      - name: "4. Trigger Spring Pipeline"
+      - name: "2. Trigger Spring Pipeline"
         if: |
           github.event_name == 'schedule' ||
-          contains(fromJSON('["fetch_or_models","fetch_aa_benchmark","upload_to_oci","webhook_trigger"]'), github.event.inputs.start_from)
+          contains(fromJSON('["collect","webhook_trigger"]'), github.event.inputs.start_from)
         env:
           SPRING_WEBHOOK_URL:    ${{ secrets.SPRING_WEBHOOK_URL }}
           SPRING_WEBHOOK_SECRET: ${{ secrets.SPRING_WEBHOOK_SECRET }}
@@ -95,7 +82,7 @@ jobs:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
         run: |
           python -c "
-          from collectors.scripts.ai_info.notify import notify_failure
+          from collectors.scripts.ai_tracker.notify import notify_failure
           run_url = '${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}'
           notify_failure('pipeline', Exception(f'워크플로우 실패: {run_url}'))
           "

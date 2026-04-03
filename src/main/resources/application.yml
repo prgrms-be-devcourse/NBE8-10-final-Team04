@@ -29,9 +29,21 @@ spring:
       max-request-size: 5MB
 
 app:
+  embedding:
+    base-url: ${APP_EMBEDDING_BASE_URL:https://embedding-server-domain}
+  prompts:
+    base-path: ${APP_PROMPTS_BASE_PATH:data/prompts}
+    oci-prefix: ${OCI_OBJECT_STORAGE_PROMPTS_PREFIX:data/prompts/}
   mcp:
     recommendation:
-      candidate-source: ${APP_MCP_RECOMMENDATION_CANDIDATE_SOURCE:mock}
+      candidate-source: ${APP_MCP_RECOMMENDATION_CANDIDATE_SOURCE:skill-search}
+      ranking:
+        weight:
+          primary: ${APP_MCP_RECOMMENDATION_WEIGHT_PRIMARY:0.60}
+          stars: ${APP_MCP_RECOMMENDATION_WEIGHT_STARS:0.20}
+          forks: ${APP_MCP_RECOMMENDATION_WEIGHT_FORKS:0.10}
+          freshness: ${APP_MCP_RECOMMENDATION_WEIGHT_FRESHNESS:0.10}
+        final-score-threshold: ${APP_MCP_RECOMMENDATION_FINAL_SCORE_THRESHOLD:0.45}
   storage:
     type: ${APP_STORAGE_TYPE:oci}
 

@@ -1,8 +1,10 @@
 """
-webhook_trigger.py — Spring 서버에 AI 데이터 파이프라인 실행 요청
+shared/webhook_trigger.py — Spring 서버 Webhook 공통 트리거
 
 raw 데이터가 OCI에 업로드된 후 Spring 서버의 Webhook 엔드포인트를 호출.
 Spring에서 OCI raw 데이터를 읽어 가공 → 재업로드.
+
+ai_info, ai_tracker 파이프라인에서 공유합니다.
 
 환경변수:
     SPRING_WEBHOOK_URL:    Spring 서버 Webhook 엔드포인트
@@ -17,14 +19,13 @@ import httpx
 
 from collectors.scripts.shared.utils import setup_logging
 
+setup_logging()
 logger = logging.getLogger(__name__)
 
 TIMEOUT = 10
 
 
 def main() -> None:
-    setup_logging()
-
     webhook_url    = os.environ.get("SPRING_WEBHOOK_URL", "")
     webhook_secret = os.environ.get("SPRING_WEBHOOK_SECRET", "")
 
