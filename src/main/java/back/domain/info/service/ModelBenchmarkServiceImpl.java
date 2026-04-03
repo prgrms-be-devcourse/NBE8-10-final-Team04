@@ -1,6 +1,6 @@
 package back.domain.info.service;
 
-import back.domain.info.dto.ModelBenchmarkDto;
+import back.domain.info.dto.data.ModelBenchmarkDto;
 import back.domain.info.entity.ModelBenchmark;
 import back.domain.info.mapper.ModelStatMapper;
 import back.domain.info.repository.ModelBenchmarkRepository;
@@ -8,14 +8,10 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.ObjectMapper;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.List;
 
 @Service
@@ -24,10 +20,9 @@ import java.util.List;
 @SuppressFBWarnings(
         value = "EI_EXPOSE_REP2",
         justification = "스프링이 관리하는 ObjectMapper를 DI로 주입받아 서비스 내부에서만 사용한다.")
-public class BenchmarkServiceImpl implements BenchmarkService {
+public class ModelBenchmarkServiceImpl implements ModelBenchmarkService {
 
-    @Value("${app.ai-info.base-path:}")
-    private String basePath;
+    private static final String BASE_PATH = "data/ai-info/model_benchmarks_records.json";
 
     private final ModelBenchmarkRepository benchmarkRepository;
     private final ModelStatMapper modelStatMapper;
@@ -35,11 +30,10 @@ public class BenchmarkServiceImpl implements BenchmarkService {
     private final OciObjectStorageProcessor processor;
 
     @Override
-    @Transactional
     public void run() {
-        String content = processor.readFromOci(basePath);
+        String content = processor.readFromOci(BASE_PATH);
         if (content != null) {
-            processJson(basePath, content);
+            processJson(BASE_PATH, content);
         }
     }
 
@@ -48,12 +42,12 @@ public class BenchmarkServiceImpl implements BenchmarkService {
         try {
             benchmarkDtos = objectMapper.readValue(json, new TypeReference<List<ModelBenchmarkDto>>() {});
         } catch (Exception e) {
-            log.error("[AiInfoService] JSON 파싱 실패: {}", resourceName, e);
+            log.error("[ModelBenchmarkServiceImpl] JSON 파싱 실패: {}", resourceName, e);
             return;
         }
 
         if (benchmarkDtos == null || benchmarkDtos.isEmpty()) {
-            log.warn("[StatService] model_benchmarks JSON 파일에서 읽은 데이터가 없습니다.");
+            log.warn("[ModelBenchmarkServiceImpl] model_benchmarks JSON 파일에서 읽은 데이터가 없습니다.");
             return;
         }
 
@@ -77,7 +71,7 @@ public class BenchmarkServiceImpl implements BenchmarkService {
         }
 
         log.info(
-                "[StatService] model_benchmarks upsert 완료. created={}, updated={}, skipped={}, total={}",
+                "[ModelBenchmarkServiceImpl] model_benchmarks upsert 완료. created={}, updated={}, skipped={}, total={}",
                 createdCount,
                 updatedCount,
                 skippedCount,
@@ -85,29 +79,16 @@ public class BenchmarkServiceImpl implements BenchmarkService {
         );
     }
 
+    @Transactional
     private ModelBenchmark createModelBenchmark(ModelBenchmarkDto dto) {
         ModelBenchmark benchmark = modelStatMapper.toModelBenchmarkEntity(dto);
         ModelBenchmark savedBenchmark = benchmarkRepository.save(benchmark);
         return savedBenchmark;
     }
 
+    @Transactional
     private void updateModelBenchmark(ModelBenchmark benchmark, ModelBenchmarkDto dto) {
         benchmark.update(dto);
-        log.info(
-                "[StatService] model_benchmark 수정: modelApiId={}, metricType={}",
-                benchmark.getModelApiId(),
-                benchmark.getMetricType()
-        );
-    }
-
-    private <T> T readJson(String path, TypeReference<T> typeReference) {
-        try {
-            String json = Files.readString(Path.of(path));
-            return objectMapper.readValue(json, typeReference);
-        } catch (IOException e) {
-            log.error("[StatService] JSON 읽기 실패: {}", path, e);
-            return null;
-        }
     }
 
 }

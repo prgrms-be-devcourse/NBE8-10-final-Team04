@@ -1,5 +1,6 @@
 package back.domain.info.service;
 
 public interface AiInfoService {
-    public void run();
+    void run();
+    void processJson(String resourceName, String json);
 }

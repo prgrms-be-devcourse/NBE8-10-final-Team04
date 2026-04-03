@@ -1,5 +1,5 @@
 package back.domain.info.service;
 
-public interface BenchmarkService {
+public interface ModelBenchmarkService {
     public void run();
 }
