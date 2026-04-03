@@ -7,6 +7,7 @@ import back.domain.info.entity.AiVendor;
 import back.domain.info.mapper.AiModelMapper;
 import back.domain.info.repository.AiModelFamilyRepository;
 import back.domain.info.repository.AiVendorRepository;
+import back.global.storage.OciObjectStorageReader;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -30,13 +31,13 @@ public class AiInfoServiceImpl implements AiInfoService {
     private final AiModelFamilyRepository aiModelFamilyRepository;
     private final AiModelMapper aiModelMapper;
     private final ObjectMapper objectMapper;
-    private final OciObjectStorageProcessor processor;
+    private final OciObjectStorageReader storageReader;
 
     private static final String BASE_PATH = "data/ai-info/integrated_major_models.json";
 
     @Override
     public void run() {
-        String content = processor.readFromOci(BASE_PATH);
+        String content = storageReader.readText(BASE_PATH);
         if (content != null) {
             processJson(BASE_PATH, content);
         }
@@ -45,7 +46,6 @@ public class AiInfoServiceImpl implements AiInfoService {
     /**
      * JSON 문자열을 파싱해 vendor·family를 upsert한다.
      */
-    @Override
     public void processJson(String resourceName, String json) {
         List<VendorDto> vendorDtos;
         try {

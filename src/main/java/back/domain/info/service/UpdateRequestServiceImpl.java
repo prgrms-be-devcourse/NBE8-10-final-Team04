@@ -12,6 +12,8 @@ import back.domain.info.mapper.RequestMapper;
 import back.domain.info.repository.AiModelFamilyRepository;
 import back.domain.info.repository.AiVendorRepository;
 import back.domain.info.repository.UpdateRequestRepository;
+import back.global.storage.OciObjectStorageReader;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,12 +24,16 @@ import tools.jackson.databind.ObjectMapper;
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@SuppressFBWarnings(
+        value = "EI_EXPOSE_REP2",
+        justification = "스프링이 관리하는 ObjectMapper를 DI로 주입받아 서비스 내부에서만 사용한다."
+)
 public class UpdateRequestServiceImpl implements UpdateRequestService {
 
     private static final String BASE_PATH = "data/ai-tracker/updates_raw.json";
 
     private final ObjectMapper objectMapper;
-    private final OciObjectStorageProcessor processor;
+    private final OciObjectStorageReader storageReader;
     private final AiVendorRepository aiVendorRepository;
     private final AiModelFamilyRepository familyRepository;
     private final UpdateRequestRepository requestRepository;
@@ -35,7 +41,7 @@ public class UpdateRequestServiceImpl implements UpdateRequestService {
 
     @Override
     public void run() {
-        String content = processor.readFromOci(BASE_PATH);
+        String content = storageReader.readText(BASE_PATH);
         if (content != null) {
             processJson(BASE_PATH, content);
         }
@@ -127,6 +133,8 @@ public class UpdateRequestServiceImpl implements UpdateRequestService {
     @Override
     @Transactional
     public PageUpdateRequestResponse getUpdatesApproved(Pageable pageable) {
-        return new PageUpdateRequestResponse(requestRepository.findAllByStatus(Status.APPROVED, pageable).map(UpdateRequestResponse::new));
+        return new PageUpdateRequestResponse(
+                requestRepository.findAllByStatus(Status.APPROVED, pageable).map(UpdateRequestResponse::new)
+        );
     }
 }

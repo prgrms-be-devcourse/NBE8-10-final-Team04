@@ -4,6 +4,7 @@ import back.domain.info.dto.data.ModelBenchmarkDto;
 import back.domain.info.entity.ModelBenchmark;
 import back.domain.info.mapper.ModelStatMapper;
 import back.domain.info.repository.ModelBenchmarkRepository;
+import back.global.storage.OciObjectStorageReader;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -27,11 +28,11 @@ public class ModelBenchmarkServiceImpl implements ModelBenchmarkService {
     private final ModelBenchmarkRepository benchmarkRepository;
     private final ModelStatMapper modelStatMapper;
     private final ObjectMapper objectMapper;
-    private final OciObjectStorageProcessor processor;
+    private final OciObjectStorageReader storageReader;
 
     @Override
     public void run() {
-        String content = processor.readFromOci(BASE_PATH);
+        String content = storageReader.readText(BASE_PATH);
         if (content != null) {
             processJson(BASE_PATH, content);
         }
