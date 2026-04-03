@@ -32,10 +32,6 @@ public class AiModelFamily extends BaseEntity {
     @Column(name = "common_description", columnDefinition = "TEXT")
     private String commonDescription;   // 시리즈 공통 특징 설명 (상세 페이지 상단 노출용)
 
-    @OneToMany(mappedBy = "family", cascade = CascadeType.ALL, orphanRemoval = true)
-    @Builder.Default
-    private List<AiModel> models = new ArrayList<>();
-
     public void update(String commonDescription) {
         this.commonDescription = commonDescription;
     }

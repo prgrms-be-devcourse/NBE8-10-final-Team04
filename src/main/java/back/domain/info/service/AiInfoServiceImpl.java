@@ -1,25 +1,21 @@
 package back.domain.info.service;
 
-import back.domain.info.dto.FamilyDto;
-import back.domain.info.dto.ModelDto;
-import back.domain.info.dto.VendorDto;
-import back.domain.info.entity.AiModel;
+import back.domain.info.dto.data.FamilyDto;
+import back.domain.info.dto.data.VendorDto;
 import back.domain.info.entity.AiModelFamily;
 import back.domain.info.entity.AiVendor;
 import back.domain.info.mapper.AiModelMapper;
 import back.domain.info.repository.AiModelFamilyRepository;
-import back.domain.info.repository.AiModelRepository;
 import back.domain.info.repository.AiVendorRepository;
+import back.global.storage.OciObjectStorageReader;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.ObjectMapper;
 
-import java.io.IOException;
 import java.util.List;
 
 @Slf4j
@@ -31,22 +27,36 @@ import java.util.List;
 )
 public class AiInfoServiceImpl implements AiInfoService {
 
-    @Value("${app.info.json-path:data/ai-info/integrated_major_models.json}")
-    private String jsonFilePath;
-
     private final AiVendorRepository aiVendorRepository;
     private final AiModelFamilyRepository aiModelFamilyRepository;
-    private final AiModelRepository aiModelRepository;
     private final AiModelMapper aiModelMapper;
     private final ObjectMapper objectMapper;
+    private final OciObjectStorageReader storageReader;
 
-    @Transactional
+    private static final String BASE_PATH = "data/ai-info/integrated_major_models.json";
+
     @Override
     public void run() {
+        String content = storageReader.readText(BASE_PATH);
+        if (content != null) {
+            processJson(BASE_PATH, content);
+        }
+    }
 
-        List<VendorDto> vendorDtos = readJson(jsonFilePath);
+    /**
+     * JSON 문자열을 파싱해 vendor·family를 upsert한다.
+     */
+    public void processJson(String resourceName, String json) {
+        List<VendorDto> vendorDtos;
+        try {
+            vendorDtos = objectMapper.readValue(json, new TypeReference<List<VendorDto>>() {});
+        } catch (Exception e) {
+            log.error("[AiInfoService] JSON 파싱 실패: {}", resourceName, e);
+            return;
+        }
+
         if (vendorDtos == null || vendorDtos.isEmpty()) {
-            log.warn("[AiInfoService] JSON 파일에서 읽은 데이터가 없습니다.");
+            log.warn("[AiInfoService] JSON 파일에서 읽은 데이터가 없습니다: {}", resourceName);
             return;
         }
 
@@ -54,8 +64,7 @@ public class AiInfoServiceImpl implements AiInfoService {
         int updatedVendorCount = 0;
 
         for (VendorDto vendorDto : vendorDtos) {
-            AiVendor vendor = aiVendorRepository.findByName(vendorDto.getName())
-                    .orElse(null);
+            AiVendor vendor = aiVendorRepository.findByName(vendorDto.getName()).orElse(null);
 
             if (vendor == null) {
                 vendor = createVendor(vendorDto);
@@ -69,19 +78,22 @@ public class AiInfoServiceImpl implements AiInfoService {
         }
 
         log.info(
-                "[AiInfoServiceImpl] vendor upsert 완료. created={}, updated={}, total={}",
+                "[AiInfoService] vendor upsert 완료 ({}). created={}, updated={}, total={}",
+                resourceName,
                 createdVendorCount,
                 updatedVendorCount,
                 vendorDtos.size()
         );
     }
 
+    @Transactional
     private AiVendor createVendor(VendorDto vendorDto) {
         AiVendor vendor = aiModelMapper.toVendorEntity(vendorDto);
         AiVendor savedVendor = aiVendorRepository.save(vendor);
         return savedVendor;
     }
 
+    @Transactional
     private void updateVendor(AiVendor vendor, VendorDto vendorDto) {
         vendor.update(
                 vendorDto.getOfficialUrl(),
@@ -105,7 +117,6 @@ public class AiInfoServiceImpl implements AiInfoService {
                 updateFamily(family, familyDto);
             }
 
-            processModels(family, familyDto);
         }
     }
 
@@ -116,67 +127,15 @@ public class AiInfoServiceImpl implements AiInfoService {
                 .orElse(null);
     }
 
+    @Transactional
     private AiModelFamily createFamily(AiVendor vendor, FamilyDto familyDto) {
         AiModelFamily family = aiModelMapper.toFamilyEntity(familyDto, vendor);
         return aiModelFamilyRepository.save(family);
     }
 
+    @Transactional
     private void updateFamily(AiModelFamily family, FamilyDto familyDto) {
         family.update(familyDto.getCommonDescription());
-    }
-
-    private void processModels(AiModelFamily family, FamilyDto familyDto) {
-        if (familyDto.getModels() == null || familyDto.getModels().isEmpty()) {
-            return;
-        }
-
-        for (ModelDto modelDto : familyDto.getModels()) {
-            AiModel model = aiModelRepository.findByApiId(modelDto.getApiId())
-                    .orElse(null);
-
-            if (model == null) {
-                createModel(family, modelDto);
-            } else {
-                updateModel(model, modelDto);
-            }
-        }
-    }
-
-    private AiModel createModel(AiModelFamily family, ModelDto modelDto) {
-        AiModel model = aiModelMapper.toModelEntity(modelDto, family);
-        return aiModelRepository.save(model);
-    }
-
-    private void updateModel(AiModel model, ModelDto modelDto) {
-        model.update(
-                modelDto.getModelName(),
-                modelDto.getContextWindow(),
-                modelDto.getMaxOutputTokens(),
-                modelDto.getReleaseDate(),
-                modelDto.getIsPreview(),
-                modelDto.getModelImageUrl(),
-                modelDto.getInputPrice(),
-                modelDto.getOutputPrice(),
-                modelDto.getInputModalities(),
-                modelDto.getOutputModalities()
-        );
-    }
-
-    private List<VendorDto> readJson(String path) {
-        try {
-            log.info("[DataSeedService] JSON을 읽습니다: {}", path);
-            String json = java.nio.file.Files.readString(java.nio.file.Path.of(path));
-            return objectMapper.readValue(json, new TypeReference<>() {});
-        } catch (IOException e) {
-            log.error("[DataSeedService] JSON 읽기 실패: {}", path, e);
-            return List.of();
-        }
-    }
-
-    // OCI Object Storage 연동 시 이 메서드만 교체
-    private List<VendorDto> readFromOci(String bucket, String objectName) throws IOException {
-        // TODO: OCI SDK 연동
-        return List.of();
     }
 
 }
