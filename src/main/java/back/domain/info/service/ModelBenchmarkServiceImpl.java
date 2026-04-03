@@ -1,12 +1,8 @@
 package back.domain.info.service;
 
-import back.domain.info.dto.CategoryStatDto;
 import back.domain.info.dto.ModelBenchmarkDto;
-import back.domain.info.entity.CategoryStat;
 import back.domain.info.entity.ModelBenchmark;
 import back.domain.info.mapper.ModelStatMapper;
-import back.domain.info.repository.AiModelRepository;
-import back.domain.info.repository.CategoryStatRepository;
 import back.domain.info.repository.ModelBenchmarkRepository;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import jakarta.transaction.Transactional;
@@ -28,67 +24,33 @@ import java.util.List;
 @SuppressFBWarnings(
         value = "EI_EXPOSE_REP2",
         justification = "스프링이 관리하는 ObjectMapper를 DI로 주입받아 서비스 내부에서만 사용한다.")
-public class StatServiceImpl implements StatService {
+public class BenchmarkServiceImpl implements BenchmarkService {
 
-    @Value("${app.info.category-stat-path:data/stats/category_stats.json}")
-    private String categoryStatPath;
+    @Value("${app.ai-info.base-path:}")
+    private String basePath;
 
-    @Value("${app.info.model-benchmark-path:data/stats/model_benchmarks_records.json}")
-    private String modelBenchmarkPath;
-
-    private final CategoryStatRepository categoryStatRepository;
-    private final ModelBenchmarkRepository modelBenchmarkRepository;
-    private final AiModelRepository aiModelRepository;
+    private final ModelBenchmarkRepository benchmarkRepository;
     private final ModelStatMapper modelStatMapper;
     private final ObjectMapper objectMapper;
+    private final OciObjectStorageProcessor processor;
 
     @Override
     @Transactional
     public void run() {
-        processCategoryStats();
-        processModelBenchmarks();
+        String content = processor.readFromOci(basePath);
+        if (content != null) {
+            processJson(basePath, content);
+        }
     }
 
-    private void processCategoryStats() {
-        List<CategoryStatDto> statDtos = readJson(
-                categoryStatPath,
-                new TypeReference<List<CategoryStatDto>>() {}
-        );
-
-        if (statDtos == null || statDtos.isEmpty()) {
-            log.warn("[StatService] category_stats JSON 파일에서 읽은 데이터가 없습니다.");
+    private void processJson(String resourceName, String json) {
+        List<ModelBenchmarkDto> benchmarkDtos;
+        try {
+            benchmarkDtos = objectMapper.readValue(json, new TypeReference<List<ModelBenchmarkDto>>() {});
+        } catch (Exception e) {
+            log.error("[AiInfoService] JSON 파싱 실패: {}", resourceName, e);
             return;
         }
-
-        int createdCount = 0;
-        int updatedCount = 0;
-
-        for (CategoryStatDto statDto : statDtos) {
-            CategoryStat stat = categoryStatRepository.findByCategory(statDto.getCategory())
-                    .orElse(null);
-
-            if (stat == null) {
-                createCategoryStat(statDto);
-                createdCount++;
-            } else {
-                updateCategoryStat(stat, statDto);
-                updatedCount++;
-            }
-        }
-
-        log.info(
-                "[StatService] category_stats upsert 완료. created={}, updated={}, total={}",
-                createdCount,
-                updatedCount,
-                statDtos.size()
-        );
-    }
-
-    private void processModelBenchmarks() {
-        List<ModelBenchmarkDto> benchmarkDtos = readJson(
-                modelBenchmarkPath,
-                new TypeReference<List<ModelBenchmarkDto>>() {}
-        );
 
         if (benchmarkDtos == null || benchmarkDtos.isEmpty()) {
             log.warn("[StatService] model_benchmarks JSON 파일에서 읽은 데이터가 없습니다.");
@@ -101,7 +63,7 @@ public class StatServiceImpl implements StatService {
 
         for (ModelBenchmarkDto benchmarkDto : benchmarkDtos) {
 
-            ModelBenchmark benchmark = modelBenchmarkRepository
+            ModelBenchmark benchmark = benchmarkRepository
                     .findByModelApiIdAndMetricType(benchmarkDto.getModelApiId(), benchmarkDto.getMetricType())
                     .orElse(null);
 
@@ -123,20 +85,9 @@ public class StatServiceImpl implements StatService {
         );
     }
 
-    private CategoryStat createCategoryStat(CategoryStatDto dto) {
-        CategoryStat stat = modelStatMapper.toCategoryStatEntity(dto);
-        CategoryStat savedStat = categoryStatRepository.save(stat);
-        return savedStat;
-    }
-
-    private void updateCategoryStat(CategoryStat stat, CategoryStatDto dto) {
-        stat.update(dto);
-        log.info("[StatService] category_stat 수정: {}", stat.getCategory());
-    }
-
     private ModelBenchmark createModelBenchmark(ModelBenchmarkDto dto) {
         ModelBenchmark benchmark = modelStatMapper.toModelBenchmarkEntity(dto);
-        ModelBenchmark savedBenchmark = modelBenchmarkRepository.save(benchmark);
+        ModelBenchmark savedBenchmark = benchmarkRepository.save(benchmark);
         return savedBenchmark;
     }
 
@@ -158,4 +109,5 @@ public class StatServiceImpl implements StatService {
             return null;
         }
     }
+
 }

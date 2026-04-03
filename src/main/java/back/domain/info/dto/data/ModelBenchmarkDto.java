@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 public class ModelBenchmarkDto {
 
-    @JsonProperty("model_api_id")
+    @JsonProperty("aa_slug")
     private String modelApiId;
 
     @JsonProperty("metric_type")

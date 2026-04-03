@@ -12,7 +12,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
-import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -21,21 +20,18 @@ import org.junit.jupiter.api.io.TempDir;
 import org.mockito.ArgumentCaptor;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import back.domain.info.entity.CategoryStat;
 import back.domain.info.entity.ModelBenchmark;
 import back.domain.info.enums.MetricType;
 import back.domain.info.mapper.ModelStatMapper;
-import back.domain.info.repository.AiModelRepository;
-import back.domain.info.repository.CategoryStatRepository;
 import back.domain.info.repository.ModelBenchmarkRepository;
 import tools.jackson.databind.ObjectMapper;
 
-class StatServiceImplTest {
+class BenchmarkServiceImplTest {
 
     @TempDir
     Path tempDir;
 
-    private StatServiceImpl statService;
+    private BenchmarkServiceImpl statService;
 
     private CategoryStatRepository categoryStatRepository;
 
@@ -48,7 +44,7 @@ class StatServiceImplTest {
         categoryStatRepository = mock(CategoryStatRepository.class);
         modelBenchmarkRepository = mock(ModelBenchmarkRepository.class);
         aiModelRepository = mock(AiModelRepository.class);
-        statService = new StatServiceImpl(
+        statService = new BenchmarkServiceImpl(
                 categoryStatRepository,
                 modelBenchmarkRepository,
                 aiModelRepository,

@@ -20,5 +20,5 @@ public class FamilyDto {
     @JsonProperty("common_description")
     private String commonDescription;
 
-    private List<ModelDto> models;
+//    private List<ModelDto> models;
 }
