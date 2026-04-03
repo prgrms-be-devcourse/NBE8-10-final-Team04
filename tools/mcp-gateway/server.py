@@ -32,6 +32,16 @@ def _error(error_type: str, message: str, **extra: Any) -> dict[str, Any]:
     return payload
 
 
+def _success(payload: Any) -> dict[str, Any]:
+    if isinstance(payload, dict):
+        response = dict(payload)
+    else:
+        response = {"data": payload}
+
+    response["success"] = True
+    return response
+
+
 @mcp.tool(name="get_start_agent_template")
 def get_start_agent_template(agentType: str, mcpPersonalToken: str | None = None) -> dict[str, Any]:
     """Fetches start.agent.md template. Uses tool token first, then MCP_PERSONAL_TOKEN env fallback."""
@@ -40,7 +50,7 @@ def get_start_agent_template(agentType: str, mcpPersonalToken: str | None = None
             mcp_personal_token=mcpPersonalToken,
             agent_type=agentType,
         )
-        return response
+        return _success(response)
     except GatewayValidationError as validation_error:
         return _error("validation_error", str(validation_error))
     except GatewayHttpError as http_error:
@@ -62,7 +72,7 @@ def recommend_skills(keywords: str, mcpPersonalToken: str | None = None) -> dict
             mcp_personal_token=mcpPersonalToken,
             keywords=keywords,
         )
-        return response
+        return _success(response)
     except GatewayValidationError as validation_error:
         return _error("validation_error", str(validation_error))
     except GatewayHttpError as http_error:

@@ -17,7 +17,7 @@ from gateway.spring_proxy_client import SpringProxyClient
 @dataclass(frozen=True)
 class SelectedSkill:
     category: str
-    skill_id: str
+    skill_id: int
     final_score: float
     source_repo: str
     skill_md_raw: str
@@ -212,7 +212,7 @@ class AutoFlowService:
                 raise GatewayValidationError("selectedSkills item must be a JSON object.")
 
             category = str(raw_skill.get("category", "unknown")).strip() or "unknown"
-            skill_id = str(raw_skill.get("skillId", "unknown")).strip() or "unknown"
+            skill_id = self._parse_skill_id(raw_skill.get("skillId"))
             source_repo = str(raw_skill.get("sourceRepo", "unknown")).strip() or "unknown"
             skill_md_raw = str(raw_skill.get("skillMdRaw", "")).strip()
 
@@ -235,6 +235,25 @@ class AutoFlowService:
             )
 
         return selected_skills
+
+    def _parse_skill_id(self, raw_skill_id: Any) -> int:
+        if isinstance(raw_skill_id, bool):
+            return 0
+
+        if isinstance(raw_skill_id, int):
+            return max(raw_skill_id, 0)
+
+        if isinstance(raw_skill_id, float):
+            if raw_skill_id.is_integer():
+                return max(int(raw_skill_id), 0)
+            return 0
+
+        if isinstance(raw_skill_id, str):
+            normalized = raw_skill_id.strip()
+            if normalized.lstrip("-").isdigit():
+                return max(int(normalized), 0)
+
+        return 0
 
     def _build_skill_file_action(self, selected_skill: SelectedSkill) -> dict[str, str]:
         safe_category = self._slug(selected_skill.category)

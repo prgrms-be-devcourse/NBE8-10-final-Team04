@@ -11,7 +11,14 @@ class GatewaySettings:
     @staticmethod
     def from_env() -> "GatewaySettings":
         base_url = os.getenv("SPRING_API_BASE_URL", "http://localhost:8080").rstrip("/")
-        timeout_seconds = float(os.getenv("GATEWAY_HTTP_TIMEOUT_SECONDS", "10"))
+        raw_timeout_seconds = os.getenv("GATEWAY_HTTP_TIMEOUT_SECONDS", "10")
+        try:
+            timeout_seconds = float(raw_timeout_seconds)
+        except ValueError as exc:
+            raise ValueError(
+                "Invalid value for GATEWAY_HTTP_TIMEOUT_SECONDS: "
+                f"{raw_timeout_seconds!r}. Expected a numeric value."
+            ) from exc
         raw_token = os.getenv("MCP_PERSONAL_TOKEN")
         mcp_personal_token = raw_token.strip() if raw_token and raw_token.strip() else None
 

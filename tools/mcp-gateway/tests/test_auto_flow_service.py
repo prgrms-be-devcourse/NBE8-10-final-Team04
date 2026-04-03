@@ -63,6 +63,32 @@ class _StubClientWithEmptyRecommendation:
         return {"data": {"selectedSkills": []}}
 
 
+class _StubClientWithStringSkillId:
+    def get_start_agent_template(self, mcp_personal_token, agent_type):
+        return {
+            "data": {
+                "templateName": "start.agent.md",
+                "version": "v3",
+                "templateMarkdown": "# template",
+            }
+        }
+
+    def recommend_skills(self, mcp_personal_token, keywords):
+        return {
+            "data": {
+                "selectedSkills": [
+                    {
+                        "category": "backend",
+                        "skillId": "7",
+                        "finalScore": 0.91,
+                        "sourceRepo": "example/doc-agent",
+                        "skillMdRaw": "Spring Backend Code Review",
+                    }
+                ]
+            }
+        }
+
+
 class AutoFlowServiceTest(unittest.TestCase):
     def setUp(self):
         self.stub_client = _StubSpringProxyClient()
@@ -115,6 +141,8 @@ class AutoFlowServiceTest(unittest.TestCase):
         self.assertIn("기존 skills 파일을 기반으로", response["actions"]["askUser"][2])
         self.assertIn("처음부터 새로 작성하지 말고", response["actions"]["askUser"][3])
         self.assertEqual(self.stub_client.last_recommend_request["keywords"], "SpringBoot infra")
+        self.assertIsInstance(response["recommendation"]["selectedSkills"][0]["skillId"], int)
+        self.assertEqual(response["recommendation"]["selectedSkills"][0]["skillId"], 1)
 
     def test_finalize_step_returns_agents_write_and_start_file_delete_actions(self):
         response = self.service.run(
@@ -183,6 +211,21 @@ class AutoFlowServiceTest(unittest.TestCase):
                 decision=None,
                 customization_notes=None,
             )
+
+    def test_collected_step_parses_string_skill_id_to_int(self):
+        service = AutoFlowService(_StubClientWithStringSkillId())
+
+        response = service.run(
+            step="COLLECTED",
+            mcp_personal_token="mcp_token_1",
+            agent_type=None,
+            keywords="SpringBoot infra",
+            decision=None,
+            customization_notes=None,
+        )
+
+        self.assertEqual(response["recommendation"]["selectedSkills"][0]["skillId"], 7)
+        self.assertIsInstance(response["recommendation"]["selectedSkills"][0]["skillId"], int)
 
 
 if __name__ == "__main__":
