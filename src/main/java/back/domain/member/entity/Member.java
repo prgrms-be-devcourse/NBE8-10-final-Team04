@@ -10,6 +10,8 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
+
 @Entity
 @Table(name = "users")
 @Getter
@@ -73,6 +75,21 @@ public class Member extends BaseEntity {
             throw new IllegalArgumentException(fieldName + " must not be blank");
         }
         return value.trim();
+    }
+
+//    구독 관련 컬럼 추가
+    @Column(name = "free_usage_count")
+    private int freeUsageCount;  //이번 달 사용 횟수
+
+    @Column(name = "free_usage_reset_at")
+    private LocalDateTime freeUsageResetAt;  //초기화 날짜 (다음달 1일)
+
+    public void increaseFreeUsageCount() {
+        this.freeUsageCount++;
+    }
+
+    public int getFreeUsageCount() {
+        return this.freeUsageCount;
     }
 
 }
