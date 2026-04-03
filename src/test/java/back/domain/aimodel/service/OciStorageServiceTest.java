@@ -1,7 +1,8 @@
 package back.domain.aimodel.service;
 
-import back.domain.aimodel.config.OciProperties;
+import back.global.config.properties.OciProperties;
 import back.global.exception.ServiceException;
+import back.global.infra.oci.OciStorageServiceImpl;
 import com.oracle.bmc.objectstorage.ObjectStorage;
 import com.oracle.bmc.objectstorage.requests.GetObjectRequest;
 import com.oracle.bmc.objectstorage.requests.PutObjectRequest;

@@ -14,7 +14,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import static org.mockito.Mockito.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(AiDataController.class)
@@ -32,7 +32,8 @@ class AiDataControllerTest extends WebMvcTestSupport {
                         .with(csrf())
                         .header("X-Webhook-Secret", "test-secret"))
                 .andExpect(status().isOk())
-                .andExpect(content().string("Pipeline triggered"));
+                .andExpect(jsonPath("$.message").value("파이프라인이 시작되었습니다."))
+                .andExpect(jsonPath("$.data").value("triggered"));
     }
 
     @Test
@@ -76,7 +77,8 @@ class AiDataControllerTest extends WebMvcTestSupport {
         mockMvc.perform(post("/api/v1/ai-model/pipeline/run")
                         .with(csrf()))
                 .andExpect(status().isOk())
-                .andExpect(content().string("Pipeline completed"));
+                .andExpect(jsonPath("$.message").value("파이프라인 실행 완료"))
+                .andExpect(jsonPath("$.data").value("completed"));
 
         verify(pipelineService, times(1)).run();
     }

@@ -1,12 +1,13 @@
-package back.domain.aimodel.config;
+package back.global.config.properties;
 
+import back.domain.aimodel.config.AiModelProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
 @EnableConfigurationProperties({
-        AiModelProperties.class,
         OciProperties.class,
-        GeminiProperties.class
+        GeminiProperties.class,
+        AiModelProperties.class
 })
-public class AiModelConfig {}
+public class PropertiesConfig {}

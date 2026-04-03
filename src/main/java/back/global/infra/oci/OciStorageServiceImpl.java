@@ -1,6 +1,6 @@
-package back.domain.aimodel.service;
+package back.global.infra.oci;
 
-import back.domain.aimodel.config.OciProperties;
+import back.global.config.properties.OciProperties;
 import back.global.exception.CommonErrorCode;
 import back.global.exception.ServiceException;
 import com.oracle.bmc.objectstorage.ObjectStorage;
@@ -11,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
 import tools.jackson.core.JacksonException;
+import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.json.JsonMapper;
 
 import java.io.ByteArrayInputStream;
@@ -44,7 +45,7 @@ public class OciStorageServiceImpl implements OciStorageService {
         if (client == null) {
             throw new ServiceException(
                     CommonErrorCode.INTERNAL_SERVER_ERROR,
-                    "[OciStorageService] OCI 클라이언트가 초기화되지 않았습니다.",
+                    "[OciStorageService#client] OCI 클라이언트가 초기화되지 않았습니다.",
                     "OCI 스토리지를 사용할 수 없는 환경입니다."
             );
         }
@@ -84,6 +85,20 @@ public class OciStorageServiceImpl implements OciStorageService {
         byte[] bytes = download(objectName);
         try {
             return jsonMapper.readValue(bytes, clazz);
+        } catch (JacksonException e) {
+            throw new ServiceException(
+                    CommonErrorCode.INTERNAL_SERVER_ERROR,
+                    "[OciStorageService#downloadJson] JSON 역직렬화 실패 - objectName: " + objectName,
+                    "JSON 데이터를 객체로 변환하는데 실패했습니다."
+            );
+        }
+    }
+
+    @Override
+    public <T> T downloadJson(String objectName, TypeReference<T> typeReference) {
+        byte[] bytes = download(objectName);
+        try {
+            return jsonMapper.readValue(bytes, typeReference);
         } catch (JacksonException e) {
             throw new ServiceException(
                     CommonErrorCode.INTERNAL_SERVER_ERROR,

@@ -1,7 +1,7 @@
 package back.domain.aimodel.service;
 
 import back.domain.aimodel.config.AiModelProperties;
-import back.domain.aimodel.config.GeminiProperties;
+import back.global.config.properties.GeminiProperties;
 import back.domain.aimodel.dto.integrated.IntegratedVendor;
 import back.domain.aimodel.dto.integrated.IntegratedVendor.IntegratedFamily;
 import back.domain.aimodel.dto.openrouter.OrModelsResponse;
