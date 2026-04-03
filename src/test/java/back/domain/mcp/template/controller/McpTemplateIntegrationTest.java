@@ -64,7 +64,7 @@ class McpTemplateIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message").value("템플릿 조회 성공"))
                 .andExpect(jsonPath("$.data.templateName").value("start.agent.md"))
-                .andExpect(jsonPath("$.data.version").value("v1"))
+                .andExpect(jsonPath("$.data.version").value("v4"))
                 .andExpect(jsonPath("$.data.templateMarkdown").isString());
     }
 
