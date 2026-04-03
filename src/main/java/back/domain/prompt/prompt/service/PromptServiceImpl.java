@@ -39,22 +39,17 @@ import tools.jackson.databind.ObjectMapper;
 )
 public class PromptServiceImpl implements PromptService {
 
-    private static final String STORAGE_TYPE_OCI = "oci";
 
     private final SkillUpsertService skillUpsertService;
     private final ObjectMapper objectMapper;
     private final ObjectProvider<ObjectStorage> objectStorageProvider;
 
-    @Value("${app.storage.type:}")
-    private String storageType;
+    private static final String BASE_PATH = "data/prompts";
 
-    @Value("${app.prompts.base-path:data/prompts}")
-    private String promptsBasePath;
-
-    @Value("${app.storage.oci.namespace:}")
+    @Value("${oci.namespace:}")
     private String namespace;
 
-    @Value("${app.storage.oci.bucket:}")
+    @Value("${oci.bucket:}")
     private String bucket;
 
     @Value("${app.prompts.oci-prefix:data/prompts/}")
@@ -68,12 +63,7 @@ public class PromptServiceImpl implements PromptService {
      */
     @Override
     public void run() {
-        if (STORAGE_TYPE_OCI.equalsIgnoreCase(storageType)) {
-            runFromOci();
-            return;
-        }
-
-        runFromLocal();
+        runFromOci();
     }
 
     /**
@@ -81,7 +71,7 @@ public class PromptServiceImpl implements PromptService {
      * app.prompts.base-path 경로 아래의 .json 파일을 파일명 순으로 처리한다.
      */
     private void runFromLocal() {
-        File baseDir = new File(promptsBasePath);
+        File baseDir = new File(BASE_PATH);
 
         if (!baseDir.exists() || !baseDir.isDirectory()) {
             log.error("프롬프트 디렉터리가 존재하지 않습니다: {}", baseDir.getAbsolutePath());
