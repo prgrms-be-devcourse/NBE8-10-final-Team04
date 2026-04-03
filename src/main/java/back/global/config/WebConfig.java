@@ -18,6 +18,9 @@ public class WebConfig implements WebMvcConfigurer {
     @Value("${app.storage.local.upload-dir:./uploads}")
     private String uploadDir;
 
+    @Value("${app.embedding.base-url:https://embedding-server-domain}")
+    private String embeddingBaseUrl;
+
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
         if (!STORAGE_TYPE_LOCAL.equalsIgnoreCase(storageType)) {
@@ -36,7 +39,7 @@ public class WebConfig implements WebMvcConfigurer {
                 .build();
 
         return WebClient.builder()
-                .baseUrl("https://embedding-server-domain")
+                .baseUrl(embeddingBaseUrl)
                 .exchangeStrategies(exchangeStrategies)
                 .build();
     }
