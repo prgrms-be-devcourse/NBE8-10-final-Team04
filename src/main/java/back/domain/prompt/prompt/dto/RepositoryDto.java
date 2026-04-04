@@ -2,73 +2,70 @@ package back.domain.prompt.prompt.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 import java.util.Map;
 
-@Getter
-@NoArgsConstructor
 @SuppressFBWarnings(
         value = "EI_EXPOSE_REP",
-        justification = "Jackson DTO는 JSON 컬렉션/맵 값을 그대로 전달한다.")
-public class RepositoryDto {
+        justification = "Jackson DTO 필드는 역직렬화된 값을 그대로 전송용으로 노출한다."
+)
+public record RepositoryDto(
+        @JsonProperty("github_id")
+        Long githubId,
 
-    @JsonProperty("github_id")
-    private Long githubId;
+        @JsonProperty("name")
+        String name,
 
-    @JsonProperty("name")
-    private String name;
+        @JsonProperty("source_repo")
+        String sourceRepo,
 
-    @JsonProperty("source_repo")
-    private String sourceRepo;
+        @JsonProperty("source_url")
+        String sourceUrl,
 
-    @JsonProperty("source_url")
-    private String sourceUrl;
+        @JsonProperty("summary")
+        String summary,
 
-    @JsonProperty("summary")
-    private String summary;
+        @JsonProperty("star_count")
+        Integer starCount,
 
-    @JsonProperty("star_count")
-    private Integer starCount;
+        @JsonProperty("fork_count")
+        Integer forkCount,
 
-    @JsonProperty("fork_count")
-    private Integer forkCount;
+        @JsonProperty("size")
+        Integer size,
 
-    @JsonProperty("size")
-    private Integer size;
+        @JsonProperty("language_stats")
+        Map<String, Integer> languageStats,
 
-    @JsonProperty("language_stats")
-    private Map<String, Integer> languageStats;
+        @JsonProperty("license")
+        String license,
 
-    @JsonProperty("license")
-    private String license;
+        @JsonProperty("homepage")
+        String homepage,
 
-    @JsonProperty("homepage")
-    private String homepage;
+        @JsonProperty("owner_avatar_url")
+        String ownerAvatarUrl,
 
-    @JsonProperty("owner_avatar_url")
-    private String ownerAvatarUrl;
+        @JsonProperty("owner_type")
+        String ownerType,
 
-    @JsonProperty("owner_type")
-    private String ownerType;
+        @JsonProperty("is_official")
+        Boolean isOfficial,
 
-    @JsonProperty("is_official")
-    private Boolean isOfficial;
+        @JsonProperty("default_branch")
+        String defaultBranch,
 
-    @JsonProperty("default_branch")
-    private String defaultBranch;
+        @JsonProperty("etag")
+        String etag,
 
-    @JsonProperty("etag")
-    private String etag;
+        @JsonProperty("source_updated_at")
+        LocalDateTime sourceUpdatedAt,
 
-    @JsonProperty("source_updated_at")
-    private LocalDateTime sourceUpdatedAt;
+        @JsonProperty("active")
+        Boolean active,
 
-    @JsonProperty("active")
-    private Boolean active;
-
-    @JsonProperty("raw_metadata")
-    private Map<String, Object> rawMetadata;
+        @JsonProperty("raw_metadata")
+        Map<String, Object> rawMetadata
+) {
 }

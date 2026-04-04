@@ -25,7 +25,6 @@ public class SkillSearchServiceImpl implements SkillSearchService{
 
     private static final int DEFAULT_TOP_K = 30;
 
-
     @Override
     public SkillChunkSearchResultDto search(String query) {
         // query 값을 임베딩해서 float[] 형태의 벡터로 변환
@@ -37,7 +36,7 @@ public class SkillSearchServiceImpl implements SkillSearchService{
                 skillChunkVectorSearchRepository.searchTopK(queryVector, DEFAULT_TOP_K * 3);
 
         List<CandidateDto> candidates = results.stream()
-                .collect(Collectors.groupingBy(SkillChunkVectorSearchRowDto::getSkillId))
+                .collect(Collectors.groupingBy(SkillChunkVectorSearchRowDto::skillId))
                 .values().stream()
                 .map(this::toGroupedCandidateDto)
                 .sorted(Comparator.comparing(CandidateDto::primaryScore).reversed())
@@ -50,22 +49,22 @@ public class SkillSearchServiceImpl implements SkillSearchService{
     // 후보들 중에 skills_id가 같은 chunk들은 하나로 묶고 제일 높은 점수(similarity)를 반환한다.
     private CandidateDto toGroupedCandidateDto(List<SkillChunkVectorSearchRowDto> groupedResults) {
         SkillChunkVectorSearchRowDto best = groupedResults.stream()
-                .max(Comparator.comparing(SkillChunkVectorSearchRowDto::getSimilarity))
+                .max(Comparator.comparing(SkillChunkVectorSearchRowDto::similarity))
                 .orElseThrow();
 
         return new CandidateDto(
-                best.getSkillId(),
-                best.getSkillName(),
-                best.getRepositoryName(),
-                best.getRepositoryUrl(),
-                best.getContentMd(),
-                Category.valueOf(best.getCategory()),
-                best.getSummary() == null || best.getSummary().isBlank() ? null : best.getSummary(),
-                best.getSimilarity(),
+                best.skillId(),
+                best.skillName(),
+                best.repositoryName(),
+                best.repositoryUrl(),
+                best.contentMd(),
+                Category.valueOf(best.category()),
+                best.summary() == null || best.summary().isBlank() ? null : best.summary(),
+                best.similarity(),
                 new CandidateMetadataDto(
-                        best.getStars(),
-                        best.getForks(),
-                        best.getUpdatedAt() != null ? best.getUpdatedAt().toString() : null
+                        best.stars(),
+                        best.forks(),
+                        best.updatedAt() != null ? best.updatedAt().toString() : null
                 )
         );
     }

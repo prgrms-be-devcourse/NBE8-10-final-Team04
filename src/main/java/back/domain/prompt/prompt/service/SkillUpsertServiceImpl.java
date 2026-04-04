@@ -33,24 +33,24 @@ public class SkillUpsertServiceImpl implements SkillUpsertService {
     @Override
     @Transactional
     public Repository upsertRepository(PromptRepoItem repoItem) {
-        RepositoryDto data = repoItem.getRepository();
+        RepositoryDto data = repoItem.repository();
 
-        return repositoryRepository.findByGithubId(data.getGithubId())
+        return repositoryRepository.findByGithubId(data.githubId())
                 .map(existing -> {
                     // getSourceUpatedAt()으로 레포지터리 메타데이터 변경 감지
-                    if (!existing.getSourceUpdatedAt().equals(data.getSourceUpdatedAt())) {
+                    if (!existing.getSourceUpdatedAt().equals(data.sourceUpdatedAt())) {
                         existing.update(
-                                data.getStarCount(),
-                                data.getForkCount(),
-                                data.getEtag(),
-                                data.getSourceUpdatedAt(),
-                                data.getSummary(),
-                                data.getHomepage(),
-                                data.getLicense(),
-                                data.getOwnerAvatarUrl(),
-                                data.getActive(),
-                                data.getRawMetadata(),
-                                data.getLanguageStats()
+                                data.starCount(),
+                                data.forkCount(),
+                                data.etag(),
+                                data.sourceUpdatedAt(),
+                                data.summary(),
+                                data.homepage(),
+                                data.license(),
+                                data.ownerAvatarUrl(),
+                                data.active(),
+                                data.rawMetadata(),
+                                data.languageStats()
                         );
 
                         // 레포 메타데이터 변경 -> skills tag와 category 업데이트
@@ -68,26 +68,26 @@ public class SkillUpsertServiceImpl implements SkillUpsertService {
                 })
                 .orElseGet(() -> repositoryRepository.save(
                         Repository.builder()
-                                .githubId(data.getGithubId())
-                                .name(data.getName())
-                                .sourceRepo(data.getSourceRepo())
-                                .sourceUri(data.getSourceUrl())
-                                .summary(data.getSummary())
-                                .starCount(data.getStarCount())
-                                .forkCount(data.getForkCount())
-                                .size(data.getSize())
-                                .license(data.getLicense())
-                                .languageStats(data.getLanguageStats())
-                                .homepage(data.getHomepage())
-                                .ownerAvatarUrl(data.getOwnerAvatarUrl())
-                                .ownerType(data.getOwnerType() != null
-                                        ? OwnerType.valueOf(data.getOwnerType().toUpperCase()) : null)
-                                .isOfficial(data.getIsOfficial())
-                                .defaultBranch(data.getDefaultBranch())
-                                .etag(data.getEtag())
-                                .sourceUpdatedAt(data.getSourceUpdatedAt())
-                                .active(data.getActive())
-                                .rawMetadata(data.getRawMetadata() != null ? data.getRawMetadata() : null)
+                                .githubId(data.githubId())
+                                .name(data.name())
+                                .sourceRepo(data.sourceRepo())
+                                .sourceUri(data.sourceUrl())
+                                .summary(data.summary())
+                                .starCount(data.starCount())
+                                .forkCount(data.forkCount())
+                                .size(data.size())
+                                .license(data.license())
+                                .languageStats(data.languageStats())
+                                .homepage(data.homepage())
+                                .ownerAvatarUrl(data.ownerAvatarUrl())
+                                .ownerType(data.ownerType() != null
+                                        ? OwnerType.valueOf(data.ownerType().toUpperCase()) : null)
+                                .isOfficial(data.isOfficial())
+                                .defaultBranch(data.defaultBranch())
+                                .etag(data.etag())
+                                .sourceUpdatedAt(data.sourceUpdatedAt())
+                                .active(data.active())
+                                .rawMetadata(data.rawMetadata() != null ? data.rawMetadata() : null)
                                 .build()
                 ));
     }
@@ -95,17 +95,17 @@ public class SkillUpsertServiceImpl implements SkillUpsertService {
     @Override
     @Transactional
     public Skill upsertSkill(Repository repository, SkillDto skillDto) {
-        String name = skillDto.getName();
+        String name = skillDto.name();
         String summary = repository.getSummary() == null ? "" : repository.getSummary();
-        String rawContent = skillDto.getContentMd();
+        String rawContent = skillDto.contentMd();
         Set<String> tags = parser.extractTags(summary, rawContent);
         Category category = parser.extractCategory(summary, rawContent);
 
         return skillRepository.findByRepositoryIdAndName(repository.getId(), name)
                 .map(existing -> {
-                    if (!existing.getContentHash().equals(skillDto.getContentHash())) {
-                        existing.update(rawContent, skillDto.getContentHash(), tags, category);
-                        log.info("Skill updated: {}/{}", repository.getSourceRepo(), name);
+                    if (!existing.getContentHash().equals(skillDto.contentHash())) {
+                        existing.update(rawContent, skillDto.contentHash(), tags, category);
+                        log.info("[SkillUpsertServiceImpl#upsertSkill] Skill updated: {}/{}", repository.getSourceRepo(), name);
                     }
                     return existing;
                 })
@@ -114,8 +114,8 @@ public class SkillUpsertServiceImpl implements SkillUpsertService {
                                 .repository(repository)
                                 .name(name)
                                 .contentMd(rawContent)
-                                .contentHash(skillDto.getContentHash())
-                                .filePath(skillDto.getFilePath())
+                                .contentHash(skillDto.contentHash())
+                                .filePath(skillDto.filePath())
                                 .category(category)
                                 .tagsJson(tags)
                                 .build()
@@ -125,13 +125,13 @@ public class SkillUpsertServiceImpl implements SkillUpsertService {
     @Override
     @Transactional
     public Agent upsertAgent(Repository repository, AgentDto agentDto) {
-        String rawContent = agentDto.getContentMd();
+        String rawContent = agentDto.contentMd();
 
         return agentRepository.findByRepositoryId(repository.getId())
                 .map(existing -> {
-                    if (!existing.getContentHash().equals(agentDto.getContentHash())) {
-                        existing.update(rawContent, agentDto.getContentHash());
-                        log.info("Agent updated: {}", repository.getSourceRepo());
+                    if (!existing.getContentHash().equals(agentDto.contentHash())) {
+                        existing.update(rawContent, agentDto.contentHash());
+                        log.info("[SkillUpsertServiceImpl#upsertAgent] Agent updated: {}", repository.getSourceRepo());
                     }
                     return existing;
                 })
@@ -139,8 +139,8 @@ public class SkillUpsertServiceImpl implements SkillUpsertService {
                         Agent.builder()
                                 .repository(repository)
                                 .contentMd(rawContent)
-                                .contentHash(agentDto.getContentHash())
-                                .filePath(agentDto.getFilePath())
+                                .contentHash(agentDto.contentHash())
+                                .filePath(agentDto.filePath())
                                 .build()
                 ));
     }
