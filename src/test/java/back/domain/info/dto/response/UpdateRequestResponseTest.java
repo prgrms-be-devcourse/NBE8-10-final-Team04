@@ -20,12 +20,12 @@ class UpdateRequestResponseTest {
 
         UpdateRequestResponse response = new UpdateRequestResponse(entity);
 
-        assertThat(response.getId()).isEqualTo(1L);
-        assertThat(response.getSourceId()).isEqualTo("item-1");
-        assertThat(response.getVendorName()).isEqualTo("OpenAI");
-        assertThat(response.getFamilyName()).isEqualTo("GPT");
-        assertThat(response.getStatus()).isEqualTo(Status.APPROVED);
-        assertThat(response.getCreatedAt()).isEqualTo(LocalDateTime.of(2026, 4, 3, 9, 0));
+        assertThat(response.id()).isEqualTo(1L);
+        assertThat(response.sourceId()).isEqualTo("item-1");
+        assertThat(response.vendorName()).isEqualTo("OpenAI");
+        assertThat(response.familyName()).isEqualTo("GPT");
+        assertThat(response.status()).isEqualTo(Status.APPROVED);
+        assertThat(response.createdAt()).isEqualTo(LocalDateTime.of(2026, 4, 3, 9, 0));
     }
 
     @Test
@@ -34,8 +34,8 @@ class UpdateRequestResponseTest {
 
         UpdateRequestResponse response = new UpdateRequestResponse(entity);
 
-        assertThat(response.getFamilyName()).isNull();
-        assertThat(response.getVendorName()).isEqualTo("OpenAI");
+        assertThat(response.familyName()).isNull();
+        assertThat(response.vendorName()).isEqualTo("OpenAI");
     }
 
     private UpdateRequest createEntity(boolean withFamily) {

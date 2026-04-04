@@ -1,5 +1,8 @@
 package back.domain.prompt.search.util;
 
+import back.global.exception.CommonErrorCode;
+import back.global.exception.ServiceException;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -23,7 +26,8 @@ class VectorUtilsTest {
     @DisplayName("toFloatArray는 null 원소가 있으면 예외를 던진다")
     void toFloatArray_throwsWhenValueIsNull() {
         assertThatThrownBy(() -> VectorUtils.toFloatArray(Arrays.asList(0.1f, null)))
-                .isInstanceOf(IllegalArgumentException.class);
+                .isInstanceOfSatisfying(ServiceException.class, ex ->
+                        assertThat(ex.getErrorCode()).isEqualTo(CommonErrorCode.INTERNAL_SERVER_ERROR));
     }
 
     @Test
@@ -35,9 +39,14 @@ class VectorUtilsTest {
     @Test
     @DisplayName("toPgVector는 null, 빈 값, null 원소를 허용하지 않는다")
     void toPgVector_throwsForInvalidValues() {
-        assertThatThrownBy(() -> VectorUtils.toPgVector(null)).isInstanceOf(IllegalArgumentException.class);
-        assertThatThrownBy(() -> VectorUtils.toPgVector(List.of())).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> VectorUtils.toPgVector(null))
+                .isInstanceOfSatisfying(ServiceException.class, ex ->
+                        assertThat(ex.getErrorCode()).isEqualTo(CommonErrorCode.INTERNAL_SERVER_ERROR));
+        assertThatThrownBy(() -> VectorUtils.toPgVector(List.of()))
+                .isInstanceOfSatisfying(ServiceException.class, ex ->
+                        assertThat(ex.getErrorCode()).isEqualTo(CommonErrorCode.INTERNAL_SERVER_ERROR));
         assertThatThrownBy(() -> VectorUtils.toPgVector(Arrays.asList(0.1f, null)))
-                .isInstanceOf(IllegalArgumentException.class);
+                .isInstanceOfSatisfying(ServiceException.class, ex ->
+                        assertThat(ex.getErrorCode()).isEqualTo(CommonErrorCode.INTERNAL_SERVER_ERROR));
     }
 }

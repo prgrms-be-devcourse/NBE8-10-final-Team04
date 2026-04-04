@@ -5,7 +5,6 @@ import back.domain.info.entity.AiModelFamily;
 import back.domain.info.entity.AiVendor;
 import back.domain.info.enums.Status;
 import org.junit.jupiter.api.Test;
-import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDate;
 
@@ -17,12 +16,18 @@ class RequestMapperTest {
 
     @Test
     void toUpdateRequestEntity_mapsFields() {
-        ItemDto dto = new ItemDto();
-        ReflectionTestUtils.setField(dto, "itemId", "item-1");
-        ReflectionTestUtils.setField(dto, "url", "https://example.com/post");
-        ReflectionTestUtils.setField(dto, "sourceType", "blog");
-        ReflectionTestUtils.setField(dto, "rawContent", "raw content");
-        ReflectionTestUtils.setField(dto, "summary", "summary");
+        ItemDto dto = new ItemDto(
+                "item-1",
+                "OpenAI",
+                "GPT",
+                "blog",
+                null,
+                null,
+                "https://example.com/post",
+                "summary",
+                "raw content",
+                null
+        );
 
         AiVendor vendor = AiVendor.builder()
                 .name("OpenAI")

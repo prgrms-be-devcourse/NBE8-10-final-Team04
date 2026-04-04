@@ -1,24 +1,22 @@
 package back.domain.prompt.prompt.dto;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
 import java.util.Map;
 
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
-import org.springframework.test.util.ReflectionTestUtils;
+import static org.assertj.core.api.Assertions.assertThat;
 
 class SkillDtoTest {
 
     @Test
-    @DisplayName("rawMetadata getter는 설정된 맵 값을 그대로 반환한다")
-    void getRawMetadataReturnsAssignedValue() {
-        SkillDto skillDto = new SkillDto();
+    @DisplayName("rawMetadata accessor는 전달된 맵을 그대로 반환한다")
+    void rawMetadataReturnsAssignedValue() {
         Map<String, Object> rawMetadata = new HashMap<>(Map.of("k", "v"));
-        ReflectionTestUtils.setField(skillDto, "rawMetadata", rawMetadata);
+        SkillDto skillDto = new SkillDto("alpha", "skills/alpha.md", "content", "hash", rawMetadata);
 
-        Map<String, Object> returned = skillDto.getRawMetadata();
+        Map<String, Object> returned = skillDto.rawMetadata();
 
         assertThat(returned).isSameAs(rawMetadata);
         assertThat(returned).containsEntry("k", "v");
@@ -26,9 +24,9 @@ class SkillDtoTest {
 
     @Test
     @DisplayName("rawMetadata가 null이면 null을 반환한다")
-    void getRawMetadataReturnsNullWhenNull() {
-        SkillDto skillDto = new SkillDto();
+    void rawMetadataReturnsNullWhenNull() {
+        SkillDto skillDto = new SkillDto("alpha", "skills/alpha.md", "content", "hash", null);
 
-        assertThat(skillDto.getRawMetadata()).isNull();
+        assertThat(skillDto.rawMetadata()).isNull();
     }
 }

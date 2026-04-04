@@ -35,10 +35,10 @@ class ModelBenchmarkServiceImplTest {
         benchmarkRepository = mock(ModelBenchmarkRepository.class);
         storageReader = mock(OciObjectStorageReader.class);
         service = new ModelBenchmarkServiceImpl(
-                benchmarkRepository,
-                new ModelStatMapper(),
                 new ObjectMapper(),
-                storageReader
+                storageReader,
+                benchmarkRepository,
+                new ModelStatMapper()
         );
     }
 

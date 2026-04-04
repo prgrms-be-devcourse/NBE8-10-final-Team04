@@ -37,11 +37,11 @@ class AiInfoServiceImplTest {
         aiModelFamilyRepository = mock(AiModelFamilyRepository.class);
         storageReader = mock(OciObjectStorageReader.class);
         service = new AiInfoServiceImpl(
+                new ObjectMapper(),
+                storageReader,
                 aiVendorRepository,
                 aiModelFamilyRepository,
-                new AiModelMapper(),
-                new ObjectMapper(),
-                storageReader
+                new AiModelMapper()
         );
     }
 
@@ -79,7 +79,7 @@ class AiInfoServiceImplTest {
     }
 
     @Test
-    void processJson_updatesExistingVendorAndExistingFamily() {
+    void run_updatesExistingVendorAndExistingFamily() {
         AiVendor vendor = AiVendor.builder()
                 .name("OpenAI")
                 .officialUrl("https://old.example.com")
@@ -110,9 +110,10 @@ class AiInfoServiceImplTest {
                   }
                 ]
                 """;
+        when(storageReader.readText(BASE_PATH)).thenReturn(json);
         when(aiVendorRepository.findByName("OpenAI")).thenReturn(Optional.of(vendor));
 
-        service.processJson("ai-info.json", json);
+        service.run();
 
         assertThat(vendor.getOfficialUrl()).isEqualTo("https://openai.com");
         assertThat(vendor.getIsActive()).isTrue();
@@ -123,7 +124,7 @@ class AiInfoServiceImplTest {
     }
 
     @Test
-    void processJson_createsMissingFamilyForExistingVendor() {
+    void run_createsMissingFamilyForExistingVendor() {
         AiVendor vendor = AiVendor.builder()
                 .name("OpenAI")
                 .officialUrl("https://openai.com")
@@ -147,10 +148,11 @@ class AiInfoServiceImplTest {
                   }
                 ]
                 """;
+        when(storageReader.readText(BASE_PATH)).thenReturn(json);
         when(aiVendorRepository.findByName("OpenAI")).thenReturn(Optional.of(vendor));
         when(aiModelFamilyRepository.save(any(AiModelFamily.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        service.processJson("ai-info.json", json);
+        service.run();
 
         ArgumentCaptor<AiModelFamily> familyCaptor = ArgumentCaptor.forClass(AiModelFamily.class);
         verify(aiModelFamilyRepository).save(familyCaptor.capture());
@@ -160,8 +162,10 @@ class AiInfoServiceImplTest {
     }
 
     @Test
-    void processJson_ignoresInvalidJson() {
-        service.processJson("broken.json", "{not-json}");
+    void run_ignoresInvalidJson() {
+        when(storageReader.readText(BASE_PATH)).thenReturn("{not-json}");
+
+        service.run();
 
         verifyNoInteractions(aiVendorRepository, aiModelFamilyRepository);
     }
