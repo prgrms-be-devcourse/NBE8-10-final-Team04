@@ -1,8 +1,6 @@
 package back.domain.prompt.chunking.controller;
 
 import back.domain.prompt.chunking.service.ChunkingService;
-import back.domain.prompt.search.dto.chunk.SkillChunkSearchResultDto;
-import back.domain.prompt.search.service.SkillSearchService;
 import back.global.response.RsData;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -12,16 +10,12 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
-import java.util.List;
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.isEmptyOrNullString;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -30,15 +24,13 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class SkillChunkControllerTest {
 
     private ChunkingService chunkingService;
-    private SkillSearchService skillSearchService;
     private SkillChunkController skillChunkController;
     private MockMvc mockMvc;
 
     @BeforeEach
     void setUp() {
         chunkingService = mock(ChunkingService.class);
-        skillSearchService = mock(SkillSearchService.class);
-        skillChunkController = new SkillChunkController(chunkingService, skillSearchService);
+        skillChunkController = new SkillChunkController(chunkingService);
         mockMvc = MockMvcBuilders.standaloneSetup(skillChunkController).build();
     }
 
@@ -65,17 +57,5 @@ class SkillChunkControllerTest {
                 .andExpect(jsonPath("$.message").value(not(isEmptyOrNullString())));
 
         verify(chunkingService).chunk();
-    }
-
-    @Test
-    @DisplayName("GET /api/v1/skills/search는 검색 결과를 반환한다")
-    void search_returnsServiceResult() throws Exception {
-        SkillChunkSearchResultDto result = new SkillChunkSearchResultDto(List.of());
-        when(skillSearchService.search("spring")).thenReturn(result);
-
-        mockMvc.perform(get("/api/v1/skills/search").param("query", "spring"))
-                .andExpect(status().isOk());
-
-        verify(skillSearchService).search("spring");
     }
 }
