@@ -16,7 +16,6 @@ import java.io.IOException;
 public class SkillChunkController {
 
     private final ChunkingService chunkingService;
-    private final SkillSearchService skillSearchService;
 
     @PostMapping("/chunk")
     public ResponseEntity<RsData<Void>> run() {
@@ -25,10 +24,4 @@ public class SkillChunkController {
         return ResponseEntity.ok(new RsData<>("skill_chunk 적재 완료"));
     }
 
-    @GetMapping("/search")
-    public SkillChunkSearchResultDto search(
-            @RequestParam String query
-    ) {
-        return skillSearchService.search(query);
-    }
 }
