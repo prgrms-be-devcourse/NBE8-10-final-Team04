@@ -28,10 +28,9 @@ public final class RawContentNormalizer {
             "\\w+\\nCopied\\n?"
     );
 
-    // 관련 게시글 섹션 구분자 (대소문자 무관)
+    // 관련 게시글 섹션 구분자 — 줄의 시작에서 단독으로 등장하는 경우만 매칭 (대소문자 무관)
     private static final Pattern TRAILING_SECTION_PATTERN = Pattern.compile(
-            "(?i)(Related Posts|Keep reading)",
-            Pattern.CASE_INSENSITIVE
+            "(?im)^(Related Posts|Keep reading)\s*$"
     );
 
     // 연속 빈줄 (3줄 이상 → 2줄로)

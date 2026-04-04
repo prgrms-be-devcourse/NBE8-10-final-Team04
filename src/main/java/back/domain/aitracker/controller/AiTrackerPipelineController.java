@@ -2,12 +2,12 @@ package back.domain.aitracker.controller;
 
 import back.domain.aitracker.service.AiTrackerPipelineService;
 import back.domain.aitracker.service.AiTrackerPipelineService.PipelineResult;
+import back.global.config.properties.AiTrackerProperties;
 import back.global.exception.CommonErrorCode;
 import back.global.exception.ServiceException;
 import back.global.response.RsData;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -21,10 +21,8 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class AiTrackerPipelineController {
 
-    @Value("${ai-tracker.webhook-secret}")
-    private String webhookSecret;
-
     private final AiTrackerPipelineService aiTrackerPipelineService;
+    private final AiTrackerProperties      aiTrackerProperties;
 
     /**
      * GitHub Actions → Webhook 호출 엔드포인트 (비동기 실행).
@@ -33,7 +31,7 @@ public class AiTrackerPipelineController {
     public ResponseEntity<RsData<String>> trigger(
             @RequestHeader(value = "X-Webhook-Secret", required = false) String secret
     ) {
-        if (!webhookSecret.equals(secret)) {
+        if (!aiTrackerProperties.webhookSecret().equals(secret)) {
             throw new ServiceException(
                     CommonErrorCode.FORBIDDEN,
                     "[AiTrackerPipelineController#trigger] Webhook 인증 실패",

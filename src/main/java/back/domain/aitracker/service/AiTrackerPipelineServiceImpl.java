@@ -8,6 +8,8 @@ import back.domain.aitracker.dto.AiTrackerRawPayload.RawItem;
 import back.domain.aitracker.dto.GeminiProcessResult;
 import back.domain.aitracker.dto.IntegratedVendorRef;
 import back.domain.aitracker.util.RawContentNormalizer;
+import back.global.config.properties.AiInfoProperties;
+import back.global.config.properties.AiTrackerProperties;
 import back.global.config.properties.GeminiProperties;
 import com.google.genai.Client;
 import com.google.genai.errors.ApiException;
@@ -29,20 +31,22 @@ import java.util.stream.Collectors;
 @Service
 public class AiTrackerPipelineServiceImpl implements AiTrackerPipelineService {
 
-    private static final String RAW_OBJECT_NAME          = "data/ai-tracker/updates_raw.json";
-    private static final String OUTPUT_OBJECT_NAME       = "data/ai-tracker/updates.json";
-    private static final String INTEGRATED_OBJECT_NAME   = "data/ai-info/integrated_major_models.json";
+    private static final String RAW_FILE_NAME          = "updates_raw.json";
+    private static final String OUTPUT_FILE_NAME       = "updates.json";
+    private static final String INTEGRATED_FILE_NAME   = "integrated_major_models.json";
     private static final int    SUMMARY_TRANSLATE_THRESHOLD = 500;
 
-    // AI 호출 RPM limit 반영
+    // RPM 15 기준 최소 호출 간격
     private static final long RATE_LIMIT_DELAY_MS    = 5_000L;
     private static final long RETRY_AFTER_DEFAULT_MS = 60_000L;
     private static final long NETWORK_RETRY_DELAY_MS = 5_000L;
     private static final int  MAX_RETRY_COUNT        = 3;
 
-    private final OciStorageService ociStorageService;
-    private final GeminiProperties  geminiProperties;
-    private final JsonMapper        jsonMapper;
+    private final OciStorageService  ociStorageService;
+    private final GeminiProperties   geminiProperties;
+    private final AiTrackerProperties aiTrackerProperties;
+    private final AiInfoProperties    aiInfoProperties;
+    private final JsonMapper          jsonMapper;
 
     private Client geminiClient;
 
@@ -53,10 +57,14 @@ public class AiTrackerPipelineServiceImpl implements AiTrackerPipelineService {
     public AiTrackerPipelineServiceImpl(
             OciStorageService ociStorageService,
             GeminiProperties geminiProperties,
+            AiTrackerProperties aiTrackerProperties,
+            AiInfoProperties aiInfoProperties,
             JsonMapper jsonMapper) {
-        this.ociStorageService = ociStorageService;
-        this.geminiProperties  = geminiProperties;
-        this.jsonMapper        = jsonMapper;
+        this.ociStorageService   = ociStorageService;
+        this.geminiProperties    = geminiProperties;
+        this.aiTrackerProperties = aiTrackerProperties;
+        this.aiInfoProperties    = aiInfoProperties;
+        this.jsonMapper          = jsonMapper;
     }
 
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings(
@@ -99,7 +107,7 @@ public class AiTrackerPipelineServiceImpl implements AiTrackerPipelineService {
 
         AiTrackerProcessedPayload output = new AiTrackerProcessedPayload(
                 Instant.now(), results.size(), results);
-        ociStorageService.uploadJson(OUTPUT_OBJECT_NAME, output);
+        ociStorageService.uploadJson(aiTrackerProperties.ociPrefix() + OUTPUT_FILE_NAME, output);
 
         log.info("[AiTrackerPipeline#run] 파이프라인 완료: 전체 {}건 / 성공 {}건",
                 raw.items().size(), succeeded);
@@ -109,8 +117,9 @@ public class AiTrackerPipelineServiceImpl implements AiTrackerPipelineService {
     // ── 다운로드 ──────────────────────────────────────────────────────────────
 
     private AiTrackerRawPayload downloadRaw() {
-        log.info("[AiTrackerPipeline#downloadRaw] raw 다운로드: {}", RAW_OBJECT_NAME);
-        return ociStorageService.downloadJson(RAW_OBJECT_NAME, AiTrackerRawPayload.class);
+        String objectName = aiTrackerProperties.ociPrefix() + RAW_FILE_NAME;
+        log.info("[AiTrackerPipeline#downloadRaw] raw 다운로드: {}", objectName);
+        return ociStorageService.downloadJson(objectName, AiTrackerRawPayload.class);
     }
 
     /**
@@ -119,8 +128,9 @@ public class AiTrackerPipelineServiceImpl implements AiTrackerPipelineService {
      * @return key: vendor name 소문자, value: family_name 목록
      */
     private Map<String, List<String>> buildFamilyMap() {
+        String objectName = aiInfoProperties.ociPrefix() + INTEGRATED_FILE_NAME;
         List<IntegratedVendorRef> vendors = ociStorageService.downloadJson(
-                INTEGRATED_OBJECT_NAME, new TypeReference<List<IntegratedVendorRef>>() {});
+                objectName, new TypeReference<List<IntegratedVendorRef>>() {});
         return vendors.stream().collect(Collectors.toMap(
                 v -> v.name().toLowerCase(),
                 v -> v.families().stream()
@@ -161,8 +171,7 @@ public class AiTrackerPipelineServiceImpl implements AiTrackerPipelineService {
                 geminiResult.title(),
                 geminiResult.summary(),
                 geminiResult.familyName(),
-                notifiedAt
-        );
+                notifiedAt);
     }
 
     /**
@@ -232,7 +241,7 @@ public class AiTrackerPipelineServiceImpl implements AiTrackerPipelineService {
         String familyInstruction = families.isEmpty()
                 ? "family_name 필드: null로 설정하세요."
                 : "family_name 필드: 아래 후보 목록 중 이 기사와 가장 관련 있는 항목 1개를 선택하세요."
-                + " 관련 항목이 없으면 null로 설정하세요.\n후보: " + families;
+                        + " 관련 항목이 없으면 null로 설정하세요.\n후보: " + families;
 
         return new StringBuilder()
                 .append("반드시 JSON만 반환하세요. 마크다운 코드블록(```), 설명, 부연 없이 순수 JSON만 출력하세요.\n\n")

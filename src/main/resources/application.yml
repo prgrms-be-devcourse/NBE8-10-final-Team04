@@ -47,6 +47,11 @@ app:
       config-file-path: ${OCI_CONFIG_FILE_PATH:~/.oci/config}
       profile: ${OCI_CONFIG_PROFILE:DEFAULT}
       region: ${OCI_REGION:}
+  ai-info:
+    oci-prefix: ${AI_INFO_OCI_PREFIX:data/ai-info/}
+  ai-tracker:
+    oci-prefix: ${AI_TRACKER_OCI_PREFIX:data/ai-tracker/}
+    webhook-secret: ${SPRING_WEBHOOK_SECRET}
 
 custom:
   jwt:
@@ -93,6 +98,3 @@ ai-model:
     - openai
     - anthropic
     - google
-
-ai-tracker:
-  webhook-secret: ${SPRING_WEBHOOK_SECRET}

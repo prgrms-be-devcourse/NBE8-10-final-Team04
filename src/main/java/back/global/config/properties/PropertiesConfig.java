@@ -8,6 +8,8 @@ import org.springframework.context.annotation.Configuration;
 @EnableConfigurationProperties({
         OciProperties.class,
         GeminiProperties.class,
-        AiModelProperties.class
+        AiModelProperties.class,
+        AiInfoProperties.class,
+        AiTrackerProperties.class
 })
 public class PropertiesConfig {}
