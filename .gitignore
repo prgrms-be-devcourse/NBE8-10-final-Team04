@@ -50,3 +50,7 @@ out/
 ## venv ##
 venv/
 ai-service/venv/
+
+## Python cache ##
+__pycache__/
+*.py[cod]

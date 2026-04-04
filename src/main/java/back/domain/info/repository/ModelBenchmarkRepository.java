@@ -1,6 +1,5 @@
 package back.domain.info.repository;
 
-import back.domain.info.entity.AiModel;
 import back.domain.info.entity.ModelBenchmark;
 import back.domain.info.enums.MetricType;
 import org.springframework.data.jpa.repository.JpaRepository;

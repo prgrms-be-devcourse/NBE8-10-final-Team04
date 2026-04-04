@@ -1,9 +1,7 @@
 package back.domain.info.mapper;
 
-import back.domain.info.dto.FamilyDto;
-import back.domain.info.dto.ModelDto;
-import back.domain.info.dto.VendorDto;
-import back.domain.info.entity.AiModel;
+import back.domain.info.dto.data.FamilyDto;
+import back.domain.info.dto.data.VendorDto;
 import back.domain.info.entity.AiModelFamily;
 import back.domain.info.entity.AiVendor;
 import org.springframework.stereotype.Component;
@@ -34,32 +32,9 @@ public class AiModelMapper {
                 .vendor(vendor)
                 .familyName(dto.getFamilyName())
                 .commonDescription(dto.getCommonDescription())
-                .models(new ArrayList<>())
                 .build();
-
-        if (dto.getModels() != null) {
-            dto.getModels().stream()
-                    .map(m -> toModelEntity(m, family))
-                    .forEach(family.getModels()::add);
-        }
 
         return family;
     }
 
-    public AiModel toModelEntity(ModelDto dto, AiModelFamily family) {
-        return AiModel.builder()
-                .family(family)
-                .modelName(dto.getModelName())
-                .apiId(dto.getApiId())
-                .contextWindow(dto.getContextWindow())
-                .maxOutputTokens(dto.getMaxOutputTokens())
-                .releaseDate(dto.getReleaseDate())
-                .isPreview(dto.getIsPreview())
-                .modelImageUrl(dto.getModelImageUrl())
-                .inputPrice(dto.getInputPrice())
-                .outputPrice(dto.getOutputPrice())
-                .inputModalities(dto.getInputModalities() != null ? dto.getInputModalities() : new ArrayList<>())
-                .outputModalities(dto.getOutputModalities() != null ? dto.getOutputModalities() : new ArrayList<>())
-                .build();
-    }
 }

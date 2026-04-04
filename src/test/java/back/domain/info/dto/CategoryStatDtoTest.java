@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+import back.domain.info.dto.data.CategoryStatDto;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;

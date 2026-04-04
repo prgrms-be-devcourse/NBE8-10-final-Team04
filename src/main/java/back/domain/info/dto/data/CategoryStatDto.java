@@ -1,6 +1,5 @@
-package back.domain.info.dto;
+package back.domain.info.dto.data;
 
-import back.domain.info.entity.CategoryStat;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
