@@ -11,15 +11,15 @@ import java.util.ArrayList;
 public class AiModelMapper {
     public AiVendor toVendorEntity(VendorDto dto) {
         AiVendor vendor = AiVendor.builder()
-                .name(dto.getName())
-                .officialUrl(dto.getOfficialUrl())
-                .isActive(dto.getIsActive())
-                .isDeprecated(dto.getIsDeprecated())
+                .name(dto.name())
+                .officialUrl(dto.officialUrl())
+                .isActive(dto.isActive())
+                .isDeprecated(dto.isDeprecated())
                 .modelFamilies(new ArrayList<>())
                 .build();
 
-        if (dto.getFamilies() != null) {
-            dto.getFamilies().stream()
+        if (dto.families() != null) {
+            dto.families().stream()
                     .map(f -> toFamilyEntity(f, vendor))
                     .forEach(vendor.getModelFamilies()::add);
         }
@@ -30,8 +30,8 @@ public class AiModelMapper {
     public AiModelFamily toFamilyEntity(FamilyDto dto, AiVendor vendor) {
         AiModelFamily family = AiModelFamily.builder()
                 .vendor(vendor)
-                .familyName(dto.getFamilyName())
-                .commonDescription(dto.getCommonDescription())
+                .familyName(dto.familyName())
+                .commonDescription(dto.commonDescription())
                 .build();
 
         return family;

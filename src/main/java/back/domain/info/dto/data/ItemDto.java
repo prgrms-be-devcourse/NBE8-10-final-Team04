@@ -1,41 +1,38 @@
 package back.domain.info.dto.data;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
 
 import java.time.OffsetDateTime;
 
-@Getter
-@NoArgsConstructor
-public class ItemDto {
-    @JsonProperty("id")
-    private String itemId;
+public record ItemDto(
+        @JsonProperty("id")
+        String itemId,
 
-    @JsonProperty("provider")
-    private String provider;
+        @JsonProperty("provider")
+        String provider,
 
-    @JsonProperty("family")  // 임시 지정
-    private String family;
+        @JsonProperty("family")
+        String family,
 
-    @JsonProperty("source_type")
-    private String sourceType;
+        @JsonProperty("source_type")
+        String sourceType,
 
-    @JsonProperty("label")
-    private String label;
+        @JsonProperty("label")
+        String label,
 
-    @JsonProperty("title")
-    private String title;
+        @JsonProperty("title")
+        String title,
 
-    @JsonProperty("url")
-    private String url;
+        @JsonProperty("url")
+        String url,
 
-    @JsonProperty("summary")
-    private String summary;
+        @JsonProperty("summary")
+        String summary,
 
-    @JsonProperty("raw_content")
-    private String rawContent;
+        @JsonProperty("raw_content")
+        String rawContent,
 
-    @JsonProperty("published_at")
-    private OffsetDateTime publishedAt;
+        @JsonProperty("published_at")
+        OffsetDateTime publishedAt
+) {
 }

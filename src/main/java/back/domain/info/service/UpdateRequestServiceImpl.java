@@ -53,30 +53,30 @@ public class UpdateRequestServiceImpl implements UpdateRequestService {
         try {
             requestDto = objectMapper.readValue(content, UpdateRequestDto.class);
         } catch (Exception e) {
-            log.error("[UpdateRequestServiceImpl] JSON 파싱 실패", e);
+            log.error("[UpdateRequestServiceImpl#run] JSON 파싱 실패", e);
             return;
         }
 
         int success = 0, fail = 0;
-        for(ItemDto dto : requestDto.getItems()) {
+        for(ItemDto dto : requestDto.items()) {
             try {
                 processJson(dto);
                 success++;
             } catch (Exception e) {
-                log.error("[UpdateRequestServiceImpl] 아이템 업데이트 실패", e);
+                log.error("[UpdateRequestServiceImpl#run] 아이템 업데이트 실패", e);
                 fail++;
             }
         }
 
-        log.info("[UpdateRequestServiceImpl] 완료. 성공: {}, 실패: {}", success, fail);
+        log.info("[UpdateRequestServiceImpl#run] 완료. 성공: {}, 실패: {}", success, fail);
     }
 
     private void processJson(ItemDto dto) {
 
-        AiVendor vendor = aiVendorRepository.findByName(dto.getProvider()).orElse(null);
+        AiVendor vendor = aiVendorRepository.findByName(dto.provider()).orElse(null);
 
         if (vendor == null) {
-            log.warn("[UpdateRequestServiceImpl] 없는 제조사입니다.");
+            log.warn("[UpdateRequestServiceImpl#processJson] 없는 vendor입니다.");
             return;
         }
 
@@ -85,7 +85,7 @@ public class UpdateRequestServiceImpl implements UpdateRequestService {
 
     private void createUpdateRequest(ItemDto dto, AiVendor vendor) {
 
-        AiModelFamily family = familyRepository.findByFamilyName(dto.getFamily()).orElse(null);
+        AiModelFamily family = familyRepository.findByFamilyName(dto.family()).orElse(null);
 
         UpdateRequest updateRequest = requestMapper.toUpdateRequestEntity(dto, vendor, family);
 

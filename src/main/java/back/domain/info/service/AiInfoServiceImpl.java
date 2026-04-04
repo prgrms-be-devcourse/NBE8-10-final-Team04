@@ -45,7 +45,7 @@ public class AiInfoServiceImpl implements AiInfoService {
         try {
             vendorDtos = objectMapper.readValue(content, new TypeReference<List<VendorDto>>() {});
         } catch (Exception e) {
-            log.error("[AiInfoService] JSON 파싱 실패", e);
+            log.error("[AiInfoService#run] JSON 파싱 실패", e);
             return;
         }
 
@@ -55,16 +55,16 @@ public class AiInfoServiceImpl implements AiInfoService {
                 upsertVendor(dto);  // dto 하나씩 트랜잭션
                 success++;
             } catch (Exception e) {
-                log.error("[AiInfoService] vendor 처리 실패, 스킵: {}", dto.getName(), e);
+                log.error("[AiInfoService#run] vendor 처리 실패, 스킵: {}", dto.name(), e);
                 fail++;  // 이 dto만 롤백, 나머지 계속 진행
             }
         }
 
-        log.info("[AiInfoService] 완료. success={}, fail={}", success, fail);
+        log.info("[AiInfoService#run] 완료. success={}, fail={}", success, fail);
     }
 
     private void upsertVendor(VendorDto dto) {
-        AiVendor vendor = aiVendorRepository.findByName(dto.getName()).orElse(null);
+        AiVendor vendor = aiVendorRepository.findByName(dto.name()).orElse(null);
 
         if (vendor == null) {
             vendor = createVendor(dto);
@@ -83,20 +83,20 @@ public class AiInfoServiceImpl implements AiInfoService {
 
     private void updateVendor(AiVendor vendor, VendorDto vendorDto) {
         vendor.update(
-                vendorDto.getOfficialUrl(),
-                vendorDto.getIsActive(),
-                vendorDto.getIsDeprecated()
+                vendorDto.officialUrl(),
+                vendorDto.isActive(),
+                vendorDto.isDeprecated()
         );
         log.info("[AiInfoService] vendor 수정: {}", vendor.getName());
     }
 
     private void processFamilies(AiVendor vendor, VendorDto vendorDto) {
-        if (vendorDto.getFamilies() == null || vendorDto.getFamilies().isEmpty()) {
+        if (vendorDto.families() == null || vendorDto.families().isEmpty()) {
             return;
         }
 
-        for (FamilyDto familyDto : vendorDto.getFamilies()) {
-            AiModelFamily family = findFamily(vendor, familyDto.getFamilyName());
+        for (FamilyDto familyDto : vendorDto.families()) {
+            AiModelFamily family = findFamily(vendor, familyDto.familyName());
 
             if (family == null) {
                 family = createFamily(vendor, familyDto);
@@ -120,7 +120,7 @@ public class AiInfoServiceImpl implements AiInfoService {
     }
 
     private void updateFamily(AiModelFamily family, FamilyDto familyDto) {
-        family.update(familyDto.getCommonDescription());
+        family.update(familyDto.commonDescription());
     }
 
 }

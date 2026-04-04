@@ -40,7 +40,7 @@ public class ModelBenchmarkServiceImpl implements ModelBenchmarkService {
         try {
             benchmarkDtos = objectMapper.readValue(content, new TypeReference<List<ModelBenchmarkDto>>() {});
         } catch (Exception e) {
-            log.error("[ModelBenchmarkServiceImpl] JSON 파싱 실패", e);
+            log.error("[ModelBenchmarkServiceImpl#run] JSON 파싱 실패", e);
             return;
         }
 
@@ -50,18 +50,18 @@ public class ModelBenchmarkServiceImpl implements ModelBenchmarkService {
                 upsertModelBenchmark(dto);
                 success++;
             } catch (Exception e) {
-                log.error("[ModelBenchmarkServiceImpl] 모델 벤치마크 업서트 실패: {}", dto, e);
+                log.error("[ModelBenchmarkServiceImpl#run] 모델 벤치마크 업서트 실패: {}", dto.modelApiId(), e);
                 fail++; // 이 dto만 롤백, 나머지 계속 진행
             }
         }
 
-        log.info("[ModelBenchmarkService] 완료. success={}, fail={}", success, fail);
+        log.info("[ModelBenchmarkService#run] 완료. success={}, fail={}", success, fail);
     }
 
     private void upsertModelBenchmark(ModelBenchmarkDto dto) {
 
         ModelBenchmark benchmark = benchmarkRepository
-                .findByModelApiIdAndMetricType(dto.getModelApiId(), dto.getMetricType())
+                .findByModelApiIdAndMetricType(dto.modelApiId(), dto.metricType())
                 .orElse(null);
 
         if (benchmark == null) {
