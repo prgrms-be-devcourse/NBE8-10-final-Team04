@@ -25,6 +25,8 @@ public class SkillSearchServiceImpl implements SkillSearchService{
 
     private static final int DEFAULT_TOP_K = 30;
 
+
+    @Override
     public SkillChunkSearchResultDto search(String query) {
         // query 값을 임베딩해서 float[] 형태의 벡터로 변환
         List<Float> queryEmbedding = embeddingService.embed(query);
