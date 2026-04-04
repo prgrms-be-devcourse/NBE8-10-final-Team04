@@ -3,6 +3,8 @@ package back.domain.aitracker.service;
 import back.domain.aitracker.dto.AiTrackerProcessedPayload;
 import back.domain.aitracker.dto.AiTrackerRawPayload;
 import back.domain.aitracker.dto.IntegratedVendorRef;
+import back.global.config.properties.AiInfoProperties;
+import back.global.config.properties.AiTrackerProperties;
 import back.global.config.properties.GeminiProperties;
 import back.global.infra.oci.OciStorageService;
 import com.google.genai.Client;
@@ -33,6 +35,8 @@ class AiTrackerPipelineServiceImplTest {
 
     @Mock private OciStorageService ociStorageService;
     @Mock private GeminiProperties geminiProperties;
+    @Mock private AiTrackerProperties aiTrackerProperties;
+    @Mock private AiInfoProperties aiInfoProperties;
     @Mock private JsonMapper jsonMapper;
 
     @InjectMocks private AiTrackerPipelineServiceImpl service;
@@ -49,7 +53,9 @@ class AiTrackerPipelineServiceImplTest {
         ReflectionTestUtils.setField(mockClient, "models", mockModels);
         ReflectionTestUtils.setField(service, "geminiClient", mockClient);
 
-        when(geminiProperties.descriptionModel()).thenReturn("gemini-test-model");
+        lenient().when(geminiProperties.descriptionModel()).thenReturn("gemini-test-model");
+        lenient().when(aiTrackerProperties.ociPrefix()).thenReturn("data/ai-tracker/");
+        lenient().when(aiInfoProperties.ociPrefix()).thenReturn("data/ai-info/");
     }
 
     @Test

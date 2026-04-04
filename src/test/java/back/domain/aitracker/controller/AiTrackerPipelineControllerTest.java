@@ -1,13 +1,17 @@
 package back.domain.aitracker.controller;
 
 import back.domain.aitracker.service.AiTrackerPipelineService;
+import back.global.config.properties.AiTrackerProperties;
 import back.global.exception.CommonErrorCode;
 import back.testUtil.RsDataMatcher;
 import back.testUtil.WebMvcTestSupport;
 import back.testUtil.WithMockMember;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -19,9 +23,17 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(AiTrackerPipelineController.class)
-@TestPropertySource(properties = "ai-tracker.webhook-secret=test-secret")
+@Import(AiTrackerPipelineControllerTest.TestConfig.class)
+@TestPropertySource(properties = {
+    "app.ai-tracker.webhook-secret=test-secret",
+    "app.ai-tracker.oci-prefix=data/ai-tracker/"
+})
 @WithMockMember
 class AiTrackerPipelineControllerTest extends WebMvcTestSupport {
+
+    @TestConfiguration
+    @EnableConfigurationProperties(AiTrackerProperties.class)
+    static class TestConfig {}
 
     @MockitoBean
     AiTrackerPipelineService aiTrackerPipelineService;
