@@ -47,10 +47,10 @@ public class ModelBenchmarkServiceImpl implements ModelBenchmarkService {
         int success = 0, fail = 0;
         for(ModelBenchmarkDto dto : benchmarkDtos) {
             try {
-                upsertModelBenchmark(dto);
+                createModelBenchmark(dto);
                 success++;
             } catch (Exception e) {
-                log.error("[ModelBenchmarkServiceImpl#run] 모델 벤치마크 업서트 실패: {}", dto.modelApiId(), e);
+                log.error("[ModelBenchmarkServiceImpl#run] modelbenchmark 생성 실패: {}", dto.modelApiId(), e);
                 fail++; // 이 dto만 롤백, 나머지 계속 진행
             }
         }
@@ -58,28 +58,10 @@ public class ModelBenchmarkServiceImpl implements ModelBenchmarkService {
         log.info("[ModelBenchmarkService#run] 완료. success={}, fail={}", success, fail);
     }
 
-    private void upsertModelBenchmark(ModelBenchmarkDto dto) {
-
-        ModelBenchmark benchmark = benchmarkRepository
-                .findByModelApiIdAndMetricType(dto.modelApiId(), dto.metricType())
-                .orElse(null);
-
-        if (benchmark == null) {
-            createModelBenchmark(dto);
-        } else {
-            updateModelBenchmark(benchmark, dto);
-        }
-
-    }
-
     private ModelBenchmark createModelBenchmark(ModelBenchmarkDto dto) {
         ModelBenchmark benchmark = modelStatMapper.toModelBenchmarkEntity(dto);
         ModelBenchmark savedBenchmark = benchmarkRepository.save(benchmark);
         return savedBenchmark;
-    }
-
-    private void updateModelBenchmark(ModelBenchmark benchmark, ModelBenchmarkDto dto) {
-        benchmark.update(dto);
     }
 
 }
