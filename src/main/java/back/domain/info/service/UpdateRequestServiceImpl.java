@@ -32,8 +32,6 @@ import tools.jackson.databind.ObjectMapper;
 )
 public class UpdateRequestServiceImpl implements UpdateRequestService {
 
-    private static final String INVALID_STATUS = "유효하지 않는 상태 값 입니다. (PENDING, APPROVED, REJECTED)";
-
     private static final String BASE_PATH = "data/ai-tracker/updates_raw.json";
 
     private final ObjectMapper objectMapper;
@@ -46,6 +44,8 @@ public class UpdateRequestServiceImpl implements UpdateRequestService {
     @Override
     @Transactional
     public void run() {
+        log.info("[UpdateRequestService#run] 시작. path={}", BASE_PATH);
+
         String content = storageReader.readText(BASE_PATH);
         if (content == null) return;
 
@@ -53,32 +53,32 @@ public class UpdateRequestServiceImpl implements UpdateRequestService {
         try {
             requestDto = objectMapper.readValue(content, UpdateRequestDto.class);
         } catch (Exception e) {
-            log.error("[UpdateRequestServiceImpl#run] JSON 파싱 실패", e);
+            log.error("[UpdateRequestService#run] JSON 파싱 실패", e);
             return;
         }
 
-        int success = 0, fail = 0;
+        int success = 0;
         for(ItemDto dto : requestDto.items()) {
             try {
                 processJson(dto);
                 success++;
             } catch (Exception e) {
-                log.error("[UpdateRequestServiceImpl#run] 아이템 업데이트 실패", e);
-                fail++;
+                throw new ServiceException(
+                        CommonErrorCode.INTERNAL_SERVER_ERROR,
+                        "[UpdateRequestService#run] Failed to create update request. (id=" + dto.itemId() + ")",
+                        "Update Request 데이터 생성 중 오류가 발생했습니다. (id=" + dto.itemId() + ")"
+                );
             }
         }
 
-        log.info("[UpdateRequestServiceImpl#run] 완료. 성공: {}, 실패: {}", success, fail);
+        log.info("[UpdateRequestService#run] 완료. 성공: {}", success);
     }
 
     private void processJson(ItemDto dto) {
-
-        AiVendor vendor = aiVendorRepository.findByName(dto.provider()).orElse(null);
-
-        if (vendor == null) {
-            log.warn("[UpdateRequestServiceImpl#processJson] 없는 vendor입니다.");
-            return;
-        }
+        AiVendor vendor = aiVendorRepository.findByName(dto.provider())
+                .orElseThrow(() -> new IllegalStateException(
+                        "vendor not found. provider=" + dto.provider()
+                ));
 
         createUpdateRequest(dto, vendor);
     }
@@ -109,8 +109,8 @@ public class UpdateRequestServiceImpl implements UpdateRequestService {
             // 유효하지 않은 상태일 경우
             throw new ServiceException(
                     CommonErrorCode.BAD_REQUEST,
-                    "[RequestService#updateStatus] invalid status value",
-                    INVALID_STATUS
+                    "[UpdateRequestService#updateStatus] invalid status value",
+                    "유효하지 않는 상태 값 입니다. (PENDING, APPROVED, REJECTED)"
             );
         }
     }

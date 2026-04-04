@@ -38,6 +38,8 @@ public class AiInfoServiceImpl implements AiInfoService {
     @Override
     @Transactional
     public void run() {
+        log.info("[AiInfoService#run] 시작. path={}", BASE_PATH);
+
         String content = storageReader.readText(BASE_PATH);
         if (content == null) return;
 
@@ -52,11 +54,11 @@ public class AiInfoServiceImpl implements AiInfoService {
         int success = 0, fail = 0;
         for (VendorDto dto : vendorDtos) {
             try {
-                upsertVendor(dto);  // dto 하나씩 트랜잭션
+                upsertVendor(dto);
                 success++;
             } catch (Exception e) {
                 log.error("[AiInfoService#run] vendor 처리 실패, 스킵: {}", dto.name(), e);
-                fail++;  // 이 dto만 롤백, 나머지 계속 진행
+                fail++;
             }
         }
 
@@ -77,8 +79,7 @@ public class AiInfoServiceImpl implements AiInfoService {
 
     private AiVendor createVendor(VendorDto vendorDto) {
         AiVendor vendor = aiModelMapper.toVendorEntity(vendorDto);
-        AiVendor savedVendor = aiVendorRepository.save(vendor);
-        return savedVendor;
+        return aiVendorRepository.save(vendor);
     }
 
     private void updateVendor(AiVendor vendor, VendorDto vendorDto) {

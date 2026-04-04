@@ -4,6 +4,8 @@ import back.domain.info.dto.data.ModelBenchmarkDto;
 import back.domain.info.entity.ModelBenchmark;
 import back.domain.info.mapper.ModelStatMapper;
 import back.domain.info.repository.ModelBenchmarkRepository;
+import back.global.exception.CommonErrorCode;
+import back.global.exception.ServiceException;
 import back.global.storage.OciObjectStorageReader;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import lombok.RequiredArgsConstructor;
@@ -33,6 +35,8 @@ public class ModelBenchmarkServiceImpl implements ModelBenchmarkService {
     @Override
     @Transactional
     public void run() {
+        log.info("[ModelBenchmarkService#run] 시작. path={}", BASE_PATH);
+
         String content = storageReader.readText(BASE_PATH);
         if (content == null) return;
 
@@ -40,22 +44,25 @@ public class ModelBenchmarkServiceImpl implements ModelBenchmarkService {
         try {
             benchmarkDtos = objectMapper.readValue(content, new TypeReference<List<ModelBenchmarkDto>>() {});
         } catch (Exception e) {
-            log.error("[ModelBenchmarkServiceImpl#run] JSON 파싱 실패", e);
+            log.error("[ModelBenchmarkService#run] JSON 파싱 실패", e);
             return;
         }
 
-        int success = 0, fail = 0;
+        int success = 0;
         for(ModelBenchmarkDto dto : benchmarkDtos) {
             try {
                 createModelBenchmark(dto);
                 success++;
             } catch (Exception e) {
-                log.error("[ModelBenchmarkServiceImpl#run] modelbenchmark 생성 실패: {}", dto.modelApiId(), e);
-                fail++; // 이 dto만 롤백, 나머지 계속 진행
+                throw new ServiceException(
+                        CommonErrorCode.INTERNAL_SERVER_ERROR,
+                        "[ModelBenchmarkService#run] Failed to create model benchmark. (modelApiId=" + dto.modelApiId() + ")",
+                        "모델 벤치마크 데이터 생성 중 오류가 발생했습니다. (modelApiId=" + dto.modelApiId() + ")"
+                );
             }
         }
 
-        log.info("[ModelBenchmarkService#run] 완료. success={}, fail={}", success, fail);
+        log.info("[ModelBenchmarkService#run] 완료. success={}", success);
     }
 
     private ModelBenchmark createModelBenchmark(ModelBenchmarkDto dto) {
