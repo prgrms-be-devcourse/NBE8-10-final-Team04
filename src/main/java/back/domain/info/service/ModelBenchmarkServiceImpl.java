@@ -48,27 +48,30 @@ public class ModelBenchmarkServiceImpl implements ModelBenchmarkService {
             return;
         }
 
-        int success = 0;
-        for(ModelBenchmarkDto dto : benchmarkDtos) {
+        int success = 0, fail = 0;
+        for (ModelBenchmarkDto dto : benchmarkDtos) {
             try {
                 createModelBenchmark(dto);
                 success++;
             } catch (Exception e) {
-                throw new ServiceException(
-                        CommonErrorCode.INTERNAL_SERVER_ERROR,
-                        "[ModelBenchmarkService#run] Failed to create model benchmark. (modelApiId=" + dto.modelApiId() + ")",
-                        "모델 벤치마크 데이터 생성 중 오류가 발생했습니다. (modelApiId=" + dto.modelApiId() + ")"
-                );
+                log.error("[ModelBenchmarkService#run] 처리 실패 스킵. modelApiId={}", dto.modelApiId(), e);
+                fail++;
             }
         }
 
-        log.info("[ModelBenchmarkService#run] 완료. success={}", success);
+        log.info("[ModelBenchmarkService#run] 완료. success={}, fail={}", success, fail);
     }
 
-    private ModelBenchmark createModelBenchmark(ModelBenchmarkDto dto) {
+    private void createModelBenchmark(ModelBenchmarkDto dto) {
+        // 중복 스킵
+        if (benchmarkRepository.existsByModelApiIdAndMetricTypeAndMeasuredAt(
+                dto.modelApiId(), dto.metricType(), dto.measuredAt())) {
+            log.info("[ModelBenchmarkService#run] 중복 스킵. modelApiId={}, metricType={}",
+                    dto.modelApiId(), dto.metricType());
+
+            return;
+        }
         ModelBenchmark benchmark = modelStatMapper.toModelBenchmarkEntity(dto);
-        ModelBenchmark savedBenchmark = benchmarkRepository.save(benchmark);
-        return savedBenchmark;
     }
 
 }

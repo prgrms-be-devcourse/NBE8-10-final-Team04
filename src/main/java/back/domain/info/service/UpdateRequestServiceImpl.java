@@ -23,6 +23,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import tools.jackson.databind.ObjectMapper;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -57,17 +60,14 @@ public class UpdateRequestServiceImpl implements UpdateRequestService {
             return;
         }
 
-        int success = 0;
-        for(ItemDto dto : requestDto.items()) {
+        int success = 0, fail = 0;
+        for (ItemDto dto : requestDto.items()) {
             try {
                 processJson(dto);
                 success++;
             } catch (Exception e) {
-                throw new ServiceException(
-                        CommonErrorCode.INTERNAL_SERVER_ERROR,
-                        "[UpdateRequestService#run] Failed to create update request. (id=" + dto.itemId() + ")",
-                        "Update Request 데이터 생성 중 오류가 발생했습니다. (id=" + dto.itemId() + ")"
-                );
+                log.error("[UpdateRequestService#run] 처리 실패 스킵. id={}", dto.itemId(), e);
+                fail++;
             }
         }
 
@@ -75,17 +75,26 @@ public class UpdateRequestServiceImpl implements UpdateRequestService {
     }
 
     private void processJson(ItemDto dto) {
-        AiVendor vendor = aiVendorRepository.findByName(dto.provider())
-                .orElseThrow(() -> new IllegalStateException(
-                        "vendor not found. provider=" + dto.provider()
-                ));
+        if (requestRepository.existsBySourceIdAndNotifiedAt(dto.itemId(), LocalDate.now())) {
+            log.info("[UpdateRequestService] 중복 스킵. sourceId={}", dto.itemId());
+            return;
+        }
+
+        AiVendor vendor = aiVendorRepository.findByName(dto.provider()).orElse(null);
+        if (vendor == null) {
+            log.info("[UpdateRequestService] 없는 vendor 스킵. name={}", dto.provider());
+            return;
+        }
 
         createUpdateRequest(dto, vendor);
     }
 
     private void createUpdateRequest(ItemDto dto, AiVendor vendor) {
 
-        AiModelFamily family = familyRepository.findByFamilyName(dto.family()).orElse(null);
+        AiModelFamily family = null;
+        if (dto.family() != null && !dto.family().isBlank()) {
+            family = familyRepository.findByFamilyName(dto.family()).orElse(null);
+        }
 
         UpdateRequest updateRequest = requestMapper.toUpdateRequestEntity(dto, vendor, family);
 
@@ -96,33 +105,25 @@ public class UpdateRequestServiceImpl implements UpdateRequestService {
     @Override
     @Transactional
     public void updateStatus(Long id, String status) {
-
-        String newStatus = status.toUpperCase();
-
-        // Status enum 값이 유효한지 검증
-        if (isValidStatus(newStatus)) {
-            UpdateRequest updateRequest = requestRepository.findById(id).orElse(null);
-            if (updateRequest != null) {
-                updateRequest.setStatus(Status.valueOf(newStatus));
-            }
-        } else {
-            // 유효하지 않은 상태일 경우
+        Status newStatus;
+        try {
+            newStatus = Status.valueOf(status.toUpperCase());
+        } catch (IllegalArgumentException e) {
             throw new ServiceException(
                     CommonErrorCode.BAD_REQUEST,
-                    "[UpdateRequestService#updateStatus] invalid status value",
-                    "유효하지 않는 상태 값 입니다. (PENDING, APPROVED, REJECTED)"
+                    "[UpdateRequestService#updateStatus] invalid status: " + status,
+                    "유효하지 않은 상태 값입니다. (PENDING, APPROVED, REJECTED)"
             );
         }
-    }
 
-    // Status enum에 해당하는 값인지 체크하는 메서드
-    private boolean isValidStatus(String status) {
-        try {
-            Status.valueOf(status); // status가 Status enum에 있는지 확인
-            return true;
-        } catch (IllegalArgumentException e) {
-            return false; // enum에 없으면 false 반환
-        }
+        UpdateRequest updateRequest = requestRepository.findById(id)
+                .orElseThrow(() -> new ServiceException(
+                        CommonErrorCode.NOT_FOUND,
+                        "[UpdateRequestService#updateStatus] update request not found. id=" + id,
+                        "해당 내용을 찾을 수 없습니다."
+                ));
+
+        updateRequest.review(newStatus); // reviewedAt도 함께 업데이트
     }
 
     @Override

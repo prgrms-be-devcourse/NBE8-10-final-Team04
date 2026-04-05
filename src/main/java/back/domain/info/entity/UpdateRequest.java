@@ -24,7 +24,6 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "update_requests")
 @Getter
-@Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Builder
@@ -41,7 +40,7 @@ public class UpdateRequest extends BaseEntity {
     private AiVendor vendor;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "family_id", nullable = true)
+    @JoinColumn(name = "family_id")
     private AiModelFamily family;
 
     private String sourceUrl;
@@ -61,4 +60,9 @@ public class UpdateRequest extends BaseEntity {
     private LocalDate notifiedAt; // 업데이트 일시
 
     private LocalDateTime reviewedAt; // 확인 및 반영 일시
+
+    public void review(Status status) {
+        this.status = status;
+        this.reviewedAt = LocalDateTime.now();
+    }
 }
