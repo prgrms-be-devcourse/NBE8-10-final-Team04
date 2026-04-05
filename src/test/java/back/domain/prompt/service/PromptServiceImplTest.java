@@ -71,21 +71,21 @@ class PromptServiceImplTest {
         when(normalizeService.upsertRepository(any())).thenReturn(repository);
         doThrow(new IllegalStateException("boom"))
                 .when(normalizeService)
-                .upsertSkill(same(repository), argThat(skill -> "alpha".equals(skill.getName())));
+                .upsertSkill(same(repository), argThat(skill -> "alpha".equals(skill.name())));
 
         assertThatNoException().isThrownBy(() -> promptServiceImpl.run());
 
         verify(normalizeService).upsertSkill(
                 same(repository),
-                argThat(skill -> "alpha".equals(skill.getName()))
+                argThat(skill -> "alpha".equals(skill.name()))
         );
         verify(normalizeService).upsertSkill(
                 same(repository),
-                argThat(skill -> "beta".equals(skill.getName()))
+                argThat(skill -> "beta".equals(skill.name()))
         );
         verify(normalizeService).upsertAgent(
                 same(repository),
-                argThat(agent -> "agent-hash".equals(agent.getContentHash()))
+                argThat(agent -> "agent-hash".equals(agent.contentHash()))
         );
     }
 
@@ -110,19 +110,19 @@ class PromptServiceImplTest {
 
     private void verifyNormalized(Repository repository) {
         verify(normalizeService).upsertRepository(
-                argThat(item -> item.getRepository() != null
-                        && "owner/repo".equals(item.getRepository().getSourceRepo()))
+                argThat(item -> item.repository() != null
+                        && "owner/repo".equals(item.repository().sourceRepo()))
         );
 
         ArgumentCaptor<SkillDto> skillCaptor = ArgumentCaptor.forClass(SkillDto.class);
         verify(normalizeService, times(2)).upsertSkill(same(repository), skillCaptor.capture());
         assertThat(skillCaptor.getAllValues())
-                .extracting(SkillDto::getName)
+                .extracting(SkillDto::name)
                 .containsExactly("alpha", "beta");
 
         verify(normalizeService).upsertAgent(
                 same(repository),
-                argThat(agent -> agent != null && "agent-hash".equals(agent.getContentHash()))
+                argThat(agent -> agent != null && "agent-hash".equals(agent.contentHash()))
         );
     }
 

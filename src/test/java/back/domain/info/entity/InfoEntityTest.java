@@ -1,10 +1,8 @@
 package back.domain.info.entity;
 
-import back.domain.info.dto.data.ModelBenchmarkDto;
 import back.domain.info.enums.MetricType;
 import back.domain.info.enums.Status;
 import org.junit.jupiter.api.Test;
-import org.springframework.test.util.ReflectionTestUtils;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -52,20 +50,14 @@ class InfoEntityTest {
     }
 
     @Test
-    void modelBenchmark_updateUsesDtoValues() {
+    void modelBenchmark_builderExposesValues() {
         ModelBenchmark benchmark = ModelBenchmark.builder()
                 .modelApiId("gpt-4.1")
                 .metricType(MetricType.CODING)
-                .metricValue(new BigDecimal("10.00"))
-                .measuredAt(LocalDateTime.of(2025, 1, 1, 0, 0))
-                .unit("old")
+                .metricValue(new BigDecimal("92.30"))
+                .measuredAt(LocalDateTime.of(2026, 3, 27, 9, 30))
+                .unit("score")
                 .build();
-        ModelBenchmarkDto dto = new ModelBenchmarkDto();
-        ReflectionTestUtils.setField(dto, "metricValue", new BigDecimal("92.30"));
-        ReflectionTestUtils.setField(dto, "measuredAt", LocalDateTime.of(2026, 3, 27, 9, 30));
-        ReflectionTestUtils.setField(dto, "unit", "score");
-
-        benchmark.update(dto);
 
         assertThat(benchmark.getMetricValue()).isEqualByComparingTo("92.30");
         assertThat(benchmark.getMeasuredAt()).isEqualTo(LocalDateTime.of(2026, 3, 27, 9, 30));

@@ -8,6 +8,7 @@ import back.domain.info.mapper.RequestMapper;
 import back.domain.info.repository.AiModelFamilyRepository;
 import back.domain.info.repository.AiVendorRepository;
 import back.domain.info.repository.UpdateRequestRepository;
+import back.global.exception.ServiceException;
 import back.global.storage.OciObjectStorageReader;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -50,9 +51,9 @@ class UpdateRequestServiceImplTest {
         service = new UpdateRequestServiceImpl(
                 new ObjectMapper(),
                 storageReader,
+                requestRepository,
                 aiVendorRepository,
                 familyRepository,
-                requestRepository,
                 new RequestMapper()
         );
     }
@@ -106,7 +107,7 @@ class UpdateRequestServiceImplTest {
     }
 
     @Test
-    void run_skipsItemsWhenVendorDoesNotExist() {
+    void run_throwsWhenVendorDoesNotExist() {
         String json = """
                 {
                   "collected_at": "2026-04-03T10:00:00+09:00",
@@ -127,7 +128,10 @@ class UpdateRequestServiceImplTest {
         when(storageReader.readText(BASE_PATH)).thenReturn(json);
         when(aiVendorRepository.findByName("Unknown")).thenReturn(Optional.empty());
 
-        service.run();
+        assertThatThrownBy(() -> service.run())
+                .isInstanceOf(ServiceException.class)
+                .hasMessageContaining("Failed to create update request")
+                .hasMessageContaining("item-1");
 
         verify(requestRepository, never()).save(any());
     }
@@ -157,7 +161,7 @@ class UpdateRequestServiceImplTest {
     @Test
     void updateStatus_throwsWhenStatusIsInvalid() {
         assertThatThrownBy(() -> service.updateStatus(1L, "bad-status"))
-                .isInstanceOf(IllegalArgumentException.class);
+                .isInstanceOf(ServiceException.class);
     }
 
     @Test
@@ -168,9 +172,9 @@ class UpdateRequestServiceImplTest {
 
         var response = service.getUpdates(PageRequest.of(0, 10));
 
-        assertThat(response.getContents()).hasSize(1);
-        assertThat(response.getContents().getFirst().getVendorName()).isEqualTo("OpenAI");
-        assertThat(response.getTotalElements()).isEqualTo(1);
+        assertThat(response.contents()).hasSize(1);
+        assertThat(response.contents().getFirst().vendorName()).isEqualTo("OpenAI");
+        assertThat(response.totalElements()).isEqualTo(1);
     }
 
     @Test
@@ -181,10 +185,10 @@ class UpdateRequestServiceImplTest {
 
         var response = service.getUpdatesApproved(PageRequest.of(0, 5));
 
-        assertThat(response.getContents()).hasSize(1);
-        assertThat(response.getContents().getFirst().getFamilyName()).isEqualTo("GPT");
-        assertThat(response.getPage()).isEqualTo(0);
-        assertThat(response.getSize()).isEqualTo(5);
+        assertThat(response.contents()).hasSize(1);
+        assertThat(response.contents().getFirst().familyName()).isEqualTo("GPT");
+        assertThat(response.page()).isEqualTo(0);
+        assertThat(response.size()).isEqualTo(5);
     }
 
     private UpdateRequest createUpdateRequestEntity() {

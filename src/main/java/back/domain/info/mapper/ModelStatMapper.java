@@ -8,11 +8,11 @@ import org.springframework.stereotype.Component;
 public class ModelStatMapper {
     public ModelBenchmark toModelBenchmarkEntity(ModelBenchmarkDto dto) {
         return ModelBenchmark.builder()
-                .modelApiId(dto.getModelApiId())
-                .metricType(dto.getMetricType())
-                .metricValue(dto.getMetricValue())
-                .measuredAt(dto.getMeasuredAt())
-                .unit(dto.getUnit())
+                .modelApiId(dto.modelApiId())
+                .metricType(dto.metricType())
+                .metricValue(dto.metricValue())
+                .measuredAt(dto.measuredAt())
+                .unit(dto.unit())
                 .build();
     }
 }

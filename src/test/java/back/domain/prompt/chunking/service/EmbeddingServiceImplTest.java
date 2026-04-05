@@ -1,5 +1,8 @@
 package back.domain.prompt.chunking.service;
 
+import back.global.exception.CommonErrorCode;
+import back.global.exception.ServiceException;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -38,7 +41,8 @@ class EmbeddingServiceImplTest {
         ));
 
         assertThatThrownBy(() -> embeddingService.embed("hello"))
-                .isInstanceOf(IllegalStateException.class);
+                .isInstanceOfSatisfying(ServiceException.class, ex ->
+                        assertThat(ex.getErrorCode()).isEqualTo(CommonErrorCode.INTERNAL_SERVER_ERROR));
     }
 
     @Test
@@ -75,7 +79,8 @@ class EmbeddingServiceImplTest {
         ));
 
         assertThatThrownBy(() -> embeddingService.embedBatch(List.of("hello")))
-                .isInstanceOf(IllegalStateException.class);
+                .isInstanceOfSatisfying(ServiceException.class, ex ->
+                        assertThat(ex.getErrorCode()).isEqualTo(CommonErrorCode.INTERNAL_SERVER_ERROR));
     }
 
     private WebClient webClientResponding(ClientResponse response) {

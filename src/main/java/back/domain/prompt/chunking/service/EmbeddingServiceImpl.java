@@ -2,6 +2,8 @@ package back.domain.prompt.chunking.service;
 
 import back.domain.prompt.chunking.dto.EmbeddingRequest;
 import back.domain.prompt.chunking.dto.EmbeddingResponse;
+import back.global.exception.CommonErrorCode;
+import back.global.exception.ServiceException;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -18,6 +20,9 @@ import java.util.List;
 )
 public class EmbeddingServiceImpl implements EmbeddingService {
 
+    private static final String EMBEDDING_RESPONSE_EMPTY = "임베딩 응답이 비어 있습니다.";
+    private static final String EMBEDDING_SIZE_MISMATCH = "임베딩 응답 크기가 요청된 배치 크기와 일치하지 않습니다.";
+
     private final WebClient embeddingWebClient;
 
     // 배치 사이즈는 Fast API에 있는 배치 사이즈와 통일시켜야 한다.
@@ -32,7 +37,11 @@ public class EmbeddingServiceImpl implements EmbeddingService {
                 .block();
 
         if (response == null || response.embeddings() == null || response.embeddings().isEmpty()) {
-            throw new IllegalStateException("임베딩 응답이 비어 있습니다.");
+            throw new ServiceException(
+                    CommonErrorCode.INTERNAL_SERVER_ERROR,
+                    "[EmbeddingService#embed] embedding response is empty",
+                    EMBEDDING_RESPONSE_EMPTY
+            );
         }
 
         return response.embeddings().getFirst();
@@ -54,14 +63,20 @@ public class EmbeddingServiceImpl implements EmbeddingService {
                     .block();
 
             if (response == null || response.embeddings() == null) {
-                throw new IllegalStateException("임베딩 응답이 비어 있습니다. batchStart=" + i);
+                throw new ServiceException(
+                        CommonErrorCode.INTERNAL_SERVER_ERROR,
+                        "[EmbeddingService#embedBatch] embedding response is empty",
+                        EMBEDDING_RESPONSE_EMPTY
+                );
             }
 
             // 배치 크기와 반환된 임베딩 크기가 일치하는지 확인
             if (response.embeddings().size() != batch.size()) {
-                throw new IllegalStateException("임베딩 응답의 크기가 요청된 배치 크기와 일치하지 않습니다. " +
-                        "요청된 배치 크기: " + batch.size() + ", 반환된 임베딩 크기: " + response.embeddings().size() +
-                        ", batchStart=" + i);
+                throw new ServiceException(
+                        CommonErrorCode.INTERNAL_SERVER_ERROR,
+                        "[EmbeddingService#embedBatch] embedding response size mismatch",
+                        EMBEDDING_SIZE_MISMATCH
+                );
             }
 
             allEmbeddings.addAll(response.embeddings());

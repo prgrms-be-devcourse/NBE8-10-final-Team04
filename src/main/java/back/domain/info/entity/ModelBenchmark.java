@@ -33,9 +33,4 @@ public class ModelBenchmark extends BaseEntity {
     @Column(length = 50)
     private String unit;
 
-    public void update(ModelBenchmarkDto dto) {
-        this.metricValue = dto.getMetricValue();
-        this.measuredAt = dto.getMeasuredAt();
-        this.unit = dto.getUnit();
-    }
 }

@@ -4,12 +4,14 @@ import back.domain.info.dto.data.ModelBenchmarkDto;
 import back.domain.info.entity.ModelBenchmark;
 import back.domain.info.mapper.ModelStatMapper;
 import back.domain.info.repository.ModelBenchmarkRepository;
+import back.global.exception.CommonErrorCode;
+import back.global.exception.ServiceException;
 import back.global.storage.OciObjectStorageReader;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.ObjectMapper;
 
@@ -25,71 +27,48 @@ public class ModelBenchmarkServiceImpl implements ModelBenchmarkService {
 
     private static final String BASE_PATH = "data/ai-info/model_benchmarks_records.json";
 
-    private final ModelBenchmarkRepository benchmarkRepository;
-    private final ModelStatMapper modelStatMapper;
     private final ObjectMapper objectMapper;
     private final OciObjectStorageReader storageReader;
+    private final ModelBenchmarkRepository benchmarkRepository;
+    private final ModelStatMapper modelStatMapper;
 
     @Override
+    @Transactional
     public void run() {
-        String content = storageReader.readText(BASE_PATH);
-        if (content != null) {
-            processJson(BASE_PATH, content);
-        }
-    }
+        log.info("[ModelBenchmarkService#run] 시작. path={}", BASE_PATH);
 
-    private void processJson(String resourceName, String json) {
+        String content = storageReader.readText(BASE_PATH);
+        if (content == null) return;
+
         List<ModelBenchmarkDto> benchmarkDtos;
         try {
-            benchmarkDtos = objectMapper.readValue(json, new TypeReference<List<ModelBenchmarkDto>>() {});
+            benchmarkDtos = objectMapper.readValue(content, new TypeReference<List<ModelBenchmarkDto>>() {});
         } catch (Exception e) {
-            log.error("[ModelBenchmarkServiceImpl] JSON 파싱 실패: {}", resourceName, e);
+            log.error("[ModelBenchmarkService#run] JSON 파싱 실패", e);
             return;
         }
 
-        if (benchmarkDtos == null || benchmarkDtos.isEmpty()) {
-            log.warn("[ModelBenchmarkServiceImpl] model_benchmarks JSON 파일에서 읽은 데이터가 없습니다.");
-            return;
-        }
-
-        int createdCount = 0;
-        int updatedCount = 0;
-        int skippedCount = 0;
-
-        for (ModelBenchmarkDto benchmarkDto : benchmarkDtos) {
-
-            ModelBenchmark benchmark = benchmarkRepository
-                    .findByModelApiIdAndMetricType(benchmarkDto.getModelApiId(), benchmarkDto.getMetricType())
-                    .orElse(null);
-
-            if (benchmark == null) {
-                createModelBenchmark(benchmarkDto);
-                createdCount++;
-            } else {
-                updateModelBenchmark(benchmark, benchmarkDto);
-                updatedCount++;
+        int success = 0;
+        for(ModelBenchmarkDto dto : benchmarkDtos) {
+            try {
+                createModelBenchmark(dto);
+                success++;
+            } catch (Exception e) {
+                throw new ServiceException(
+                        CommonErrorCode.INTERNAL_SERVER_ERROR,
+                        "[ModelBenchmarkService#run] Failed to create model benchmark. (modelApiId=" + dto.modelApiId() + ")",
+                        "모델 벤치마크 데이터 생성 중 오류가 발생했습니다. (modelApiId=" + dto.modelApiId() + ")"
+                );
             }
         }
 
-        log.info(
-                "[ModelBenchmarkServiceImpl] model_benchmarks upsert 완료. created={}, updated={}, skipped={}, total={}",
-                createdCount,
-                updatedCount,
-                skippedCount,
-                benchmarkDtos.size()
-        );
+        log.info("[ModelBenchmarkService#run] 완료. success={}", success);
     }
 
-    @Transactional
     private ModelBenchmark createModelBenchmark(ModelBenchmarkDto dto) {
         ModelBenchmark benchmark = modelStatMapper.toModelBenchmarkEntity(dto);
         ModelBenchmark savedBenchmark = benchmarkRepository.save(benchmark);
         return savedBenchmark;
-    }
-
-    @Transactional
-    private void updateModelBenchmark(ModelBenchmark benchmark, ModelBenchmarkDto dto) {
-        benchmark.update(dto);
     }
 
 }

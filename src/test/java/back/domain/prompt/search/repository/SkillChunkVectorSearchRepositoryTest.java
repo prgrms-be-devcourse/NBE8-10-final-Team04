@@ -63,10 +63,10 @@ class SkillChunkVectorSearchRepositoryTest {
         List<SkillChunkVectorSearchRowDto> result = repository.searchTopK("[0.1,0.2]", 5);
 
         assertThat(result).singleElement().satisfies(row -> {
-            assertThat(row.getChunkId()).isEqualTo(1L);
-            assertThat(row.getSkillId()).isEqualTo(2L);
-            assertThat(row.getSkillName()).isEqualTo("alpha");
-            assertThat(row.getSimilarity()).isEqualTo(0.91f);
+            assertThat(row.chunkId()).isEqualTo(1L);
+            assertThat(row.skillId()).isEqualTo(2L);
+            assertThat(row.skillName()).isEqualTo("alpha");
+            assertThat(row.similarity()).isEqualTo(0.91f);
         });
     }
 }

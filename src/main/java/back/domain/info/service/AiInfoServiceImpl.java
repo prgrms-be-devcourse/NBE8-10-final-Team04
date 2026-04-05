@@ -9,10 +9,10 @@ import back.domain.info.repository.AiModelFamilyRepository;
 import back.domain.info.repository.AiVendorRepository;
 import back.global.storage.OciObjectStorageReader;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.ObjectMapper;
 
@@ -27,89 +27,77 @@ import java.util.List;
 )
 public class AiInfoServiceImpl implements AiInfoService {
 
+    private final ObjectMapper objectMapper;
+    private final OciObjectStorageReader storageReader;
     private final AiVendorRepository aiVendorRepository;
     private final AiModelFamilyRepository aiModelFamilyRepository;
     private final AiModelMapper aiModelMapper;
-    private final ObjectMapper objectMapper;
-    private final OciObjectStorageReader storageReader;
 
     private static final String BASE_PATH = "data/ai-info/integrated_major_models.json";
 
     @Override
+    @Transactional
     public void run() {
-        String content = storageReader.readText(BASE_PATH);
-        if (content != null) {
-            processJson(BASE_PATH, content);
-        }
-    }
+        log.info("[AiInfoService#run] 시작. path={}", BASE_PATH);
 
-    /**
-     * JSON 문자열을 파싱해 vendor·family를 upsert한다.
-     */
-    public void processJson(String resourceName, String json) {
+        String content = storageReader.readText(BASE_PATH);
+        if (content == null) return;
+
         List<VendorDto> vendorDtos;
         try {
-            vendorDtos = objectMapper.readValue(json, new TypeReference<List<VendorDto>>() {});
+            vendorDtos = objectMapper.readValue(content, new TypeReference<List<VendorDto>>() {});
         } catch (Exception e) {
-            log.error("[AiInfoService] JSON 파싱 실패: {}", resourceName, e);
+            log.error("[AiInfoService#run] JSON 파싱 실패", e);
             return;
         }
 
-        if (vendorDtos == null || vendorDtos.isEmpty()) {
-            log.warn("[AiInfoService] JSON 파일에서 읽은 데이터가 없습니다: {}", resourceName);
-            return;
-        }
-
-        int createdVendorCount = 0;
-        int updatedVendorCount = 0;
-
-        for (VendorDto vendorDto : vendorDtos) {
-            AiVendor vendor = aiVendorRepository.findByName(vendorDto.getName()).orElse(null);
-
-            if (vendor == null) {
-                vendor = createVendor(vendorDto);
-                createdVendorCount++;
-            } else {
-                updateVendor(vendor, vendorDto);
-                updatedVendorCount++;
+        int success = 0, fail = 0;
+        for (VendorDto dto : vendorDtos) {
+            try {
+                upsertVendor(dto);
+                success++;
+            } catch (Exception e) {
+                log.error("[AiInfoService#run] vendor 처리 실패, 스킵: {}", dto.name(), e);
+                fail++;
             }
-
-            processFamilies(vendor, vendorDto);
         }
 
-        log.info(
-                "[AiInfoService] vendor upsert 완료 ({}). created={}, updated={}, total={}",
-                resourceName,
-                createdVendorCount,
-                updatedVendorCount,
-                vendorDtos.size()
-        );
+        log.info("[AiInfoService#run] 완료. success={}, fail={}", success, fail);
     }
 
-    @Transactional
+    private void upsertVendor(VendorDto dto) {
+        AiVendor vendor = aiVendorRepository.findByName(dto.name()).orElse(null);
+
+        if (vendor == null) {
+            vendor = createVendor(dto);
+        } else {
+            updateVendor(vendor, dto);
+        }
+
+        processFamilies(vendor, dto);
+    }
+
     private AiVendor createVendor(VendorDto vendorDto) {
         AiVendor vendor = aiModelMapper.toVendorEntity(vendorDto);
-        AiVendor savedVendor = aiVendorRepository.save(vendor);
-        return savedVendor;
+        return aiVendorRepository.save(vendor);
     }
 
-    @Transactional
     private void updateVendor(AiVendor vendor, VendorDto vendorDto) {
         vendor.update(
-                vendorDto.getOfficialUrl(),
-                vendorDto.getIsActive(),
-                vendorDto.getIsDeprecated()
+                vendorDto.officialUrl(),
+                vendorDto.isActive(),
+                vendorDto.isDeprecated()
         );
         log.info("[AiInfoService] vendor 수정: {}", vendor.getName());
     }
 
     private void processFamilies(AiVendor vendor, VendorDto vendorDto) {
-        if (vendorDto.getFamilies() == null || vendorDto.getFamilies().isEmpty()) {
+        if (vendorDto.families() == null || vendorDto.families().isEmpty()) {
             return;
         }
 
-        for (FamilyDto familyDto : vendorDto.getFamilies()) {
-            AiModelFamily family = findFamily(vendor, familyDto.getFamilyName());
+        for (FamilyDto familyDto : vendorDto.families()) {
+            AiModelFamily family = findFamily(vendor, familyDto.familyName());
 
             if (family == null) {
                 family = createFamily(vendor, familyDto);
@@ -127,15 +115,13 @@ public class AiInfoServiceImpl implements AiInfoService {
                 .orElse(null);
     }
 
-    @Transactional
     private AiModelFamily createFamily(AiVendor vendor, FamilyDto familyDto) {
         AiModelFamily family = aiModelMapper.toFamilyEntity(familyDto, vendor);
         return aiModelFamilyRepository.save(family);
     }
 
-    @Transactional
     private void updateFamily(AiModelFamily family, FamilyDto familyDto) {
-        family.update(familyDto.getCommonDescription());
+        family.update(familyDto.commonDescription());
     }
 
 }
