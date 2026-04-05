@@ -107,7 +107,7 @@ class UpdateRequestServiceImplTest {
     }
 
     @Test
-    void run_skipsItemsWhenVendorDoesNotExist() {
+    void run_throwsWhenVendorDoesNotExist() {
         String json = """
                 {
                   "collected_at": "2026-04-03T10:00:00+09:00",
@@ -128,7 +128,10 @@ class UpdateRequestServiceImplTest {
         when(storageReader.readText(BASE_PATH)).thenReturn(json);
         when(aiVendorRepository.findByName("Unknown")).thenReturn(Optional.empty());
 
-        service.run();
+        assertThatThrownBy(() -> service.run())
+                .isInstanceOf(ServiceException.class)
+                .hasMessageContaining("Failed to create update request")
+                .hasMessageContaining("item-1");
 
         verify(requestRepository, never()).save(any());
     }
