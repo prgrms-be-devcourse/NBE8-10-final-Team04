@@ -31,9 +31,6 @@ spring:
 app:
   embedding:
     base-url: ${APP_EMBEDDING_BASE_URL:https://embedding-server-domain}
-  prompts:
-    base-path: ${APP_PROMPTS_BASE_PATH:data/prompts}
-    oci-prefix: ${OCI_OBJECT_STORAGE_PROMPTS_PREFIX:data/prompts/}
   mcp:
     recommendation:
       candidate-source: ${APP_MCP_RECOMMENDATION_CANDIDATE_SOURCE:skill-search}
@@ -46,6 +43,24 @@ app:
         final-score-threshold: ${APP_MCP_RECOMMENDATION_FINAL_SCORE_THRESHOLD:0.45}
   storage:
     type: ${APP_STORAGE_TYPE:oci}
+    local:
+      upload-dir: ${APP_STORAGE_LOCAL_UPLOAD_DIR:./uploads}
+    oci:
+      bucket: ${OCI_OBJECT_STORAGE_BUCKET:}
+      namespace: ${OCI_OBJECT_STORAGE_NAMESPACE:}
+      prefix: ${OCI_OBJECT_STORAGE_PREFIX:data/}
+      auth-type: ${OCI_AUTH_TYPE:config-file}
+      config-file-path: ${OCI_CONFIG_FILE_PATH:~/.oci/config}
+      profile: ${OCI_CONFIG_PROFILE:DEFAULT}
+      region: ${OCI_REGION:}
+  prompts:
+    base-path: ${APP_PROMPTS_BASE_PATH:data/prompts}
+    oci-prefix: ${OCI_OBJECT_STORAGE_PROMPTS_PREFIX:data/prompts/}
+  ai-info:
+    oci-prefix: ${AI_INFO_OCI_PREFIX:data/ai-info/}
+  ai-tracker:
+    oci-prefix: ${AI_TRACKER_OCI_PREFIX:data/ai-tracker/}
+    webhook-secret: ${SPRING_WEBHOOK_SECRET}
 
 custom:
   jwt:
@@ -87,7 +102,7 @@ oci:
 
 gemini:
   api-key: ${CRAWL_GEMINI_API_KEY}
-  model: gemini-3.1-flash-lite-preview              # 매칭용 gemini-2.5-flash limit으로 변경
+  model: gemini-3.1-flash-lite-preview              # 매칭용 gemini-2.5-flash limit으로 인해 변경
   description-model: gemini-3.1-flash-lite-preview  # description 생성용
 
 ai-model:

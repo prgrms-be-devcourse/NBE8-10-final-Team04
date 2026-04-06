@@ -1,4 +1,4 @@
-package back.domain.aimodel.config;
+package back.global.config.properties;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 

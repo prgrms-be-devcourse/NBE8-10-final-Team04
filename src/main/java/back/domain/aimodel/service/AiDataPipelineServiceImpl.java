@@ -6,6 +6,7 @@ import back.domain.aimodel.dto.integrated.IntegratedVendor;
 import back.domain.aimodel.dto.openrouter.OrModelsResponse;
 import back.global.exception.CommonErrorCode;
 import back.global.exception.ServiceException;
+import back.global.infra.oci.OciStorageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -17,10 +18,10 @@ import java.util.List;
 @RequiredArgsConstructor
 public class AiDataPipelineServiceImpl implements AiDataPipelineService {
 
-    private static final String RAW_OR_FILE     = "models_info_raw.json";
-    private static final String RAW_AA_FILE     = "models_benchmark_raw.json";
-    private static final String INTEGRATED_FILE = "integrated_major_models.json";
-    private static final String BENCHMARKS_FILE = "model_benchmarks_records.json";
+    private static final String RAW_OR_FILE     = "ai-info/models_info_raw.json";
+    private static final String RAW_AA_FILE     = "ai-info/models_benchmark_raw.json";
+    private static final String INTEGRATED_FILE = "ai-info/integrated_major_models.json";
+    private static final String BENCHMARKS_FILE = "ai-info/model_benchmarks_records.json";
 
     private final OciStorageService  ociStorageService;
     private final ModelMergeService  modelMergeService;
