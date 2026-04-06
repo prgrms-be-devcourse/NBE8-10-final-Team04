@@ -24,6 +24,10 @@ public class SkillSearchMcpRecommendationCandidateProvider implements McpRecomme
     @Override
     public List<McpRecommendationCandidate> findTopCandidates(McpRecommendationQuery query) {
         SkillChunkSearchResultDto response = skillSearchService.search(query.query());
+        if (response == null || response.candidates() == null) {
+            return List.of();
+        }
+
         return response.candidates().stream()
                 .map(this::toMcpRecommendationCandidate)
                 .toList();

@@ -84,4 +84,16 @@ class SkillSearchMcpRecommendationCandidateProviderTest {
         assertThat(result).hasSize(1);
         assertThat(result.getFirst().metadata()).isNull();
     }
+
+    @Test
+    @DisplayName("검색 결과 candidates가 null이면 빈 리스트를 반환한다")
+    void findTopCandidates_whenCandidatesIsNull_returnsEmptyList() {
+        when(skillSearchService.search("backend"))
+                .thenReturn(new SkillChunkSearchResultDto(null));
+
+        List<McpRecommendationCandidate> result =
+                provider.findTopCandidates(new McpRecommendationQuery("backend"));
+
+        assertThat(result).isEmpty();
+    }
 }
