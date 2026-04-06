@@ -22,14 +22,14 @@ public class AiInfoController {
 
     @PostMapping("/model")
     public ResponseEntity<RsData<Void>> getModel() {
-        inforService.run();
+        inforService.getAiInfo();
 
         return ResponseEntity.ok(new RsData<>("데이터 적재 완료"));
     }
 
     @PostMapping("/benchmark")
     public ResponseEntity<RsData<Void>> getBenchmark() {
-        benchmarkService.run();
+        benchmarkService.getModelBenchmark();
 
         return ResponseEntity.ok(new RsData<>("데이터 적재 완료"));
     }
@@ -37,7 +37,7 @@ public class AiInfoController {
     // Object Storage update_raw.json에서 가져온 데이터 적재
     @PostMapping("/update")
     public ResponseEntity<RsData<Void>> run() {
-        updateRequestService.run();
+        updateRequestService.getUpdateRequest();
 
         return ResponseEntity.ok(new RsData<>("데이터 적재 완료"));
     }

@@ -4,8 +4,6 @@ import back.domain.info.dto.data.ModelBenchmarkDto;
 import back.domain.info.entity.ModelBenchmark;
 import back.domain.info.mapper.ModelStatMapper;
 import back.domain.info.repository.ModelBenchmarkRepository;
-import back.global.exception.CommonErrorCode;
-import back.global.exception.ServiceException;
 import back.global.storage.OciObjectStorageReader;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import lombok.RequiredArgsConstructor;
@@ -34,7 +32,7 @@ public class ModelBenchmarkServiceImpl implements ModelBenchmarkService {
 
     @Override
     @Transactional
-    public void run() {
+    public void getModelBenchmark() {
         log.info("[ModelBenchmarkService#run] 시작. path={}", BASE_PATH);
 
         String content = storageReader.readText(BASE_PATH);
@@ -72,6 +70,7 @@ public class ModelBenchmarkServiceImpl implements ModelBenchmarkService {
             return;
         }
         ModelBenchmark benchmark = modelStatMapper.toModelBenchmarkEntity(dto);
+        benchmarkRepository.save(benchmark);
     }
 
 }

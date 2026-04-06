@@ -4,7 +4,7 @@ import back.domain.info.dto.response.PageUpdateRequestResponse;
 import org.springframework.data.domain.Pageable;
 
 public interface UpdateRequestService {
-    void run();
+    void getUpdateRequest();
 
     void updateStatus(Long id, String status);
 
