@@ -65,7 +65,7 @@ class InfoEntityTest {
     }
 
     @Test
-    void updateRequest_builderAndSettersExposeValues() {
+    void updateRequest_builderAndReviewExposeValues() {
         AiVendor vendor = AiVendor.builder()
                 .name("OpenAI")
                 .officialUrl("https://openai.com")
@@ -88,9 +88,9 @@ class InfoEntityTest {
                 .summary("summary")
                 .status(Status.PENDING)
                 .notifiedAt(LocalDate.of(2026, 4, 3))
-                .reviewedAt(LocalDateTime.of(2026, 4, 3, 10, 0))
                 .build();
-        request.setStatus(Status.APPROVED);
+        LocalDateTime beforeReview = LocalDateTime.now().minusSeconds(1);
+        request.review(Status.APPROVED);
 
         assertThat(request.getSourceId()).isEqualTo("item-1");
         assertThat(request.getVendor()).isSameAs(vendor);
@@ -101,6 +101,6 @@ class InfoEntityTest {
         assertThat(request.getSummary()).isEqualTo("summary");
         assertThat(request.getStatus()).isEqualTo(Status.APPROVED);
         assertThat(request.getNotifiedAt()).isEqualTo(LocalDate.of(2026, 4, 3));
-        assertThat(request.getReviewedAt()).isEqualTo(LocalDateTime.of(2026, 4, 3, 10, 0));
+        assertThat(request.getReviewedAt()).isAfter(beforeReview);
     }
 }

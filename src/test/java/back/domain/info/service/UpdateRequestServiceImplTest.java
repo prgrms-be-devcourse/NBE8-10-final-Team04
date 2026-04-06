@@ -8,6 +8,7 @@ import back.domain.info.mapper.RequestMapper;
 import back.domain.info.repository.AiModelFamilyRepository;
 import back.domain.info.repository.AiVendorRepository;
 import back.domain.info.repository.UpdateRequestRepository;
+import back.global.exception.CommonErrorCode;
 import back.global.exception.ServiceException;
 import back.global.storage.OciObjectStorageReader;
 import org.junit.jupiter.api.BeforeEach;
@@ -94,7 +95,7 @@ class UpdateRequestServiceImplTest {
         when(familyRepository.findByFamilyName("GPT")).thenReturn(Optional.of(family));
         when(requestRepository.save(any(UpdateRequest.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        service.run();
+        service.getUpdateRequest();
 
         ArgumentCaptor<UpdateRequest> captor = ArgumentCaptor.forClass(UpdateRequest.class);
         verify(requestRepository).save(captor.capture());
@@ -128,10 +129,11 @@ class UpdateRequestServiceImplTest {
         when(storageReader.readText(BASE_PATH)).thenReturn(json);
         when(aiVendorRepository.findByName("Unknown")).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> service.run())
-                .isInstanceOf(ServiceException.class)
-                .hasMessageContaining("Failed to create update request")
-                .hasMessageContaining("item-1");
+        assertThatThrownBy(() -> service.getUpdateRequest())
+                .isInstanceOfSatisfying(ServiceException.class, ex -> {
+                    assertThat(ex.getErrorCode()).isEqualTo(CommonErrorCode.NOT_FOUND);
+                    assertThat(ex.getLogMessage()).contains("item-1");
+                });
 
         verify(requestRepository, never()).save(any());
     }
@@ -140,7 +142,7 @@ class UpdateRequestServiceImplTest {
     void run_ignoresInvalidJson() {
         when(storageReader.readText(BASE_PATH)).thenReturn("{broken");
 
-        service.run();
+        service.getUpdateRequest();
 
         verifyNoInteractions(aiVendorRepository, familyRepository, requestRepository);
     }

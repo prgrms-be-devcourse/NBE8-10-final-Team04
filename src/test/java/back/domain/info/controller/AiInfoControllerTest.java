@@ -39,7 +39,7 @@ class AiInfoControllerTest {
     void getModel_runsAiInfoService() throws Exception {
         ResponseEntity<RsData<Void>> response = controller.getModel();
 
-        verify(aiInfoService).run();
+        verify(aiInfoService).getAiInfo();
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isNotNull();
         assertThat(response.getBody().message()).isNotBlank();
@@ -49,7 +49,7 @@ class AiInfoControllerTest {
     void getBenchmark_runsBenchmarkService() throws Exception {
         ResponseEntity<RsData<Void>> response = controller.getBenchmark();
 
-        verify(benchmarkService).run();
+        verify(benchmarkService).getModelBenchmark();
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isNotNull();
     }
@@ -58,7 +58,7 @@ class AiInfoControllerTest {
     void run_executesUpdateImport() throws Exception {
         ResponseEntity<RsData<Void>> response = controller.run();
 
-        verify(updateRequestService).run();
+        verify(updateRequestService).getUpdateRequest();
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isNotNull();
     }

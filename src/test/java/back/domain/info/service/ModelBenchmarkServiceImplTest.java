@@ -60,7 +60,7 @@ class ModelBenchmarkServiceImplTest {
         when(storageReader.readText(BASE_PATH)).thenReturn(json);
         when(benchmarkRepository.save(any(ModelBenchmark.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        service.run();
+        service.getModelBenchmark();
 
         ArgumentCaptor<ModelBenchmark> captor = ArgumentCaptor.forClass(ModelBenchmark.class);
         verify(benchmarkRepository, times(2)).save(captor.capture());
@@ -85,7 +85,7 @@ class ModelBenchmarkServiceImplTest {
         when(storageReader.readText(BASE_PATH)).thenReturn(json);
         when(benchmarkRepository.save(any(ModelBenchmark.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        service.run();
+        service.getModelBenchmark();
 
         ArgumentCaptor<ModelBenchmark> captor = ArgumentCaptor.forClass(ModelBenchmark.class);
         verify(benchmarkRepository, times(1)).save(captor.capture());
@@ -98,7 +98,7 @@ class ModelBenchmarkServiceImplTest {
     void run_ignoresInvalidJson() {
         when(storageReader.readText(BASE_PATH)).thenReturn("{broken");
 
-        service.run();
+        service.getModelBenchmark();
 
         verifyNoInteractions(benchmarkRepository);
     }
