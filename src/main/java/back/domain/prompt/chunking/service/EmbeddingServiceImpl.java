@@ -4,6 +4,7 @@ import back.domain.prompt.chunking.dto.EmbeddingRequest;
 import back.domain.prompt.chunking.dto.EmbeddingResponse;
 import back.global.exception.CommonErrorCode;
 import back.global.exception.ServiceException;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
@@ -13,6 +14,10 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@SuppressFBWarnings(
+        value = "EI_EXPOSE_REP2",
+        justification = "RestClient is managed and shared by Spring container for outbound HTTP calls."
+)
 public class EmbeddingServiceImpl implements EmbeddingService {
 
     private static final String EMBEDDING_RESPONSE_EMPTY = "임베딩 응답이 비어 있습니다.";
