@@ -3,69 +3,75 @@ package back.domain.prompt.chunking.service;
 import back.global.exception.CommonErrorCode;
 import back.global.exception.ServiceException;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-
-import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
-
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.web.reactive.function.client.ClientResponse;
-import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.test.web.client.MockRestServiceServer;
+import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestTemplate;
 
-import reactor.core.publisher.Mono;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
+import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
 
 class EmbeddingServiceImplTest {
+
+    private static final String BASE_URL = "http://localhost";
+
+    private MockRestServiceServer server;
+    private EmbeddingServiceImpl embeddingService;
+
+    @BeforeEach
+    void setUp() {
+        RestTemplate restTemplate = new RestTemplate();
+        server = MockRestServiceServer.bindTo(restTemplate).build();
+        RestClient restClient = RestClient.builder(restTemplate).baseUrl(BASE_URL).build();
+        embeddingService = new EmbeddingServiceImpl(restClient);
+    }
 
     @Test
     @DisplayName("단일 임베딩 요청 시 첫 번째 벡터를 반환한다")
     void embed_returnsFirstEmbedding() {
-        EmbeddingServiceImpl embeddingService = new EmbeddingServiceImpl(webClientResponding(
-                jsonResponse("{\"embeddings\":[[0.1,0.2]]}")
-        ));
+        server.expect(requestTo(BASE_URL + "/embed"))
+                .andRespond(withSuccess("{\"embeddings\":[[0.1,0.2]]}", MediaType.APPLICATION_JSON));
 
         List<Float> embedding = embeddingService.embed("hello");
 
         assertThat(embedding).containsExactly(0.1f, 0.2f);
+        server.verify();
     }
 
     @Test
     @DisplayName("단일 임베딩 응답이 비어 있으면 예외를 던진다")
     void embed_throwsWhenResponseIsEmpty() {
-        EmbeddingServiceImpl embeddingService = new EmbeddingServiceImpl(webClientResponding(
-                jsonResponse("{\"embeddings\":[]}")
-        ));
+        server.expect(requestTo(BASE_URL + "/embed"))
+                .andRespond(withSuccess("{\"embeddings\":[]}", MediaType.APPLICATION_JSON));
 
         assertThatThrownBy(() -> embeddingService.embed("hello"))
                 .isInstanceOfSatisfying(ServiceException.class, ex ->
                         assertThat(ex.getErrorCode()).isEqualTo(CommonErrorCode.INTERNAL_SERVER_ERROR));
+        server.verify();
     }
 
     @Test
     @DisplayName("배치 임베딩은 32개 단위로 나눠 여러 응답을 합친다")
     void embedBatch_splitsIntoFixedSizeBatchesAndAggregatesResponses() {
-        AtomicInteger callCount = new AtomicInteger();
-        EmbeddingServiceImpl embeddingService = new EmbeddingServiceImpl(WebClient.builder()
-                .exchangeFunction(request -> {
-                    int invocation = callCount.getAndIncrement();
-                    String body = invocation == 0
-                            ? jsonForEmbeddings(0, 32)
-                            : jsonForEmbeddings(32, 1);
-                    return Mono.just(jsonResponse(body));
-                })
-                .build());
+        server.expect(requestTo(BASE_URL + "/embed"))
+                .andRespond(withSuccess(jsonForEmbeddings(0, 32), MediaType.APPLICATION_JSON));
+        server.expect(requestTo(BASE_URL + "/embed"))
+                .andRespond(withSuccess(jsonForEmbeddings(32, 1), MediaType.APPLICATION_JSON));
 
         List<List<Float>> embeddings = embeddingService.embedBatch(
-                java.util.stream.IntStream.range(0, 33)
-                        .mapToObj(i -> "text-" + i)
-                        .toList()
+                IntStream.range(0, 33).mapToObj(i -> "text-" + i).toList()
         );
 
-        assertThat(callCount.get()).isEqualTo(2);
+        server.verify();
         assertThat(embeddings).hasSize(33);
         assertThat(embeddings.getFirst()).containsExactly(0.0f);
         assertThat(embeddings.get(32)).containsExactly(32.0f);
@@ -74,32 +80,19 @@ class EmbeddingServiceImplTest {
     @Test
     @DisplayName("배치 임베딩 응답에 embeddings 필드가 없으면 예외를 던진다")
     void embedBatch_throwsWhenEmbeddingsAreMissing() {
-        EmbeddingServiceImpl embeddingService = new EmbeddingServiceImpl(webClientResponding(
-                jsonResponse("{}")
-        ));
+        server.expect(requestTo(BASE_URL + "/embed"))
+                .andRespond(withSuccess("{}", MediaType.APPLICATION_JSON));
 
         assertThatThrownBy(() -> embeddingService.embedBatch(List.of("hello")))
                 .isInstanceOfSatisfying(ServiceException.class, ex ->
                         assertThat(ex.getErrorCode()).isEqualTo(CommonErrorCode.INTERNAL_SERVER_ERROR));
-    }
-
-    private WebClient webClientResponding(ClientResponse response) {
-        return WebClient.builder()
-                .exchangeFunction(request -> Mono.just(response))
-                .build();
-    }
-
-    private ClientResponse jsonResponse(String body) {
-        return ClientResponse.create(HttpStatus.OK)
-                .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
-                .body(body)
-                .build();
+        server.verify();
     }
 
     private String jsonForEmbeddings(int startInclusive, int count) {
-        String embeddings = java.util.stream.IntStream.range(startInclusive, startInclusive + count)
+        String embeddings = IntStream.range(startInclusive, startInclusive + count)
                 .mapToObj(value -> "[" + value + ".0]")
-                .collect(java.util.stream.Collectors.joining(","));
+                .collect(Collectors.joining(","));
         return "{\"embeddings\":[" + embeddings + "]}";
     }
 }
