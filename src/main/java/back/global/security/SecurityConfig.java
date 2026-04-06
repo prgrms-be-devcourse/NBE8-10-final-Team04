@@ -29,6 +29,7 @@ public class SecurityConfig {
     private final RestAuthenticationEntryPoint restAuthenticationEntryPoint;
     private final RestAccessDeniedHandler restAccessDeniedHandler;
 
+
     @Value("${custom.cors.allowed-origin-patterns:http://localhost:3000}")
     private List<String> allowedOriginPatterns;
 
@@ -57,7 +58,11 @@ public class SecurityConfig {
                                 "/actuator/info",
                                 "/api/v1/prompts/run",
                                 "/api/v1/info/run",
-                                "/api/v1/skills/chunk")
+                                "/api/v1/skills/chunk",
+                               //   결제모듈관련
+                                "/api/subscriptions/**",
+                                "/api/payments/**"
+                                )
                         .permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/auth/google/login")
                         .permitAll()
@@ -92,6 +97,7 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowedOriginPatterns(allowedOriginPatterns);
+        config.setAllowedOrigins(List.of("http://localhost:5173", "http://localhost:3000"));   // 임시로 토스페이 결제를 위해 추가함
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);

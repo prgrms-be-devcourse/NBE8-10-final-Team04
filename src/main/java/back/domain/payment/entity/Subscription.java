@@ -3,15 +3,14 @@ package back.domain.payment.entity;
 import back.domain.member.entity.Member;
 import back.global.jpa.entity.BaseEntity;
 import jakarta.persistence.*;
-import lombok.AccessLevel;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
+
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "subscription")
 @Getter
+@AllArgsConstructor
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Subscription extends BaseEntity {
 
@@ -68,6 +67,11 @@ public class Subscription extends BaseEntity {
     public void cancel(){
         this.status = SubscriptionStatus.CANCELED;
         this.canceledAt = LocalDateTime.now();
+    }
+
+    //  구독확인
+    public boolean isActive() {
+        return this.status == SubscriptionStatus.ACTIVE;
     }
 
 

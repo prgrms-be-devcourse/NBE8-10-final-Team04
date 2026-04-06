@@ -56,6 +56,6 @@ class UsageServiceTest {
             usageService.useOnce(1L);
         });
 
-        assertEquals("무료 사용 횟수 초과", exception.getMessage());
+        assertEquals("무료 사용 횟수를 초과하였습니다.", exception.getMessage());
     }
 }

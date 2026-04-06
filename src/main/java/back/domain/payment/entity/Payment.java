@@ -23,14 +23,18 @@ public class Payment extends BaseEntity {
     private Member member;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name="subscription_id", nullable=false, updatable=false)
+    @JoinColumn(name="subscription_id", nullable = true, updatable=false)
     private Subscription subscription;
 
     @Column(name = "order_id", updatable = false, nullable = false)
     private String orderId;
 
-    @Column(name = "payment_key", updatable = false, nullable = false)
+    @Column(name = "payment_key", updatable = false, nullable = true)
     private String paymentKey;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "plan_type", nullable = false)
+    private SubscriptionPlanType planType;
 
     @Column(name = "amount")
     private Integer amount;
@@ -58,16 +62,27 @@ public class Payment extends BaseEntity {
     @Column(name = "raw_payload", columnDefinition = "jsonb")
     private Map<String, Object> rawPayload;
 
-    @Builder
-    public Payment(Member member, Subscription subscription, String orderId, String paymentKey ,Integer amount, PaymentStatus status, Map<String, Object> rawPayload) {
+    @Builder(access = AccessLevel.PRIVATE)
+    public Payment(Member member, Subscription subscription, String orderId, String paymentKey ,Integer amount, PaymentStatus status, SubscriptionPlanType planType, Map<String, Object> rawPayload) {
         this.member = member;
         this.subscription = subscription;
         this.orderId = orderId;
         this.paymentKey = paymentKey;
-        this.amount = amount;
+        this.amount = planType.getAmount();
         this.status = status;
+        this.planType = planType;
         this.rawPayload = rawPayload;
         this.requestedAt = LocalDateTime.now();
+    }
+
+//    결제 준비
+    public static Payment createReady(Member member, String orderId, SubscriptionPlanType planType){
+        return Payment.builder()
+                .member(member)
+                .orderId(orderId)
+                .planType(planType)
+                .status(PaymentStatus.READY)
+                .build();
     }
 
 //    결제 성공 시 호출
@@ -85,6 +100,12 @@ public class Payment extends BaseEntity {
         this.failReason = reason;
         this.failedAt = LocalDateTime.now();
         this.rawPayload = errorPayload;
+    }
+
+    public void markAsDone() {
+        // 결제 상태를 완료(PAID)로 변경
+        // 만약 필드명이 status가 아니라면 본인의 엔티티 필드명에 맞게 수정하세요.
+        this.status = PaymentStatus.PAID;
     }
 
 }
