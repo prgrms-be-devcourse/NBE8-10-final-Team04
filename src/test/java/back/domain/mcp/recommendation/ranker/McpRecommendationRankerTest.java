@@ -15,7 +15,11 @@ import back.domain.mcp.recommendation.dto.McpRecommendedSkillResponse;
 
 class McpRecommendationRankerTest {
 
-    private final McpRecommendationRanker mcpRecommendationRanker = new McpRecommendationRankerImpl();
+    private final McpRecommendationRanker mcpRecommendationRanker = new McpRecommendationRankerImpl(
+            new McpRecommendationScoreCalculator(),
+            new McpRecommendationCategoryWinnerSelector(),
+            new McpRecommendationRankingLogger(),
+            new McpRecommendationRankingProperties());
 
     @Test
     @DisplayName("임계치 미만 후보는 제외하고 카테고리별 최고 점수 1개를 선택한다")
