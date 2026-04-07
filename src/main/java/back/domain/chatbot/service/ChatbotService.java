@@ -26,4 +26,11 @@ public class ChatbotService {
                 .bodyToMono(ChatbotResponse.class)
                 .block();
     }
+    public ChatbotResponse getWelcome() {
+        return webClient.get()
+                .uri(aiServiceUrl + "/chat/welcome")
+                .retrieve()
+                .bodyToMono(ChatbotResponse.class)
+                .block();
+    }
 }

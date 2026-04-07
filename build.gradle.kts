@@ -85,6 +85,9 @@ dependencies {
 
     // Google Gemini SDK
     implementation("com.google.genai:google-genai:1.44.0")
+
+    // test
+    testImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")
 }
 
 tasks.withType<Test> {
