@@ -5,6 +5,11 @@ import back.domain.auth.repository.McpTokenRepository;
 import back.domain.auth.util.McpTokenHasher;
 import back.domain.member.entity.Member;
 import back.domain.member.repository.MemberRepository;
+import back.domain.prompt.prompt.entity.Repository;
+import back.domain.prompt.prompt.entity.Skill;
+import back.domain.prompt.prompt.enums.Category;
+import back.domain.prompt.prompt.repository.RepositoryRepository;
+import back.domain.prompt.prompt.repository.SkillRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,6 +47,12 @@ class McpRecommendationIntegrationTest {
     @Autowired
     private McpTokenHasher mcpTokenHasher;
 
+    @Autowired
+    private RepositoryRepository repositoryRepository;
+
+    @Autowired
+    private SkillRepository skillRepository;
+
     @Test
     @DisplayName("유효한 MCP 토큰으로 추천 API를 호출하면 추천 결과를 반환한다")
     void recommend_success() throws Exception {
@@ -66,7 +77,54 @@ class McpRecommendationIntegrationTest {
                                 """))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message").value("추천 성공"))
-                .andExpect(jsonPath("$.data.selectedSkills").isArray());
+                .andExpect(jsonPath("$.data.selectedSkills").isArray())
+                .andExpect(jsonPath("$.data.selectedSkills[0].skillMdRaw").doesNotExist());
+    }
+
+    @Test
+    @DisplayName("유효한 MCP 토큰으로 본문 조회 API를 호출하면 스킬 원문을 반환한다")
+    void getSkillContent_success() throws Exception {
+        Member member = memberRepository.save(Member.createUser("google-sub-903", "u903@example.com", "User 903"));
+        String rawMcpToken = "mcp_recommend_token_903";
+
+        McpToken mcpToken = McpToken.issue(
+                member.getId(),
+                mcpTokenHasher.hash(rawMcpToken),
+                rawMcpToken.substring(0, Math.min(rawMcpToken.length(), 12)),
+                "Codex",
+                LocalDateTime.now().plusDays(3));
+        mcpTokenRepository.save(mcpToken);
+
+        Repository repository = repositoryRepository.save(Repository.builder()
+                .githubId(9001L)
+                .name("skill-repo")
+                .sourceRepo("example/skill-repo")
+                .sourceUri("https://github.com/example/skill-repo")
+                .active(true)
+                .build());
+
+        Skill skill = skillRepository.save(Skill.builder()
+                .repository(repository)
+                .name("backend-skill")
+                .contentMd("# backend skill content")
+                .filePath("skills/backend.md")
+                .category(Category.BACKEND)
+                .build());
+
+        mockMvc.perform(post("/api/v1/mcp/recommendations/skill-content")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer %s".formatted(rawMcpToken))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "skillId": %d
+                                }
+                                """.formatted(skill.getId())))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value("스킬 본문 조회 성공"))
+                .andExpect(jsonPath("$.data.skillId").value(skill.getId()))
+                .andExpect(jsonPath("$.data.category").value("backend"))
+                .andExpect(jsonPath("$.data.sourceRepo").value("example/skill-repo"))
+                .andExpect(jsonPath("$.data.skillMdRaw").value("# backend skill content"));
     }
 
     @Test

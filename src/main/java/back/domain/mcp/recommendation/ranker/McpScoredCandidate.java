@@ -32,7 +32,6 @@ public record McpScoredCandidate(
                 category,
                 finalScore,
                 new McpRecommendationScoreBreakdown(primaryScore, starsNorm, forksNorm, freshnessNorm),
-                sourceRepo,
-                skillMdRaw);
+                sourceRepo);
     }
 }

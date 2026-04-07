@@ -71,6 +71,8 @@ public class SecurityConfig {
                         .permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/mcp/recommendations")
                         .permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/mcp/recommendations/skill-content")
+                        .permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/auth/logout")
                         .authenticated()
                         .requestMatchers("/api/v1/admin/**")

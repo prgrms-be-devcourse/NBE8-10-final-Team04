@@ -12,6 +12,8 @@ import org.springframework.web.bind.annotation.RestController;
 import back.domain.auth.service.McpTokenAuthenticationService;
 import back.domain.mcp.recommendation.dto.McpRecommendationRequest;
 import back.domain.mcp.recommendation.dto.McpRecommendationResponse;
+import back.domain.mcp.recommendation.dto.McpRecommendationSkillContentRequest;
+import back.domain.mcp.recommendation.dto.McpRecommendationSkillContentResponse;
 import back.domain.mcp.recommendation.service.McpRecommendationService;
 import back.global.response.RsData;
 import jakarta.validation.Valid;
@@ -32,5 +34,14 @@ public class McpRecommendationController {
         mcpTokenAuthenticationService.authenticate(authorizationHeader);
         McpRecommendationResponse response = mcpRecommendationService.recommend(request);
         return ResponseEntity.ok(new RsData<>(response, "추천 성공"));
+    }
+
+    @PostMapping("/recommendations/skill-content")
+    public ResponseEntity<RsData<McpRecommendationSkillContentResponse>> getSkillContent(
+            @RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) String authorizationHeader,
+            @Valid @RequestBody McpRecommendationSkillContentRequest request) {
+        mcpTokenAuthenticationService.authenticate(authorizationHeader);
+        McpRecommendationSkillContentResponse response = mcpRecommendationService.getSkillContent(request);
+        return ResponseEntity.ok(new RsData<>(response, "스킬 본문 조회 성공"));
     }
 }
