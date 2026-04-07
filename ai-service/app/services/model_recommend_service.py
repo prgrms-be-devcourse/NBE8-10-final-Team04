@@ -39,7 +39,7 @@ def _generate_reasons(question: str, models: list) -> list:
 def retrieve_ai_models(question: str):
     db = SessionLocal()
     try:
-        # ✅ 실제 컬럼명에 맞게 수정: family_name, common_description, input_types, output_types
+    
         rows = db.execute(text("""
             SELECT 
                 f.id,
@@ -89,7 +89,7 @@ id만 JSON 배열로 응답하세요. 다른 말은 절대 하지 마세요.
         if not top3_rows:
             return EMPTY_MESSAGE
 
-        # 카드 구성 - ✅ 실제 컬럼명 사용
+        # 카드 구성
         top3 = [{
             "id": r.id,
             "title": r.family_name,
