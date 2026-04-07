@@ -193,8 +193,13 @@ def _handle_skill(question):
     cards = [{
         "id": c.get("id"),
         "title": str(c.get("title")),
+        "owner": c.get("owner"),        
+        "star": c.get("star"),         
         "description": str(c.get("description", "")),
+        "uploadedAt": c.get("uploadedAt"),  
+        "like": c.get("like", False),   
         "reason": str(c.get("reason", "")),
+        "score": c.get("score"),    
         "type": "skill"
     } for c in raw_cards]
 
@@ -209,7 +214,7 @@ def _handle_skill(question):
     }
 
     try:
-        message = generate_summary(question, top, cards, [])
+        message = generate_summary(question, top, cards, ai_models)
     except:
         message = f"{top['title']} 추천!" 
     

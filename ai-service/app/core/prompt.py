@@ -26,13 +26,15 @@ def format_cards(cards: list[dict]) -> str:
 
 
 def format_models(models: list[dict]) -> str:
+    if not models:
+        return "없음"
     return "\n".join([
-        f"""{i}. {m.get("title", m.get("model_name", ""))}
+        f"""{i}. {m.get("title", "")}
 - 벤더: {m.get("vendor_name", "")}
 - 설명: {m.get("description", "")}
 - 추천 이유: {m.get("reason", "")}
-- 입력 가능: {m.get("input_types", "")}
-- 출력 가능: {m.get("output_types", "")}
+- 입력 타입: {m.get("input_types", "")}
+- 출력 타입: {m.get("output_types", "")}
 """
         for i, m in enumerate(models, 1)
     ])
@@ -45,7 +47,8 @@ def build_chat_prompt(question: str, top_tool: dict, cards: list[dict], models: 
     return f"""
 참고 데이터:
 [Top Tool] {top_tool["title"]} ({top_tool["description"]})
-[AI Models]
+
+[추천 AI 모델 - ai_model_families 기준]
 {format_models(models)}
 
 [Cards]
@@ -60,7 +63,7 @@ def build_chat_prompt(question: str, top_tool: dict, cards: list[dict], models: 
 
 ### 2. 추천 AI 툴 및 모델
 - 가장 적합한 툴: {top_tool["title"]}
-- 추천 모델: 반드시 위 AI Models 목록 중 하나만 선택
+- 추천 모델: 반드시 위 [추천 AI 모델] 목록 중 하나만 선택. 목록이 없으면 "추후 업데이트 예정"으로 표시
 - 이유: 비전공자 기준으로 설명
 
 ### 3. 시작 가이드
@@ -78,7 +81,6 @@ def build_full_prompt(question, top_tool, cards, models):
 # =========================
 # 4. 질문 분류 (category)
 # =========================
-# ✅ 질문 분류 - JSON 응답으로 변경 (하드코딩 제거)
 QUESTION_CATEGORY_PROMPT = """
 사용자 질문을 분석해서 아래 JSON 형식으로만 응답하세요.
 다른 말은 절대 하지 마세요.

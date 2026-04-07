@@ -14,13 +14,17 @@ EMPTY_RESPONSE = {
 # 1. 카드 생성
 # =========================
 def _build_card(row, final_score=None):
+
+    print(f"[BuildCard] id={row.id}, source_repo={getattr(row, 'source_repo', 'NO_ATTR')}, star_count={getattr(row, 'star_count', 'NO_ATTR')}, created_at={getattr(row, 'skill_created_at', getattr(row, 'created_at', 'NO_ATTR'))}")
+
+    
     return {
         "id": row.id,
-        "title": row.name,                          # skills.name
-        "owner": getattr(row, "source_repo", None), # repositories.source_repo
-        "star": getattr(row, "star_count", None),   # repositories.star_count
-        "description": (row.summary or row.content_md or "설명 없음")[:120],
-        "uploadedAt": str(row.created_at) if row.created_at else None,
+        "title": row.name,
+        "owner": getattr(row, "source_repo", None),
+        "star": getattr(row, "star_count", None),
+        "description": (getattr(row, "summary", None) or row.content_md or "설명 없음")[:120],
+        "uploadedAt": str(row.skill_created_at) if getattr(row, "skill_created_at", None) else None,  # ✅ 별칭 사용
         "reason": "",
         "like": False,
         "type": "skill",
@@ -37,23 +41,23 @@ def _generate_reasons(question, cards):
         prompt = f"""
 사용자 질문: "{question}"
 
-아래 3개의 스킬 각각에 대해
-"왜 이 질문에 적합한지" 한 문장씩만 설명해라.
+아래 스킬 각각에 대해 왜 이 질문에 적합한지 한 문장씩만 설명해라.
 
-출력 형식:
+출력 형식 (JSON 배열만, 다른 말 절대 하지 말것):
 ["이유1", "이유2", "이유3"]
 
 스킬 목록:
 {[c["title"] for c in cards]}
 """
         result = call_gemini(prompt)
-        reasons = json.loads(result)
+        cleaned = result.strip().replace("```json", "").replace("```", "").strip()
+        reasons = json.loads(cleaned)
 
         if isinstance(reasons, list):
             return reasons
 
-    except Exception:
-        pass
+    except Exception as e:
+        print(f"[GenerateReasons Error] {e}") 
 
     return ["관련성이 높은 스킬입니다."] * len(cards)
 
@@ -178,7 +182,7 @@ def _search_by_chunks(db, question_embedding, skill_intent):
             s.id,
             s.name,
             s.content_md,
-            s.created_at,
+            s.created_at AS skill_created_at,
             r.source_repo,
             r.source_uri,
             r.summary,
@@ -231,7 +235,7 @@ def _search_by_text(db, question):
             s.id,
             s.name,
             s.content_md,
-            s.created_at,
+            s.created_at AS skill_created_at,  
             r.source_repo,
             r.summary,
             r.language_stats,
@@ -265,8 +269,10 @@ def retrieve_recommendations(question: str, question_embedding: list[float], ski
 
     try:
         cards = _search_by_chunks(db, question_embedding, skill_intent)
+        print(f"[Retrieval] 벡터검색 결과: {len(cards)}개")
 
         if not cards:
+            print(f"[Retrieval] fallback 텍스트 검색으로 전환")
             cards = _search_by_text(db, question)
 
         if not cards:
