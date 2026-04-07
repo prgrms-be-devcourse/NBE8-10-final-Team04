@@ -1,0 +1,20 @@
+services:
+  app-dev:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: app-dev
+    env_file:
+      - ../.env
+    environment:
+      SPRING_PROFILES_ACTIVE: loadtest
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
+    name: app-network
