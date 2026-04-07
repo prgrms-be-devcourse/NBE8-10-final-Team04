@@ -73,3 +73,7 @@ management:
     health:
       probes:
         enabled: true
+
+ai:
+  service:
+    url: ${AI_SERVICE_URL}

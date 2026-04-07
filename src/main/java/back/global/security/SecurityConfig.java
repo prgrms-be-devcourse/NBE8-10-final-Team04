@@ -59,7 +59,8 @@ public class SecurityConfig {
                                 "/api/info/run",
                                 "/dev/skills/**",
                                 "/dev/skill-chunks/**",
-                                "/api/skills/search")
+                                "/api/skills/search",
+                                        "/api/chatbot")
                         .permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/auth/google/login")
                         .permitAll()
