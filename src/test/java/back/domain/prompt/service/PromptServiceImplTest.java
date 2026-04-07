@@ -17,11 +17,11 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -71,18 +71,16 @@ class PromptServiceImplTest {
         when(normalizeService.upsertRepository(any())).thenReturn(repository);
         doThrow(new IllegalStateException("boom"))
                 .when(normalizeService)
-                .upsertSkill(same(repository), argThat(skill -> "alpha".equals(skill.name())));
+                .upsertSkills(same(repository), anyList());
 
         assertThatNoException().isThrownBy(() -> promptServiceImpl.run());
 
-        verify(normalizeService).upsertSkill(
-                same(repository),
-                argThat(skill -> "alpha".equals(skill.name()))
-        );
-        verify(normalizeService).upsertSkill(
-                same(repository),
-                argThat(skill -> "beta".equals(skill.name()))
-        );
+        ArgumentCaptor<List<SkillDto>> skillCaptor = ArgumentCaptor.forClass(List.class);
+        verify(normalizeService).upsertSkills(same(repository), skillCaptor.capture());
+        assertThat(skillCaptor.getValue())
+                .extracting(SkillDto::name)
+                .containsExactly("alpha", "beta");
+
         verify(normalizeService).upsertAgent(
                 same(repository),
                 argThat(agent -> "agent-hash".equals(agent.contentHash()))
@@ -114,9 +112,9 @@ class PromptServiceImplTest {
                         && "owner/repo".equals(item.repository().sourceRepo()))
         );
 
-        ArgumentCaptor<SkillDto> skillCaptor = ArgumentCaptor.forClass(SkillDto.class);
-        verify(normalizeService, times(2)).upsertSkill(same(repository), skillCaptor.capture());
-        assertThat(skillCaptor.getAllValues())
+        ArgumentCaptor<List<SkillDto>> skillCaptor = ArgumentCaptor.forClass(List.class);
+        verify(normalizeService).upsertSkills(same(repository), skillCaptor.capture());
+        assertThat(skillCaptor.getValue())
                 .extracting(SkillDto::name)
                 .containsExactly("alpha", "beta");
 
