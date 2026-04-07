@@ -160,21 +160,51 @@ public class SkillUpsertServiceImpl implements SkillUpsertService {
     }
 
     private void saveSkillsInBatches(Repository repository, List<Skill> skills, String mode) {
-        // saveAll 호출마다 짧은 트랜잭션이 열려서 커넥션 장기 점유를 줄일 수 있다.
+        // 배치 저장 실패 시 개별 저장으로 폴백해 유효한 스킬 처리를 계속 진행한다.
         int total = skills.size();
         for (int from = 0; from < total; from += SKILL_INSERT_BATCH_SIZE) {
             int to = Math.min(from + SKILL_INSERT_BATCH_SIZE, total);
             List<Skill> batch = skills.subList(from, to);
-            skillRepository.saveAll(batch);
 
-            log.info(
-                    "[SkillUpsertServiceImpl#upsertSkills] {} 스킬 배치 저장 완료. repo={}, batchSize={}, progress={}/{}",
-                    mode,
-                    repository.getSourceRepo(),
-                    batch.size(),
-                    to,
-                    total
-            );
+            try {
+                skillRepository.saveAll(batch);
+                log.info(
+                        "[SkillUpsertServiceImpl#upsertSkills] {} 스킬 배치 저장 완료. repo={}, batchSize={}, progress={}/{}",
+                        mode,
+                        repository.getSourceRepo(),
+                        batch.size(),
+                        to,
+                        total
+                );
+            } catch (Exception e) {
+                log.error(
+                        "[SkillUpsertServiceImpl#upsertSkills] {} 스킬 배치 저장 실패. 개별 저장으로 재시도합니다. repo={}, batchSize={}, progress={}/{}",
+                        mode,
+                        repository.getSourceRepo(),
+                        batch.size(),
+                        to,
+                        total,
+                        e
+                );
+                saveSkillsIndividually(repository, batch, mode);
+            }
+        }
+    }
+
+    private void saveSkillsIndividually(Repository repository, List<Skill> batch, String mode) {
+        for (Skill skill : batch) {
+            try {
+                skillRepository.save(skill);
+            } catch (Exception e) {
+                log.error(
+                        "[SkillUpsertServiceImpl#upsertSkills] {} 스킬 개별 저장 실패. repo={}, skillName={}, filePath={}",
+                        mode,
+                        repository.getSourceRepo(),
+                        skill.getName(),
+                        skill.getFilePath(),
+                        e
+                );
+            }
         }
     }
 
