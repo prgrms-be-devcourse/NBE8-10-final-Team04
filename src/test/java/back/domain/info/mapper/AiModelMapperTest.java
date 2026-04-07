@@ -14,7 +14,12 @@ class AiModelMapperTest {
 
     @Test
     void toVendorEntity_mapsVendorAndFamilies() {
-        FamilyDto familyDto = new FamilyDto("GPT-4.1", "Flagship");
+        FamilyDto familyDto = new FamilyDto(
+                "GPT-4.1",
+                "Flagship",
+                new String[]{"text"},
+                new String[]{"text", "image"}
+        );
         VendorDto vendorDto = new VendorDto(
                 "OpenAI",
                 "https://openai.com",
@@ -33,6 +38,8 @@ class AiModelMapperTest {
         assertThat(vendor.getModelFamilies().getFirst().getVendor()).isSameAs(vendor);
         assertThat(vendor.getModelFamilies().getFirst().getFamilyName()).isEqualTo("GPT-4.1");
         assertThat(vendor.getModelFamilies().getFirst().getCommonDescription()).isEqualTo("Flagship");
+        assertThat(vendor.getModelFamilies().getFirst().getInputTypes()).containsExactly("text");
+        assertThat(vendor.getModelFamilies().getFirst().getOutputTypes()).containsExactly("text", "image");
     }
 
     @Test
@@ -52,7 +59,12 @@ class AiModelMapperTest {
 
     @Test
     void toFamilyEntity_mapsFields() {
-        FamilyDto familyDto = new FamilyDto("Claude 4", "Reasoning family");
+        FamilyDto familyDto = new FamilyDto(
+                "Claude 4",
+                "Reasoning family",
+                new String[]{"text", "image"},
+                new String[]{"text"}
+        );
 
         var vendor = back.domain.info.entity.AiVendor.builder()
                 .name("Anthropic")
@@ -66,5 +78,7 @@ class AiModelMapperTest {
         assertThat(family.getVendor()).isSameAs(vendor);
         assertThat(family.getFamilyName()).isEqualTo("Claude 4");
         assertThat(family.getCommonDescription()).isEqualTo("Reasoning family");
+        assertThat(family.getInputTypes()).containsExactly("text", "image");
+        assertThat(family.getOutputTypes()).containsExactly("text");
     }
 }

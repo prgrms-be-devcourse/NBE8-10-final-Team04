@@ -44,7 +44,7 @@ class InfoEntityTest {
                 .commonDescription("old")
                 .build();
 
-        family.update("new");
+        family.update("new", new String[]{"text"}, new String[]{"text"});
 
         assertThat(family.getCommonDescription()).isEqualTo("new");
     }
