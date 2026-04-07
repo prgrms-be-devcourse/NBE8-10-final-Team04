@@ -27,12 +27,12 @@ def format_cards(cards: list[dict]) -> str:
 
 def format_models(models: list[dict]) -> str:
     return "\n".join([
-        f"""{i}. {m["model_name"]}
-- 카테고리: {m.get("category", "")}
+        f"""{i}. {m.get("title", m.get("model_name", ""))}
+- 벤더: {m.get("vendor_name", "")}
+- 설명: {m.get("description", "")}
 - 추천 이유: {m.get("reason", "")}
-- context window: {m.get("context_window", "")}
-- 입력 비용: {m.get("input_price", "")}
-- 출력 비용: {m.get("output_price", "")}
+- 입력 가능: {m.get("input_types", "")}
+- 출력 가능: {m.get("output_types", "")}
 """
         for i, m in enumerate(models, 1)
     ])
@@ -78,29 +78,27 @@ def build_full_prompt(question, top_tool, cards, models):
 # =========================
 # 4. 질문 분류 (category)
 # =========================
+# ✅ 질문 분류 - JSON 응답으로 변경 (하드코딩 제거)
 QUESTION_CATEGORY_PROMPT = """
-아래 사용자 질문의 유형을 반드시 하나만 골라라.
+사용자 질문을 분석해서 아래 JSON 형식으로만 응답하세요.
+다른 말은 절대 하지 마세요.
 
-[유형]
-recommendation
-information
-follow_up
-out_of_scope
-ambiguous
+질문: "{question}"
 
-[판단 기준]
-- recommendation: 추천 요청
-- information: 설명 요청
-- follow_up: 이어지는 질문
-- out_of_scope: 범위 밖
-- ambiguous: 애매함
+응답 형식:
+{{
+  "questionType": "recommendation" | "information" | "follow_up" | "out_of_scope" | "ambiguous",
+  "targetType": "ai_model" | "skill" | "ai_information" | "none"
+}}
 
-[질문]
-{question}
-
-반드시 하나만 출력해라.
+판단 기준:
+- recommendation + ai_model: GPT, 제미나이 같은 AI 툴 추천 요청
+- recommendation + skill: 웹사이트, 자동화, 기능 구현 추천 요청
+- information + ai_information: 특정 AI에 대한 설명/정보 요청
+- follow_up + none: 이전 대화 이어지는 질문
+- out_of_scope + none: AI와 전혀 무관한 질문
+- ambiguous + none: 의도 파악 불가
 """
-
 
 def build_question_category_prompt(question: str) -> str:
     return QUESTION_CATEGORY_PROMPT.format(question=question)

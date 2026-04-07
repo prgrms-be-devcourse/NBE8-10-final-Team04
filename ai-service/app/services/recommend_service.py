@@ -2,9 +2,8 @@ from app.schemas.chat import ChatResponse, QuestionType, TargetType
 from app.services.embedding_service import create_embedding
 from app.services.retrieval_service import retrieve_recommendations
 from app.services.model_recommend_service import retrieve_ai_models
-from app.services.question_type_service import (classify_question, classify_question_category,
-    classify_recommendation_target,
-    classify_skill_intent, )
+from app.services.question_type_service import (classify_question, 
+    classify_skill_intent )
 from app.services.gemini_service import (
     generate_summary,
     generate_information_answer,
@@ -174,6 +173,8 @@ def _handle_skill(question):
         raw_cards = result.get("cards", [])
         top = result.get("top_tool")
 
+        ai_models = retrieve_ai_models(question)
+
     except Exception as e:
         print("Skill Retrieval Error:", e)
         return _simple_response(
@@ -210,13 +211,15 @@ def _handle_skill(question):
     try:
         message = generate_summary(question, top, cards, [])
     except:
-        message = f"{top['title']} 추천!"
+        message = f"{top['title']} 추천!" 
+    
+    ai_hint = f"💡 이 스킬은 {ai_models[0]['title']}와 함께 사용하면 더 좋아요!" if ai_models else ""
 
     return ChatResponse(
         question=question,
         questionType=QuestionType.recommendation,
         targetType=TargetType.skill,
-        message=message,
+        message=message + ("\n\n" + ai_hint if ai_hint else ""),
         cards=cards,
         topPick=top_pick,
         nextActions=["AI 추천받기"],
