@@ -32,6 +32,8 @@ public class AiModelMapper {
                 .vendor(vendor)
                 .familyName(dto.familyName())
                 .commonDescription(dto.commonDescription())
+                .inputTypes(dto.inputTypes())
+                .outputTypes(dto.outputTypes())
                 .build();
 
         return family;

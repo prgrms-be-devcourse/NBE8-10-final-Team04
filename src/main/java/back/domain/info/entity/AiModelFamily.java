@@ -5,6 +5,8 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -31,6 +33,12 @@ public class AiModelFamily extends BaseEntity {
 
     @Column(name = "common_description", columnDefinition = "TEXT")
     private String commonDescription;   // 시리즈 공통 특징 설명 (상세 페이지 상단 노출용)
+
+    @Column(name = "input_types", columnDefinition = "text[]")
+    private String[] inputTypes;
+
+    @Column(name = "output_types", columnDefinition = "text[]")
+    private String[] outputTypes;
 
     public void update(String commonDescription) {
         this.commonDescription = commonDescription;

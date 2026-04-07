@@ -7,6 +7,12 @@ public record FamilyDto(
         String familyName,
 
         @JsonProperty("common_description")
-        String commonDescription
+        String commonDescription,
+
+        @JsonProperty("input_types")
+        String[] inputTypes,
+
+        @JsonProperty("output_types")
+        String[] outputTypes
 ) {
 }
