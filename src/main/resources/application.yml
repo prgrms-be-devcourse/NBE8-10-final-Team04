@@ -62,6 +62,25 @@ app:
     oci-prefix: ${AI_TRACKER_OCI_PREFIX:data/ai-tracker/}
     webhook-secret: ${SPRING_WEBHOOK_SECRET}
 
+  data:
+    collect:
+      artificial-analysis-key: ${ARTIFICIAL_ANALYSIS_API_KEY}
+      sourcegraph-token: ${SOURCEGRAPH_TOKEN}
+      github-tokens:
+        - ${GITHUB_TOKEN_1}
+        - ${GITHUB_TOKEN_2}
+
+  infrastructure:
+    cloudflare:
+      account-id: ${CF_ACCOUNT_ID}
+      api-token: ${CF_API_TOKEN}
+    webhooks:
+      spring-url: ${SPRING_WEBHOOK_URL}
+      discord-url: ${DISCORD_WEBHOOK_URL}
+
+  admin:
+    allowlist: ${ADMIN_ALLOWLIST_EMAILS}
+
 custom:
   jwt:
     secret-key: ${CUSTOM_JWT_SECRET_KEY:start-ai-hub-default-secret-key-start-ai-hub-default}
@@ -92,6 +111,10 @@ management:
         enabled: true
 
 oci:
+  user: ${OCI_USER}
+  fingerprint: ${OCI_FINGERPRINT}
+  tenancy: ${OCI_TENANCY}
+  private-key: ${OCI_KEY}
   namespace: ${OCI_NAMESPACE}
   bucket: ${OCI_BUCKET}
   prefix: data/ai-info/
