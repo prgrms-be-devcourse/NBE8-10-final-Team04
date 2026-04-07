@@ -15,8 +15,7 @@ public record McpScoredCandidate(
         double freshnessNorm,
         int stars,
         int forks,
-        String sourceRepo,
-        String skillMdRaw) {
+        String sourceRepo) {
 
     public static final Comparator<McpScoredCandidate> ORDER = Comparator
             .comparingDouble(McpScoredCandidate::finalScore)
@@ -32,7 +31,6 @@ public record McpScoredCandidate(
                 category,
                 finalScore,
                 new McpRecommendationScoreBreakdown(primaryScore, starsNorm, forksNorm, freshnessNorm),
-                sourceRepo,
-                skillMdRaw);
+                sourceRepo);
     }
 }

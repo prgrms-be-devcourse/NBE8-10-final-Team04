@@ -54,6 +54,15 @@ class SpringProxyClient:
             payload={"keywords": normalized_keywords},
         )
 
+    def get_recommendation_skill_content(self, mcp_personal_token: str | None, skill_id: int) -> dict[str, Any]:
+        token = self._resolve_mcp_personal_token(mcp_personal_token)
+
+        return self._post_json(
+            path="/api/v1/mcp/recommendations/skill-content",
+            bearer_token=token,
+            payload={"skillId": skill_id},
+        )
+
     def _post_json(self, path: str, bearer_token: str, payload: dict[str, Any]) -> dict[str, Any]:
         url = f"{self.spring_base_url}{path}"
         body = json.dumps(payload).encode("utf-8")

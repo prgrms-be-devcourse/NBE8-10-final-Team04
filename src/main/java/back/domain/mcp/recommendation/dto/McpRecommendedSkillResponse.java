@@ -5,5 +5,4 @@ public record McpRecommendedSkillResponse(
         String category,
         double finalScore,
         McpRecommendationScoreBreakdown scoreBreakdown,
-        String sourceRepo,
-        String skillMdRaw) {}
+        String sourceRepo) {}

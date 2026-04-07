@@ -74,8 +74,7 @@ public class McpRecommendationScoreCalculator {
                 freshnessNorm,
                 stars,
                 forks,
-                resolveSourceRepo(candidate),
-                resolveSkillMdRaw(candidate));
+                resolveSourceRepo(candidate));
     }
 
     private double normalizePrimaryScore(Double primaryScore) {
@@ -155,18 +154,6 @@ public class McpRecommendationScoreCalculator {
         }
 
         return candidate.repositoryName() == null ? "" : candidate.repositoryName();
-    }
-
-    private String resolveSkillMdRaw(McpRecommendationCandidate candidate) {
-        if (candidate.contentMd() != null && !candidate.contentMd().isBlank()) {
-            return candidate.contentMd();
-        }
-
-        if (candidate.summary() != null && !candidate.summary().isBlank()) {
-            return candidate.summary();
-        }
-
-        return "";
     }
 
     private void logScoringTrace(int index, McpRecommendationCandidate source, McpScoredCandidate scored) {
