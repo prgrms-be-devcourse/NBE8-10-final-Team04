@@ -51,6 +51,12 @@ public class SecurityConfig {
                                 "/h2-console/**",
                                 "/actuator/health/**",
                                 "/actuator/info",
+                                "/api/prompts/run",
+                                "/api/info/run",
+                                "/dev/skills/**",
+                                "/dev/skill-chunks/**",
+                                "/api/skills/search",
+                                        "/api/chatbot",
                                 "/api/v1/prompts/run",
                                 "/api/v1/skills/**")
                         .permitAll()
