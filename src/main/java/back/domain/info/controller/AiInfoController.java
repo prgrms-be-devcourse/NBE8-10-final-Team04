@@ -36,7 +36,7 @@ public class AiInfoController {
 
     // Object Storage update_raw.json에서 가져온 데이터 적재
     @PostMapping("/update")
-    public ResponseEntity<RsData<Void>> run() {
+    public ResponseEntity<RsData<Void>> getUpdateRequests() {
         updateRequestService.getUpdateRequest();
 
         return ResponseEntity.ok(new RsData<>("데이터 적재 완료"));
