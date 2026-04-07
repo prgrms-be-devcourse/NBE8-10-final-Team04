@@ -11,7 +11,9 @@
    - 기술 스택/언어(예: Java, SpringBoot)
    - 제약/환경(예: OCI, Docker, 기간, 비용)
 4. 사용자에게 기획 입력 완료 여부를 명시적으로 확인한다.
-5. 사용자가 완료를 말하면, 정리한 키워드로 `start_auto_flow(step=COLLECTED, keywords=...)`를 호출한다.
+5. 사용자가 완료를 명시적으로 확인한 뒤에만, 정리한 키워드로
+   `start_auto_flow(step=COLLECTED, keywords=..., userInputConfirmed=true)`를 호출한다.
+   - 사용자 확인 전에는 절대 `userInputConfirmed=true`로 호출하지 마라.
 6. COLLECTED 응답의 `actions.writeFiles`를 즉시 반영해 `skills/{category}.md` 파일들을 생성한다.
 7. 사용자에게 "이대로 진행" 또는 "사용자 맞춤 보정" 중 하나를 확인한다.
    - 사용자가 맞춤 보정을 선택하면, 반드시 방금 생성된 `skills/{category}.md`를 기준으로 부분 보정한다.
@@ -25,3 +27,4 @@
 주의:
 - MCP 응답을 채팅으로 요약만 하지 말고 `actions.writeFiles/deleteFiles`를 반드시 파일 시스템에 반영한다.
 - 사용자 기획 입력 완료 확인 전에 `COLLECTED` 또는 `FINALIZE`를 호출하면 안 된다.
+- `COLLECTED` 단계는 `userInputConfirmed=true`가 아니면 서버가 거절한다.

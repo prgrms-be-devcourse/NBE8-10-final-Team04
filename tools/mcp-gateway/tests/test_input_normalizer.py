@@ -7,6 +7,7 @@ from gateway.input_normalizer import (
     normalize_flow_step,
     normalize_keywords,
     normalize_mcp_personal_token,
+    normalize_user_input_confirmed,
 )
 
 
@@ -48,6 +49,16 @@ class InputNormalizerTest(unittest.TestCase):
     def test_normalize_finalize_decision_raises_when_invalid(self):
         with self.assertRaises(GatewayValidationError):
             normalize_finalize_decision("SKIP")
+
+    def test_normalize_user_input_confirmed_requires_true(self):
+        self.assertTrue(normalize_user_input_confirmed(True))
+
+    def test_normalize_user_input_confirmed_raises_when_false_or_none(self):
+        with self.assertRaises(GatewayValidationError):
+            normalize_user_input_confirmed(False)
+
+        with self.assertRaises(GatewayValidationError):
+            normalize_user_input_confirmed(None)
 
 
 if __name__ == "__main__":

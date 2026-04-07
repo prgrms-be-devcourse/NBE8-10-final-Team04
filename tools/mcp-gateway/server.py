@@ -91,6 +91,7 @@ def start_auto_flow(
         step: str = "START",
         agentType: str | None = None,
         keywords: str | None = None,
+        userInputConfirmed: bool | None = None,
         decision: str | None = None,
         customizationNotes: str | None = None,
         mcpPersonalToken: str | None = None,
@@ -110,6 +111,7 @@ def start_auto_flow(
             mcp_personal_token=mcpPersonalToken,
             agent_type=agentType,
             keywords=keywords,
+            user_input_confirmed=userInputConfirmed,
             decision=decision,
             customization_notes=customizationNotes,
         )
