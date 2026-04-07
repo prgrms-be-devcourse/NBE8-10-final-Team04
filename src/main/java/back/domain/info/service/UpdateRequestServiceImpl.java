@@ -128,11 +128,13 @@ public class UpdateRequestServiceImpl implements UpdateRequestService {
     }
 
     @Override
+    @Transactional(readOnly = true) // Entity에서 LAZY로 지정, 조회 + DTO 매핑이 끝날 때까지 영속성 컨텍스트를 유지
     public PageUpdateRequestResponse getUpdates(Pageable pageable) {
         return new PageUpdateRequestResponse(requestRepository.findAll(pageable).map(UpdateRequestResponse::new));
     }
 
     @Override
+    @Transactional(readOnly = true)
     public PageUpdateRequestResponse getUpdatesApproved(Pageable pageable) {
         return new PageUpdateRequestResponse(
                 requestRepository.findAllByStatus(Status.APPROVED, pageable).map(UpdateRequestResponse::new)
