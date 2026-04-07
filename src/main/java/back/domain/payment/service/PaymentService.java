@@ -63,10 +63,22 @@ public class PaymentService {
         Payment payment = paymentRepository.findByOrderId(request.orderId())
                 .orElseThrow(() -> new IllegalArgumentException("결제 정보를 찾을 수 없습니다."));
 
-        // 2. 금액 검증 (중요: 프론트에서 보낸 금액과 DB 금액이 같은지 확인)
+
+        // 2. ID 검증
+        if (!payment.getMember().getId().equals(memberId)) {
+            throw new IllegalArgumentException("본인의 결제만 승인할 수 있습니다.");
+        }
+
+        // 2-1. 결제상태 확인
+        if (!payment.isReady()) {
+            throw new IllegalStateException("승인 가능한 결제 상태가 아닙니다.");
+        }
+
+        // 2-2. 금액 검증 (중요: 프론트에서 보낸 금액과 DB 금액이 같은지 확인)
         if (!payment.getAmount().equals(request.amount())) {
             throw new IllegalArgumentException("결제 금액이 일치하지 않습니다.");
         }
+
 
         // 3. 토스페이먼츠 승인 API 호출
         // [테스트 단계] 실제 토스 서버와 통신하는 private 메서드를 호출합니다.
@@ -74,6 +86,7 @@ public class PaymentService {
 
         // 4. 결제 상태 변경 (READY -> DONE)
         payment.markAsDone();
+
 
         // 5. 구독 정보 생성/갱신 로직 (여기에 추가)
         // 예: subscriptionService.activate(memberId, payment.getPlanType());

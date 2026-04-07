@@ -33,7 +33,7 @@ public class PaymentController {
     //    결제 승인
     @PostMapping("/confirm")
     public ResponseEntity<String> confirm(
-            @AuthenticationPrincipal AuthenticatedMember authenticatedMember,
+//            @AuthenticationPrincipal AuthenticatedMember authenticatedMember,
             @RequestBody PaymentConfirmRequest request
     ) {
         Long tempMemberId = 225L;// 테스트 후 실제 연동 시 삭제
