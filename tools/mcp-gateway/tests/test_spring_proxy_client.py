@@ -58,6 +58,20 @@ class SpringProxyClientTest(unittest.TestCase):
         self.assertEqual(body["agentType"], "CODEX")
 
     @mock.patch("gateway.spring_proxy_client.request.urlopen")
+    def test_get_recommendation_skill_content_sends_skill_id_payload(self, mock_urlopen):
+        mock_urlopen.return_value = _FakeResponse({"message": "스킬 본문 조회 성공"})
+
+        response = self.client.get_recommendation_skill_content("mcp_token_4", 11)
+
+        self.assertEqual(response["message"], "스킬 본문 조회 성공")
+        request_arg = mock_urlopen.call_args[0][0]
+        self.assertEqual(request_arg.full_url, "http://localhost:8080/api/v1/mcp/recommendations/skill-content")
+        self.assertEqual(request_arg.get_header("Authorization"), "Bearer mcp_token_4")
+
+        body = json.loads(request_arg.data.decode("utf-8"))
+        self.assertEqual(body["skillId"], 11)
+
+    @mock.patch("gateway.spring_proxy_client.request.urlopen")
     def test_raises_gateway_http_error(self, mock_urlopen):
         http_error = error.HTTPError(
             url="http://localhost:8080/api/v1/mcp/recommendations",

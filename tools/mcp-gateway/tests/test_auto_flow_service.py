@@ -8,6 +8,7 @@ class _StubSpringProxyClient:
     def __init__(self):
         self.last_template_request = None
         self.last_recommend_request = None
+        self.last_skill_content_requests = []
 
     def get_start_agent_template(self, mcp_personal_token, agent_type):
         self.last_template_request = {
@@ -35,16 +36,38 @@ class _StubSpringProxyClient:
                         "skillId": 1,
                         "finalScore": 0.91,
                         "sourceRepo": "example/doc-agent",
-                        "skillMdRaw": "Spring Backend Code Review",
                     },
                     {
                         "category": "infra",
                         "skillId": 3,
                         "finalScore": 0.82,
                         "sourceRepo": "example/oci-infra-kit",
-                        "skillMdRaw": "OCI Infrastructure Bootstrap",
                     },
                 ]
+            }
+        }
+
+    def get_recommendation_skill_content(self, mcp_personal_token, skill_id):
+        self.last_skill_content_requests.append({
+            "mcp_personal_token": mcp_personal_token,
+            "skill_id": skill_id,
+        })
+        if skill_id == 1:
+            return {
+                "data": {
+                    "skillId": 1,
+                    "category": "backend",
+                    "sourceRepo": "example/doc-agent",
+                    "skillMdRaw": "Spring Backend Code Review",
+                }
+            }
+
+        return {
+            "data": {
+                "skillId": 3,
+                "category": "infra",
+                "sourceRepo": "example/oci-infra-kit",
+                "skillMdRaw": "OCI Infrastructure Bootstrap",
             }
         }
 
@@ -61,6 +84,9 @@ class _StubClientWithEmptyRecommendation:
 
     def recommend_skills(self, mcp_personal_token, keywords):
         return {"data": {"selectedSkills": []}}
+
+    def get_recommendation_skill_content(self, mcp_personal_token, skill_id):
+        return {"data": {"skillId": skill_id, "category": "unknown", "sourceRepo": "unknown", "skillMdRaw": "# x"}}
 
 
 class _StubClientWithStringSkillId:
@@ -82,9 +108,51 @@ class _StubClientWithStringSkillId:
                         "skillId": "7",
                         "finalScore": 0.91,
                         "sourceRepo": "example/doc-agent",
-                        "skillMdRaw": "Spring Backend Code Review",
                     }
                 ]
+            }
+        }
+
+    def get_recommendation_skill_content(self, mcp_personal_token, skill_id):
+        return {
+            "data": {
+                "skillId": skill_id,
+                "category": "backend",
+                "sourceRepo": "example/doc-agent",
+                "skillMdRaw": "Spring Backend Code Review",
+            }
+        }
+
+
+class _StubClientWithMissingSkillContentMeta:
+    def get_start_agent_template(self, mcp_personal_token, agent_type):
+        return {
+            "data": {
+                "templateName": "start.agent.md",
+                "version": "v3",
+                "templateMarkdown": "# template",
+            }
+        }
+
+    def recommend_skills(self, mcp_personal_token, keywords):
+        return {
+            "data": {
+                "selectedSkills": [
+                    {
+                        "category": "backend",
+                        "skillId": 11,
+                        "finalScore": 0.77,
+                        "sourceRepo": "example/doc-agent",
+                    }
+                ]
+            }
+        }
+
+    def get_recommendation_skill_content(self, mcp_personal_token, skill_id):
+        return {
+            "data": {
+                "skillId": skill_id,
+                "skillMdRaw": "Spring Backend Code Review",
             }
         }
 
@@ -100,6 +168,7 @@ class AutoFlowServiceTest(unittest.TestCase):
             mcp_personal_token=None,
             agent_type="codex",
             keywords=None,
+            user_input_confirmed=None,
             decision=None,
             customization_notes=None,
         )
@@ -116,6 +185,7 @@ class AutoFlowServiceTest(unittest.TestCase):
             mcp_personal_token=None,
             agent_type=None,
             keywords=None,
+            user_input_confirmed=None,
             decision=None,
             customization_notes=None,
         )
@@ -129,6 +199,7 @@ class AutoFlowServiceTest(unittest.TestCase):
             mcp_personal_token="mcp_token_1",
             agent_type=None,
             keywords=" SpringBoot   infra ",
+            user_input_confirmed=True,
             decision=None,
             customization_notes=None,
         )
@@ -141,6 +212,7 @@ class AutoFlowServiceTest(unittest.TestCase):
         self.assertIn("기존 skills 파일을 기반으로", response["actions"]["askUser"][2])
         self.assertIn("처음부터 새로 작성하지 말고", response["actions"]["askUser"][3])
         self.assertEqual(self.stub_client.last_recommend_request["keywords"], "SpringBoot infra")
+        self.assertEqual([1, 3], [req["skill_id"] for req in self.stub_client.last_skill_content_requests])
         self.assertIsInstance(response["recommendation"]["selectedSkills"][0]["skillId"], int)
         self.assertEqual(response["recommendation"]["selectedSkills"][0]["skillId"], 1)
 
@@ -150,6 +222,7 @@ class AutoFlowServiceTest(unittest.TestCase):
             mcp_personal_token="mcp_token_1",
             agent_type=None,
             keywords="SpringBoot infra",
+            user_input_confirmed=None,
             decision="customize",
             customization_notes="OCI 비용 제약 반영",
         )
@@ -179,6 +252,7 @@ class AutoFlowServiceTest(unittest.TestCase):
             mcp_personal_token="mcp_token_1",
             agent_type=None,
             keywords="SpringBoot infra",
+            user_input_confirmed=None,
             decision="accept",
             customization_notes=None,
         )
@@ -195,6 +269,7 @@ class AutoFlowServiceTest(unittest.TestCase):
                 mcp_personal_token="mcp_token_1",
                 agent_type=None,
                 keywords="SpringBoot infra",
+                user_input_confirmed=None,
                 decision=None,
                 customization_notes=None,
             )
@@ -208,6 +283,7 @@ class AutoFlowServiceTest(unittest.TestCase):
                 mcp_personal_token="mcp_token_1",
                 agent_type=None,
                 keywords="SpringBoot infra",
+                user_input_confirmed=True,
                 decision=None,
                 customization_notes=None,
             )
@@ -220,12 +296,53 @@ class AutoFlowServiceTest(unittest.TestCase):
             mcp_personal_token="mcp_token_1",
             agent_type=None,
             keywords="SpringBoot infra",
+            user_input_confirmed=True,
             decision=None,
             customization_notes=None,
         )
 
         self.assertEqual(response["recommendation"]["selectedSkills"][0]["skillId"], 7)
         self.assertIsInstance(response["recommendation"]["selectedSkills"][0]["skillId"], int)
+
+    def test_collected_step_falls_back_to_summary_meta_when_content_meta_missing(self):
+        service = AutoFlowService(_StubClientWithMissingSkillContentMeta())
+
+        response = service.run(
+            step="COLLECTED",
+            mcp_personal_token="mcp_token_1",
+            agent_type=None,
+            keywords="SpringBoot infra",
+            user_input_confirmed=True,
+            decision=None,
+            customization_notes=None,
+        )
+
+        selected_skill = response["recommendation"]["selectedSkills"][0]
+        self.assertEqual(selected_skill["category"], "backend")
+        self.assertEqual(selected_skill["sourceRepo"], "example/doc-agent")
+
+    def test_collected_step_requires_user_input_confirmed_true(self):
+        with self.assertRaises(GatewayValidationError):
+            self.service.run(
+                step="COLLECTED",
+                mcp_personal_token="mcp_token_1",
+                agent_type=None,
+                keywords="SpringBoot infra",
+                user_input_confirmed=False,
+                decision=None,
+                customization_notes=None,
+            )
+
+        with self.assertRaises(GatewayValidationError):
+            self.service.run(
+                step="COLLECTED",
+                mcp_personal_token="mcp_token_1",
+                agent_type=None,
+                keywords="SpringBoot infra",
+                user_input_confirmed=None,
+                decision=None,
+                customization_notes=None,
+            )
 
 
 if __name__ == "__main__":

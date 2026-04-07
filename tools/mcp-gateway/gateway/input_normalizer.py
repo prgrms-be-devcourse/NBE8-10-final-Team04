@@ -68,3 +68,12 @@ def normalize_finalize_decision(decision: str) -> str:
         )
 
     return normalized
+
+
+def normalize_user_input_confirmed(user_input_confirmed: bool | None) -> bool:
+    if user_input_confirmed is not True:
+        raise GatewayValidationError(
+            "userInputConfirmed must be true for COLLECTED step."
+        )
+
+    return True

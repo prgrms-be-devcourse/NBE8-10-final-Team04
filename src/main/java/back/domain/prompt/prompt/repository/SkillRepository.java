@@ -20,6 +20,9 @@ public interface SkillRepository extends JpaRepository<Skill, Long> {
 
     List<Skill> findByIsChunkedFalse();
 
+    @Query("SELECT s FROM Skill s JOIN FETCH s.repository WHERE s.id = :id")
+    Optional<Skill> findByIdWithRepository(@Param("id") Long id);
+
     @Modifying
     @Transactional
     @Query("UPDATE Skill s SET s.isChunked = true WHERE s.id = :id")

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any
 
 from gateway.input_normalizer import (
@@ -10,6 +11,7 @@ from gateway.input_normalizer import (
     normalize_finalize_decision,
     normalize_flow_step,
     normalize_keywords,
+    normalize_user_input_confirmed,
 )
 from gateway.spring_proxy_client import SpringProxyClient
 
@@ -19,6 +21,13 @@ class SelectedSkill:
     category: str
     skill_id: int
     final_score: float
+    source_repo: str
+    skill_md_raw: str
+
+
+@dataclass(frozen=True)
+class SkillContent:
+    category: str
     source_repo: str
     skill_md_raw: str
 
@@ -36,6 +45,7 @@ class AutoFlowService:
         mcp_personal_token: str | None,
         agent_type: str | None,
         keywords: str | None,
+        user_input_confirmed: bool | None,
         decision: str | None,
         customization_notes: str | None,
     ) -> dict[str, Any]:
@@ -51,6 +61,7 @@ class AutoFlowService:
             return self._collected(
                 mcp_personal_token=mcp_personal_token,
                 keywords=keywords,
+                user_input_confirmed=user_input_confirmed,
             )
 
         return self._finalize(
@@ -95,7 +106,14 @@ class AutoFlowService:
             },
         }
 
-    def _collected(self, *, mcp_personal_token: str | None, keywords: str | None) -> dict[str, Any]:
+    def _collected(
+        self,
+        *,
+        mcp_personal_token: str | None,
+        keywords: str | None,
+        user_input_confirmed: bool | None,
+    ) -> dict[str, Any]:
+        normalize_user_input_confirmed(user_input_confirmed)
         normalized_keywords = normalize_keywords(keywords)
 
         recommendation_response = self.spring_proxy_client.recommend_skills(
@@ -103,7 +121,11 @@ class AutoFlowService:
             keywords=normalized_keywords,
         )
 
-        selected_skills = self._extract_selected_skills(recommendation_response)
+        selected_skills_summary = self._extract_selected_skills(recommendation_response)
+        selected_skills = self._resolve_selected_skill_contents(
+            mcp_personal_token=mcp_personal_token,
+            selected_skills_summary=selected_skills_summary,
+        )
         write_files = [self._build_skill_file_action(skill) for skill in selected_skills]
 
         return {
@@ -213,11 +235,9 @@ class AutoFlowService:
 
             category = str(raw_skill.get("category", "unknown")).strip() or "unknown"
             skill_id = self._parse_skill_id(raw_skill.get("skillId"))
+            if skill_id <= 0:
+                raise GatewayValidationError("skillId is missing or invalid in selectedSkills item.")
             source_repo = str(raw_skill.get("sourceRepo", "unknown")).strip() or "unknown"
-            skill_md_raw = str(raw_skill.get("skillMdRaw", "")).strip()
-
-            if not skill_md_raw:
-                raise GatewayValidationError("skillMdRaw is missing in selectedSkills item.")
 
             try:
                 final_score = float(raw_skill.get("finalScore", 0.0))
@@ -230,11 +250,54 @@ class AutoFlowService:
                     skill_id=skill_id,
                     final_score=final_score,
                     source_repo=source_repo,
-                    skill_md_raw=skill_md_raw,
+                    skill_md_raw="",
                 )
             )
 
         return selected_skills
+
+    def _resolve_selected_skill_contents(
+        self,
+        *,
+        mcp_personal_token: str | None,
+        selected_skills_summary: list[SelectedSkill],
+    ) -> list[SelectedSkill]:
+        resolved_skills: list[SelectedSkill] = []
+
+        for skill_summary in selected_skills_summary:
+            content_response = self.spring_proxy_client.get_recommendation_skill_content(
+                mcp_personal_token=mcp_personal_token,
+                skill_id=skill_summary.skill_id,
+            )
+            skill_content = self._extract_skill_content(content_response)
+            resolved_skills.append(
+                SelectedSkill(
+                    category=skill_content.category or skill_summary.category,
+                    skill_id=skill_summary.skill_id,
+                    final_score=skill_summary.final_score,
+                    source_repo=skill_content.source_repo or skill_summary.source_repo,
+                    skill_md_raw=skill_content.skill_md_raw,
+                )
+            )
+
+        return resolved_skills
+
+    def _extract_skill_content(self, response: dict[str, Any]) -> SkillContent:
+        payload = response.get("data", response)
+        if not isinstance(payload, dict):
+            raise GatewayValidationError("skill content response data must be a JSON object.")
+
+        category = str(payload.get("category", "")).strip()
+        source_repo = str(payload.get("sourceRepo", "")).strip()
+        skill_md_raw = str(payload.get("skillMdRaw", "")).strip()
+        if not skill_md_raw:
+            raise GatewayValidationError("skillMdRaw is missing in skill content response.")
+
+        return SkillContent(
+            category=category,
+            source_repo=source_repo,
+            skill_md_raw=skill_md_raw,
+        )
 
     def _parse_skill_id(self, raw_skill_id: Any) -> int:
         if isinstance(raw_skill_id, bool):
@@ -293,25 +356,40 @@ class AutoFlowService:
             f"- keywords: {keywords}",
             f"- customizationNotes: {customization_notes or ''}",
             "",
-            "## Selected Skills",
+            "## Skill Inventory",
         ]
 
+        inventory_paths: list[str] = []
         if selected_skills:
             for selected_skill in selected_skills:
                 safe_category = self._slug(selected_skill.category)
-                lines.append(
-                    f"- skills/{safe_category}.md "
-                    f"(category={selected_skill.category}, finalScore={selected_skill.final_score:.4f})"
-                )
+                skill_path = f"skills/{safe_category}.md"
+                inventory_paths.append(skill_path)
+                lines.append(f"- {skill_path} (category={selected_skill.category}, finalScore={selected_skill.final_score:.4f})")
         else:
-            lines.append("- skills/*.md (COLLECTED 단계에서 이미 생성된 파일 기준)")
+            inventory_paths = self._discover_skill_paths()
+            if inventory_paths:
+                for skill_path in inventory_paths:
+                    inferred_category = self._infer_category_from_path(skill_path)
+                    lines.append(f"- {skill_path} (category={inferred_category})")
+            else:
+                lines.append("- skills/*.md (COLLECTED 단계에서 이미 생성된 파일 기준)")
 
         lines.extend(
             [
                 "",
                 "## Routing Rule",
-                "- 사용자 요청 맥락에 따라 위 skills 파일 중 가장 적합한 항목을 선택해 사용한다.",
-                "- 여러 카테고리가 동시에 필요한 경우 관련 skills를 조합해 응답한다.",
+                "- 사용자 요청을 목표/도메인/제약으로 분해한 뒤, 가장 관련도 높은 `primary` skill 1개를 먼저 선택한다.",
+                "- 복합 요청이면 `secondary` skill을 최대 2개까지 추가해 조합한다.",
+                "- 선택 기준 우선순위: 사용자 제약 > 보안/안정성 > 기능 정확성 > 유지보수성 > 구현 속도.",
+                "- 충돌 시 상위 우선순위를 유지하고, 하위 우선순위 항목은 타협 또는 제외한다.",
+                "- 선택 근거가 약하면 임의 생성하지 말고, inventory 내 가장 근접한 skill을 선택해 한계를 함께 보고한다.",
+                "- inventory 외 문서를 새로 만들거나 외부 정보를 임의로 섞지 않는다(사용자 명시 요청 제외).",
+                "",
+                "## Response Rule",
+                "- 응답 시작 시 사용한 `primary/secondary` skills 파일 경로를 먼저 명시한다.",
+                "- 각 스킬에서 어떤 섹션/규칙을 적용했는지 요약한 뒤 최종 답변을 제공한다.",
+                "- 코드/명령/경로는 skills 원문 기준을 우선 적용하고, 변경 시 근거를 짧게 남긴다.",
             ]
         )
 
@@ -327,6 +405,18 @@ class AutoFlowService:
             )
 
         return "\n".join(lines) + "\n"
+
+    def _discover_skill_paths(self) -> list[str]:
+        skills_dir = Path("skills")
+        if not skills_dir.exists() or not skills_dir.is_dir():
+            return []
+
+        return sorted(path.as_posix() for path in skills_dir.glob("*.md"))
+
+    def _infer_category_from_path(self, skill_path: str) -> str:
+        file_name = skill_path.rsplit("/", 1)[-1]
+        category = file_name.removesuffix(".md").strip()
+        return category or "unknown"
 
     def _slug(self, raw_value: str) -> str:
         normalized = re.sub(r"[^a-zA-Z0-9_-]+", "-", raw_value.strip().lower())

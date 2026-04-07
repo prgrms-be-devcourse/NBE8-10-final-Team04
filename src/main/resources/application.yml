@@ -113,7 +113,7 @@ ai-model:
     - google
 
 github:
-  owner-repo: ${GITHUB_OWNER_REPO}
+  owner-repo: ${GH_OWNER_REPO:prgrms-be-devcourse/NBE8-10-final-Team04}
   workflows:
     token: ${GITHUB_WORKFLOW_TOKEN}
     ai-info-and-stats:

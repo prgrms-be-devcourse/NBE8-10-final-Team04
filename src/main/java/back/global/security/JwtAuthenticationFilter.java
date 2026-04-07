@@ -27,7 +27,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private static final String REFRESH_TOKEN_ENDPOINT = "/api/v1/auth/token/refresh";
     private static final Set<String> MCP_BEARER_AUTH_ENDPOINTS = Set.of(
             "/api/v1/mcp/template/start-agent",
-            "/api/v1/mcp/recommendations");
+            "/api/v1/mcp/recommendations",
+            "/api/v1/mcp/recommendations/skill-content");
     private static final RequestMatcher REFRESH_TOKEN_REQUEST_MATCHER = request -> {
         if (!HttpMethod.POST.matches(request.getMethod())) {
             return false;
