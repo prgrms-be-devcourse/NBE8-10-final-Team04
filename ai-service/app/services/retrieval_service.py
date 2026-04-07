@@ -16,9 +16,9 @@ EMPTY_RESPONSE = {
 def _build_card(row, final_score=None):
     return {
         "id": row.id,
-        "title": row.name,
-        "owner": getattr(row, "source_repo", "Unknown"),
-        "star": getattr(row, "star_count", 0),
+        "title": row.name,                          # skills.name
+        "owner": getattr(row, "source_repo", None), # repositories.source_repo
+        "star": getattr(row, "star_count", None),   # repositories.star_count
         "description": (row.summary or row.content_md or "설명 없음")[:120],
         "uploadedAt": str(row.created_at) if row.created_at else None,
         "reason": "",
@@ -175,16 +175,21 @@ def _calculate_final_score(row, skill_intent: str) -> float:
 def _search_by_chunks(db, question_embedding, skill_intent):
     query = text("""
         SELECT 
-            s.id, s.name, s.content_md,
-            r.source_repo, r.source_uri, r.summary,
+            s.id,
+            s.name,
+            s.content_md,
+            s.created_at,
+            r.source_repo,
+            r.source_uri,
+            r.summary,
             r.language_stats,
-            r.star_count, r.created_at, 
+            r.star_count,
             sc.id AS chunk_id,
             sc.embedding <=> CAST(:embedding AS vector) AS distance
         FROM skill_chunks sc
         JOIN skills s ON s.id = sc.skill_id
         LEFT JOIN repositories r ON r.id = s.repository_id
-        ORDER BY distance ASC, r.star_count DESC
+        ORDER BY distance ASC, r.star_count DESC NULLS LAST
         LIMIT 30;
     """)
 
@@ -194,30 +199,14 @@ def _search_by_chunks(db, question_embedding, skill_intent):
         return []
 
     best_by_skill = {}
-
     for row in rows:
         final_score = _calculate_final_score(row, skill_intent)
+        if row.id not in best_by_skill or final_score > best_by_skill[row.id]["score"]:
+            best_by_skill[row.id] = {"row": row, "score": final_score}
 
-        if row.id not in best_by_skill:
-            best_by_skill[row.id] = {
-                "row": row,
-                "score": final_score
-            }
-        else:
-            if final_score > best_by_skill[row.id]["score"]:
-                best_by_skill[row.id] = {
-                    "row": row,
-                    "score": final_score
-                }
+    ranked = sorted(best_by_skill.values(), key=lambda x: x["score"], reverse=True)
 
-    ranked = list(best_by_skill.values())
-    ranked.sort(key=lambda x: x["score"], reverse=True)
-
-    cards = []
-    for item in ranked[:3]:
-        cards.append(_build_card(item["row"], item["score"]))
-
-    return cards
+    return [_build_card(item["row"], item["score"]) for item in ranked[:3]]
 
 
 # =========================
@@ -225,12 +214,13 @@ def _search_by_chunks(db, question_embedding, skill_intent):
 # =========================
 def _search_by_text(db, question):
     keywords = question.split()
-
     conditions = []
     params = {}
 
     for i, kw in enumerate(keywords):
-        conditions.append(f"(LOWER(name) LIKE LOWER(:kw{i}) OR LOWER(content_md) LIKE LOWER(:kw{i}))")
+        conditions.append(
+            f"(LOWER(s.name) LIKE LOWER(:kw{i}) OR LOWER(s.content_md) LIKE LOWER(:kw{i}))"
+        )
         params[f"kw{i}"] = f"%{kw}%"
 
     if not conditions:
@@ -238,13 +228,18 @@ def _search_by_text(db, question):
 
     query = text(f"""
         SELECT
-            s.id, s.name, s.content_md,
-            r.source_repo, r.summary, r.language_stats,
-            r.star_count, r.created_at
+            s.id,
+            s.name,
+            s.content_md,
+            s.created_at,
+            r.source_repo,
+            r.summary,
+            r.language_stats,
+            r.star_count
         FROM skills s
         LEFT JOIN repositories r ON r.id = s.repository_id
         WHERE {" OR ".join(conditions)}
-        ORDER BY r.star_count DESC
+        ORDER BY r.star_count DESC NULLS LAST
         LIMIT 10;
     """)
 
@@ -252,19 +247,15 @@ def _search_by_text(db, question):
 
     cards = []
     seen = set()
-
     for row in rows:
         if row.id in seen:
             continue
-
         seen.add(row.id)
         cards.append(_build_card(row))
-
         if len(cards) == 3:
             break
 
     return cards
-
 
 # =========================
 # 8. 메인
