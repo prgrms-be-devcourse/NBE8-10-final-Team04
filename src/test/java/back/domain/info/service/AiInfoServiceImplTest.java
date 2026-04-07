@@ -67,7 +67,7 @@ class AiInfoServiceImplTest {
         when(aiVendorRepository.findByName("OpenAI")).thenReturn(Optional.empty());
         when(aiVendorRepository.save(any(AiVendor.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        service.run();
+        service.getAiInfo();
 
         ArgumentCaptor<AiVendor> vendorCaptor = ArgumentCaptor.forClass(AiVendor.class);
         verify(aiVendorRepository).save(vendorCaptor.capture());
@@ -113,7 +113,7 @@ class AiInfoServiceImplTest {
         when(storageReader.readText(BASE_PATH)).thenReturn(json);
         when(aiVendorRepository.findByName("OpenAI")).thenReturn(Optional.of(vendor));
 
-        service.run();
+        service.getAiInfo();
 
         assertThat(vendor.getOfficialUrl()).isEqualTo("https://openai.com");
         assertThat(vendor.getIsActive()).isTrue();
@@ -152,7 +152,7 @@ class AiInfoServiceImplTest {
         when(aiVendorRepository.findByName("OpenAI")).thenReturn(Optional.of(vendor));
         when(aiModelFamilyRepository.save(any(AiModelFamily.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        service.run();
+        service.getAiInfo();
 
         ArgumentCaptor<AiModelFamily> familyCaptor = ArgumentCaptor.forClass(AiModelFamily.class);
         verify(aiModelFamilyRepository).save(familyCaptor.capture());
@@ -165,7 +165,7 @@ class AiInfoServiceImplTest {
     void run_ignoresInvalidJson() {
         when(storageReader.readText(BASE_PATH)).thenReturn("{not-json}");
 
-        service.run();
+        service.getAiInfo();
 
         verifyNoInteractions(aiVendorRepository, aiModelFamilyRepository);
     }

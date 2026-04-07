@@ -37,7 +37,7 @@ public class AiInfoServiceImpl implements AiInfoService {
 
     @Override
     @Transactional
-    public void run() {
+    public void getAiInfo() {
         log.info("[AiInfoService#run] 시작. path={}", BASE_PATH);
 
         String content = storageReader.readText(BASE_PATH);

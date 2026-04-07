@@ -13,7 +13,6 @@ import java.util.List;
 @Entity
 @Table(name = "ai_model_families")
 @Getter
-@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder

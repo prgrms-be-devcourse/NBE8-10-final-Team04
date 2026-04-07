@@ -4,8 +4,6 @@ import back.domain.info.dto.data.ModelBenchmarkDto;
 import back.domain.info.entity.ModelBenchmark;
 import back.domain.info.mapper.ModelStatMapper;
 import back.domain.info.repository.ModelBenchmarkRepository;
-import back.global.exception.CommonErrorCode;
-import back.global.exception.ServiceException;
 import back.global.storage.OciObjectStorageReader;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import lombok.RequiredArgsConstructor;
@@ -34,7 +32,7 @@ public class ModelBenchmarkServiceImpl implements ModelBenchmarkService {
 
     @Override
     @Transactional
-    public void run() {
+    public void getModelBenchmark() {
         log.info("[ModelBenchmarkService#run] 시작. path={}", BASE_PATH);
 
         String content = storageReader.readText(BASE_PATH);
@@ -48,27 +46,31 @@ public class ModelBenchmarkServiceImpl implements ModelBenchmarkService {
             return;
         }
 
-        int success = 0;
-        for(ModelBenchmarkDto dto : benchmarkDtos) {
+        int success = 0, fail = 0;
+        for (ModelBenchmarkDto dto : benchmarkDtos) {
             try {
                 createModelBenchmark(dto);
                 success++;
             } catch (Exception e) {
-                throw new ServiceException(
-                        CommonErrorCode.INTERNAL_SERVER_ERROR,
-                        "[ModelBenchmarkService#run] Failed to create model benchmark. (modelApiId=" + dto.modelApiId() + ")",
-                        "모델 벤치마크 데이터 생성 중 오류가 발생했습니다. (modelApiId=" + dto.modelApiId() + ")"
-                );
+                log.error("[ModelBenchmarkService#run] 처리 실패 스킵. modelApiId={}", dto.modelApiId(), e);
+                fail++;
             }
         }
 
-        log.info("[ModelBenchmarkService#run] 완료. success={}", success);
+        log.info("[ModelBenchmarkService#run] 완료. success={}, fail={}", success, fail);
     }
 
-    private ModelBenchmark createModelBenchmark(ModelBenchmarkDto dto) {
+    private void createModelBenchmark(ModelBenchmarkDto dto) {
+        // 중복 스킵
+        if (benchmarkRepository.existsByModelApiIdAndMetricTypeAndMeasuredAt(
+                dto.modelApiId(), dto.metricType(), dto.measuredAt())) {
+            log.info("[ModelBenchmarkService#run] 중복 스킵. modelApiId={}, metricType={}",
+                    dto.modelApiId(), dto.metricType());
+
+            return;
+        }
         ModelBenchmark benchmark = modelStatMapper.toModelBenchmarkEntity(dto);
-        ModelBenchmark savedBenchmark = benchmarkRepository.save(benchmark);
-        return savedBenchmark;
+        benchmarkRepository.save(benchmark);
     }
 
 }

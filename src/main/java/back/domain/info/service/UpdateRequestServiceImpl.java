@@ -1,9 +1,9 @@
 package back.domain.info.service;
 
 import back.domain.info.dto.data.ItemDto;
+import back.domain.info.dto.data.UpdateRequestDto;
 import back.domain.info.dto.response.PageUpdateRequestResponse;
 import back.domain.info.dto.response.UpdateRequestResponse;
-import back.domain.info.dto.data.UpdateRequestDto;
 import back.domain.info.entity.AiModelFamily;
 import back.domain.info.entity.AiVendor;
 import back.domain.info.entity.UpdateRequest;
@@ -23,12 +23,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import tools.jackson.databind.ObjectMapper;
 
+import java.time.LocalDate;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
 @SuppressFBWarnings(
         value = "EI_EXPOSE_REP2",
-        justification = "스프링이 관리하는 ObjectMapper를 DI로 주입받아 서비스 내부에서만 사용한다."
+        justification = "Spring-managed ObjectMapper is injected and used only within this service."
 )
 public class UpdateRequestServiceImpl implements UpdateRequestService {
 
@@ -43,7 +45,7 @@ public class UpdateRequestServiceImpl implements UpdateRequestService {
 
     @Override
     @Transactional
-    public void run() {
+    public void getUpdateRequest() {
         log.info("[UpdateRequestService#run] 시작. path={}", BASE_PATH);
 
         String content = storageReader.readText(BASE_PATH);
@@ -58,75 +60,75 @@ public class UpdateRequestServiceImpl implements UpdateRequestService {
         }
 
         int success = 0;
-        for(ItemDto dto : requestDto.items()) {
+        int fail = 0;
+        for (ItemDto dto : requestDto.items()) {
             try {
                 processJson(dto);
                 success++;
+            } catch (ServiceException e) {
+                throw e;
             } catch (Exception e) {
-                throw new ServiceException(
-                        CommonErrorCode.INTERNAL_SERVER_ERROR,
-                        "[UpdateRequestService#run] Failed to create update request. (id=" + dto.itemId() + ")",
-                        "Update Request 데이터 생성 중 오류가 발생했습니다. (id=" + dto.itemId() + ")"
-                );
+                log.error("[UpdateRequestService#run] 처리 실패 스킵. id={}", dto.itemId(), e);
+                fail++;
             }
         }
 
-        log.info("[UpdateRequestService#run] 완료. 성공: {}", success);
+        log.info("[UpdateRequestService#run] 완료. success={}, fail={}", success, fail);
     }
 
     private void processJson(ItemDto dto) {
+        if (requestRepository.existsBySourceIdAndNotifiedAt(dto.itemId(), LocalDate.now())) {
+            log.info("[UpdateRequestService#processJson] 중복 스킵. sourceId={}", dto.itemId());
+            return;
+        }
+
         AiVendor vendor = aiVendorRepository.findByName(dto.provider())
-                .orElseThrow(() -> new IllegalStateException(
-                        "vendor not found. provider=" + dto.provider()
+                .orElseThrow(() -> new ServiceException(
+                        CommonErrorCode.NOT_FOUND,
+                        "[UpdateRequestService#processJson] update request 생성 실패. sourceId="
+                                + dto.itemId() + ", provider=" + dto.provider(),
+                        "Vendor를 찾을 수 없습니다."
                 ));
 
         createUpdateRequest(dto, vendor);
     }
 
     private void createUpdateRequest(ItemDto dto, AiVendor vendor) {
-
-        AiModelFamily family = familyRepository.findByFamilyName(dto.family()).orElse(null);
+        AiModelFamily family = null;
+        if (dto.family() != null && !dto.family().isBlank()) {
+            family = familyRepository.findByFamilyName(dto.family()).orElse(null);
+        }
 
         UpdateRequest updateRequest = requestMapper.toUpdateRequestEntity(dto, vendor, family);
-
         requestRepository.save(updateRequest);
-
     }
 
     @Override
     @Transactional
     public void updateStatus(Long id, String status) {
-
-        String newStatus = status.toUpperCase();
-
-        // Status enum 값이 유효한지 검증
-        if (isValidStatus(newStatus)) {
-            UpdateRequest updateRequest = requestRepository.findById(id).orElse(null);
-            if (updateRequest != null) {
-                updateRequest.setStatus(Status.valueOf(newStatus));
-            }
-        } else {
-            // 유효하지 않은 상태일 경우
+        Status newStatus;
+        try {
+            newStatus = Status.valueOf(status.toUpperCase());
+        } catch (IllegalArgumentException e) {
             throw new ServiceException(
                     CommonErrorCode.BAD_REQUEST,
-                    "[UpdateRequestService#updateStatus] invalid status value",
-                    "유효하지 않는 상태 값 입니다. (PENDING, APPROVED, REJECTED)"
+                    "[UpdateRequestService#updateStatus] Invalid Status : " + status,
+                    "유효한 상태값이 아닙니다. (PENDING, APPROVED, REJECTED)"
             );
         }
-    }
 
-    // Status enum에 해당하는 값인지 체크하는 메서드
-    private boolean isValidStatus(String status) {
-        try {
-            Status.valueOf(status); // status가 Status enum에 있는지 확인
-            return true;
-        } catch (IllegalArgumentException e) {
-            return false; // enum에 없으면 false 반환
-        }
+        UpdateRequest updateRequest = requestRepository.findById(id)
+                .orElseThrow(() -> new ServiceException(
+                        CommonErrorCode.NOT_FOUND,
+                        "[UpdateRequestService#updateStatus] update request not found. id=" + id,
+                        "Update request를 찾을 수 없습니다."
+                ));
+
+        updateRequest.review(newStatus);
     }
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional(readOnly = true) // Entity에서 LAZY로 지정, 조회 + DTO 매핑이 끝날 때까지 영속성 컨텍스트를 유지
     public PageUpdateRequestResponse getUpdates(Pageable pageable) {
         return new PageUpdateRequestResponse(requestRepository.findAll(pageable).map(UpdateRequestResponse::new));
     }

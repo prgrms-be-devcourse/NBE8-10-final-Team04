@@ -17,7 +17,7 @@ import java.time.LocalDateTime;
 @Builder
 public class ModelBenchmark extends BaseEntity {
 
-    @JoinColumn(name = "model_id")
+    @Column(name = "model_id")
     private String modelApiId;
 
     @Enumerated(EnumType.STRING)
