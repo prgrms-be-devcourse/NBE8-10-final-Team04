@@ -64,6 +64,10 @@ dependencies {
     runtimeOnly("org.postgresql:postgresql")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 
+    // actuator
+    implementation ("org.springframework.boot:spring-boot-starter-actuator")
+    testImplementation ("org.springframework.boot:spring-boot-starter-actuator-test")
+
     // oci object-storage
     implementation("com.oracle.oci.sdk:oci-java-sdk-objectstorage:3.54.0")
     implementation("com.oracle.oci.sdk:oci-java-sdk-common-httpclient-jersey3:3.54.0")
