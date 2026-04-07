@@ -10,6 +10,7 @@ import org.springframework.context.annotation.Configuration;
         GeminiProperties.class,
         AiModelProperties.class,
         AiInfoProperties.class,
-        AiTrackerProperties.class
+        AiTrackerProperties.class,
+        GithubProperties.class
 })
 public class PropertiesConfig {}
