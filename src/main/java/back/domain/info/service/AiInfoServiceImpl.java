@@ -121,7 +121,7 @@ public class AiInfoServiceImpl implements AiInfoService {
     }
 
     private void updateFamily(AiModelFamily family, FamilyDto familyDto) {
-        family.update(familyDto.commonDescription());
+        family.update(familyDto.commonDescription(), familyDto.inputTypes(), familyDto.outputTypes());
     }
 
 }

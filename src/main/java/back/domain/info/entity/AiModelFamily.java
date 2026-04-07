@@ -40,7 +40,9 @@ public class AiModelFamily extends BaseEntity {
     @Column(name = "output_types", columnDefinition = "text[]")
     private String[] outputTypes;
 
-    public void update(String commonDescription) {
+    public void update(String commonDescription, String[] inputTypes, String[] outputTypes) {
         this.commonDescription = commonDescription;
+        this.inputTypes = inputTypes == null ? null : inputTypes.clone();
+        this.outputTypes = outputTypes == null ? null : outputTypes.clone();
     }
 }
