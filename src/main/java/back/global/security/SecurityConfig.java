@@ -1,7 +1,7 @@
 package back.global.security;
 
-import java.util.List;
-
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -17,8 +17,7 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import lombok.RequiredArgsConstructor;
+import java.util.List;
 
 @Configuration
 @SuppressFBWarnings(
@@ -63,10 +62,6 @@ public class SecurityConfig {
                         .permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/auth/token/refresh")
                         .permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/v1/ai-model/pipeline/*")
-                        .permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/v1/ai-tracker/pipeline/*")
-                        .permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/mcp/template/start-agent")
                         .permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/mcp/recommendations")
@@ -74,6 +69,10 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/v1/auth/logout")
                         .authenticated()
                         .requestMatchers("/api/v1/admin/**")
+                        .hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/v1/ai-model/pipeline/*")
+                        .hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/v1/ai-tracker/pipeline/*")
                         .hasRole("ADMIN")
                         .anyRequest()
                         .authenticated())
