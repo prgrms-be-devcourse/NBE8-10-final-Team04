@@ -3,7 +3,7 @@ package back.global.config;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.client.RestClient;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
@@ -17,6 +17,9 @@ public class WebConfig implements WebMvcConfigurer {
     @Value("${app.storage.local.upload-dir:./uploads}")
     private String uploadDir;
 
+    @Value("${app.embedding.base-url}")
+    private String embeddingBaseUrl;
+
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
         if (!STORAGE_TYPE_LOCAL.equalsIgnoreCase(storageType)) {
@@ -28,9 +31,9 @@ public class WebConfig implements WebMvcConfigurer {
     }
 
     @Bean
-    public WebClient embeddingWebClient() {
-        return WebClient.builder()
-                .baseUrl("http://your-embedding-service:8001")
+    public RestClient embeddingRestClient() {
+        return RestClient.builder()
+                .baseUrl(embeddingBaseUrl)
                 .build();
     }
 }

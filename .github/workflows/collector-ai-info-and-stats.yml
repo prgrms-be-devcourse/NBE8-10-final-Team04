@@ -81,7 +81,7 @@ jobs:
         env:
           SPRING_WEBHOOK_URL:    ${{ secrets.SPRING_WEBHOOK_URL }}
           SPRING_WEBHOOK_SECRET: ${{ secrets.SPRING_WEBHOOK_SECRET }}
-        run: python -m collectors.scripts.ai_info.webhook_trigger
+        run: python -m collectors.scripts.shared.webhook_trigger
 
       # ── 정리 ─────────────────────────────────────────────────────────────
       - name: Cleanup OCI credentials

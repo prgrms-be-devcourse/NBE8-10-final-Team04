@@ -20,7 +20,7 @@ public class KeywordRuleProvider {
             Map.entry("node", List.of("node", "nodejs", "express", "nestjs", "koa")),
             Map.entry("django", List.of("django")),
             Map.entry("flask", List.of("flask")),
-            Map.entry("fastapi", List.of("fastapi")),
+            Map.entry("fastapi", List.of("fastapi", "fast api")),
 
             // Frontend Framework
             Map.entry("react", List.of("react", "next", "next.js")),
@@ -32,7 +32,7 @@ public class KeywordRuleProvider {
             Map.entry("docker", List.of("docker", "dockerfile", "container")),
             Map.entry("kubernetes", List.of("kubernetes", "k8s")),
             Map.entry("terraform", List.of("terraform")),
-            Map.entry("aws", List.of("aws", "amazon web services", "ec2", "s3", "rds")),
+            Map.entry("aws", List.of("aws", "amazon web service", "ec2", "s3", "rds")),
             Map.entry("gcp", List.of("gcp", "google cloud")),
             Map.entry("ci-cd", List.of("ci/cd", "ci cd", "pipeline", "github actions", "jenkins")),
             Map.entry("monitoring", List.of("prometheus", "grafana", "monitoring", "logging")),

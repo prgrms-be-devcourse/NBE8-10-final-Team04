@@ -55,18 +55,23 @@ public class SecurityConfig {
                                 "/h2-console/**",
                                 "/actuator/health/**",
                                 "/actuator/info",
-                                "/api/prompts/run",
-                                "/api/info/run",
-                                "/dev/skills/**",
-                                "/dev/skill-chunks/**",
-                                "/api/skills/search",
-                                        "/api/chatbot")
+                                "/api/v1/prompts/run",
+                                "/api/v1/info/**",
+                                "/api/v1/skills/**")
                         .permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/auth/google/login")
                         .permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/auth/token/refresh")
                         .permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/ai-model/pipeline/*")
+                        .permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/ai-tracker/pipeline/*")
+                        .permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/mcp/template/start-agent")
+                        .permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/mcp/recommendations")
+                        .permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/mcp/recommendations/skill-content")
                         .permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/auth/logout")
                         .authenticated()

@@ -7,6 +7,4 @@ public enum MetricType {
     TPS,
     TTFT,
     PRICE_BLENDED,
-
-
 }

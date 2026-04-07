@@ -1,18 +1,12 @@
 package back.domain.prompt.search.dto.candidate;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
 
-@Getter
-@AllArgsConstructor
-public class CandidateMetadataDto {
+public record CandidateMetadataDto(
+        Integer stars,
+        Integer forks,
 
-    private Integer stars;
-
-    private Integer forks;
-
-    @JsonProperty("updated_at")
-    private String updatedAt;
-
+        @JsonProperty("updated_at")
+        String updatedAt
+) {
 }

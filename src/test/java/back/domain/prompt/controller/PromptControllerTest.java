@@ -51,7 +51,7 @@ class PromptControllerTest {
     @Test
     @DisplayName("POST /api/prompts/run은 성공 응답 본문을 반환한다")
     void runEndpoint_returnsSuccessResponse() throws Exception {
-        mockMvc.perform(post("/api/prompts/run").contentType(MediaType.APPLICATION_JSON))
+        mockMvc.perform(post("/api/v1/prompts/run").contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.data").value(nullValue()))

@@ -10,5 +10,5 @@ import java.util.Optional;
 
 @Repository
 public interface AiModelFamilyRepository extends JpaRepository<AiModelFamily, Integer> {
-
+    Optional<AiModelFamily> findByFamilyName(String familyName);
 }

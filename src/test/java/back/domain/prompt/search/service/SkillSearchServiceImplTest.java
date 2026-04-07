@@ -13,7 +13,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import back.domain.prompt.embedding.service.EmbeddingService;
+import back.domain.prompt.chunking.service.EmbeddingService;
 import back.domain.prompt.prompt.enums.Category;
 import back.domain.prompt.search.dto.chunk.SkillChunkSearchResultDto;
 import back.domain.prompt.search.dto.chunk.SkillChunkVectorSearchRowDto;
@@ -45,17 +45,17 @@ class SkillSearchServiceImplTest {
         SkillChunkSearchResultDto result = skillSearchService.search("spring search");
 
         verify(skillChunkVectorSearchRepository).searchTopK("[0.1,0.2]", 90);
-        assertThat(result.getCandidates()).hasSize(2);
+        assertThat(result.candidates()).hasSize(2);
 
-        assertThat(result.getCandidates().get(0).skillId()).isEqualTo(1L);
-        assertThat(result.getCandidates().get(0).category()).isEqualTo(Category.BACKEND);
-        assertThat(result.getCandidates().get(0).summary()).isNull();
-        assertThat(result.getCandidates().get(0).primaryScore()).isEqualTo(0.82f);
+        assertThat(result.candidates().get(0).skillId()).isEqualTo(1L);
+        assertThat(result.candidates().get(0).category()).isEqualTo(Category.BACKEND);
+        assertThat(result.candidates().get(0).summary()).isNull();
+        assertThat(result.candidates().get(0).primaryScore()).isEqualTo(0.82f);
 
-        assertThat(result.getCandidates().get(1).skillId()).isEqualTo(2L);
-        assertThat(result.getCandidates().get(1).category()).isEqualTo(Category.FRONTEND);
-        assertThat(result.getCandidates().get(1).summary()).isEqualTo("frontend summary");
-        assertThat(result.getCandidates().get(1).metadata().getUpdatedAt())
+        assertThat(result.candidates().get(1).skillId()).isEqualTo(2L);
+        assertThat(result.candidates().get(1).category()).isEqualTo(Category.FRONTEND);
+        assertThat(result.candidates().get(1).summary()).isEqualTo("frontend summary");
+        assertThat(result.candidates().get(1).metadata().updatedAt())
                 .isEqualTo("2026-04-01T00:00");
     }
 

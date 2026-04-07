@@ -1,0 +1,76 @@
+package back.domain.info.service;
+
+import back.domain.info.dto.data.ModelBenchmarkDto;
+import back.domain.info.entity.ModelBenchmark;
+import back.domain.info.mapper.ModelStatMapper;
+import back.domain.info.repository.ModelBenchmarkRepository;
+import back.global.storage.OciObjectStorageReader;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.ObjectMapper;
+
+import java.util.List;
+
+@Service
+@Slf4j
+@RequiredArgsConstructor
+@SuppressFBWarnings(
+        value = "EI_EXPOSE_REP2",
+        justification = "스프링이 관리하는 ObjectMapper를 DI로 주입받아 서비스 내부에서만 사용한다.")
+public class ModelBenchmarkServiceImpl implements ModelBenchmarkService {
+
+    private static final String BASE_PATH = "data/ai-info/model_benchmarks_records.json";
+
+    private final ObjectMapper objectMapper;
+    private final OciObjectStorageReader storageReader;
+    private final ModelBenchmarkRepository benchmarkRepository;
+    private final ModelStatMapper modelStatMapper;
+
+    @Override
+    @Transactional
+    public void getModelBenchmark() {
+        log.info("[ModelBenchmarkService#run] 시작. path={}", BASE_PATH);
+
+        String content = storageReader.readText(BASE_PATH);
+        if (content == null) return;
+
+        List<ModelBenchmarkDto> benchmarkDtos;
+        try {
+            benchmarkDtos = objectMapper.readValue(content, new TypeReference<List<ModelBenchmarkDto>>() {});
+        } catch (Exception e) {
+            log.error("[ModelBenchmarkService#run] JSON 파싱 실패", e);
+            return;
+        }
+
+        int success = 0, fail = 0;
+        for (ModelBenchmarkDto dto : benchmarkDtos) {
+            try {
+                createModelBenchmark(dto);
+                success++;
+            } catch (Exception e) {
+                log.error("[ModelBenchmarkService#run] 처리 실패 스킵. modelApiId={}", dto.modelApiId(), e);
+                fail++;
+            }
+        }
+
+        log.info("[ModelBenchmarkService#run] 완료. success={}, fail={}", success, fail);
+    }
+
+    private void createModelBenchmark(ModelBenchmarkDto dto) {
+        // 중복 스킵
+        if (benchmarkRepository.existsByModelApiIdAndMetricTypeAndMeasuredAt(
+                dto.modelApiId(), dto.metricType(), dto.measuredAt())) {
+            log.info("[ModelBenchmarkService#run] 중복 스킵. modelApiId={}, metricType={}",
+                    dto.modelApiId(), dto.metricType());
+
+            return;
+        }
+        ModelBenchmark benchmark = modelStatMapper.toModelBenchmarkEntity(dto);
+        benchmarkRepository.save(benchmark);
+    }
+
+}

@@ -1,0 +1,23 @@
+app:
+  storage:
+    type: local
+custom:
+  jwt:
+    secret-key: "start-ai-hub-default-secret-key-for-testing-purposes-only"
+  ai-tracker:
+    webhook-secret: "dummy-secret"
+
+oci:
+  namespace: "dummy-namespace"
+  bucket: "dummy-bucket"
+
+gemini:
+  api-key: "dummy-api-key"
+
+ai-model:
+  webhook-secret: "dummy-secret"
+
+github:
+  owner-repo: "dummy-owner/dummy-repo"
+  workflows:
+    token: "dummy-workflow-token"

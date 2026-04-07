@@ -11,7 +11,6 @@ import java.util.List;
 @Entity
 @Table(name = "ai_vendors")
 @Getter
-@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder

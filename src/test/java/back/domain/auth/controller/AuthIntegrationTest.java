@@ -1,11 +1,14 @@
 package back.domain.auth.controller;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
+import back.domain.auth.entity.RefreshToken;
+import back.domain.auth.port.GoogleIdTokenVerifier;
+import back.domain.auth.repository.RefreshTokenRepository;
+import back.domain.member.entity.Member;
+import back.domain.member.entity.MemberRole;
+import back.domain.member.repository.MemberRepository;
+import back.global.exception.CommonErrorCode;
+import back.global.exception.ServiceException;
+import back.global.security.JwtTokenProvider;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,26 +20,24 @@ import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Primary;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
-
-import back.domain.auth.port.GoogleIdTokenVerifier;
-import back.domain.auth.entity.RefreshToken;
-import back.domain.auth.repository.RefreshTokenRepository;
-import back.domain.member.entity.Member;
-import back.domain.member.entity.MemberRole;
-import back.domain.member.repository.MemberRepository;
-import back.global.exception.CommonErrorCode;
-import back.global.exception.ServiceException;
-import back.global.security.JwtTokenProvider;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
 @SpringBootTest(properties = "ADMIN_ALLOWLIST_EMAILS=admin-login@example.com")
+@ActiveProfiles("test")
 @AutoConfigureMockMvc
 @Transactional
 @Import(AuthIntegrationTest.TestControllerConfig.class)

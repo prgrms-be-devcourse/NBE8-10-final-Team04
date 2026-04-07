@@ -1,3 +1,5 @@
+import org.gradle.internal.impldep.org.apache.sshd.common.NamedResource.findByName
+
 plugins {
     java
     id("org.springframework.boot") version "4.0.3"
@@ -74,7 +76,15 @@ dependencies {
     implementation("com.pgvector:pgvector:0.1.6")
 
     // webflux
-    implementation("org.springframework.boot:spring-boot-starter-webflux")
+    // implementation("org.springframework.boot:spring-boot-starter-webflux")
+
+    // OCI Object Storage
+    implementation("com.oracle.oci.sdk:oci-java-sdk-objectstorage:3.60.0")
+    implementation("com.oracle.oci.sdk:oci-java-sdk-common:3.60.0")
+    implementation("com.oracle.oci.sdk:oci-java-sdk-common-httpclient-jersey3:3.60.0")
+
+    // Google Gemini SDK
+    implementation("com.google.genai:google-genai:1.44.0")
 }
 
 tasks.withType<Test> {
