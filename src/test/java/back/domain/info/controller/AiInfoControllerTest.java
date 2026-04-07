@@ -56,7 +56,7 @@ class AiInfoControllerTest {
 
     @Test
     void run_executesUpdateImport() throws Exception {
-        ResponseEntity<RsData<Void>> response = controller.run();
+        ResponseEntity<RsData<Void>> response = controller.getUpdateRequests();
 
         verify(updateRequestService).getUpdateRequest();
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
