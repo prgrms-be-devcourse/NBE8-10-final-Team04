@@ -124,6 +124,39 @@ class _StubClientWithStringSkillId:
         }
 
 
+class _StubClientWithMissingSkillContentMeta:
+    def get_start_agent_template(self, mcp_personal_token, agent_type):
+        return {
+            "data": {
+                "templateName": "start.agent.md",
+                "version": "v3",
+                "templateMarkdown": "# template",
+            }
+        }
+
+    def recommend_skills(self, mcp_personal_token, keywords):
+        return {
+            "data": {
+                "selectedSkills": [
+                    {
+                        "category": "backend",
+                        "skillId": 11,
+                        "finalScore": 0.77,
+                        "sourceRepo": "example/doc-agent",
+                    }
+                ]
+            }
+        }
+
+    def get_recommendation_skill_content(self, mcp_personal_token, skill_id):
+        return {
+            "data": {
+                "skillId": skill_id,
+                "skillMdRaw": "Spring Backend Code Review",
+            }
+        }
+
+
 class AutoFlowServiceTest(unittest.TestCase):
     def setUp(self):
         self.stub_client = _StubSpringProxyClient()
@@ -270,6 +303,23 @@ class AutoFlowServiceTest(unittest.TestCase):
 
         self.assertEqual(response["recommendation"]["selectedSkills"][0]["skillId"], 7)
         self.assertIsInstance(response["recommendation"]["selectedSkills"][0]["skillId"], int)
+
+    def test_collected_step_falls_back_to_summary_meta_when_content_meta_missing(self):
+        service = AutoFlowService(_StubClientWithMissingSkillContentMeta())
+
+        response = service.run(
+            step="COLLECTED",
+            mcp_personal_token="mcp_token_1",
+            agent_type=None,
+            keywords="SpringBoot infra",
+            user_input_confirmed=True,
+            decision=None,
+            customization_notes=None,
+        )
+
+        selected_skill = response["recommendation"]["selectedSkills"][0]
+        self.assertEqual(selected_skill["category"], "backend")
+        self.assertEqual(selected_skill["sourceRepo"], "example/doc-agent")
 
     def test_collected_step_requires_user_input_confirmed_true(self):
         with self.assertRaises(GatewayValidationError):

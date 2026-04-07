@@ -287,8 +287,8 @@ class AutoFlowService:
         if not isinstance(payload, dict):
             raise GatewayValidationError("skill content response data must be a JSON object.")
 
-        category = str(payload.get("category", "unknown")).strip() or "unknown"
-        source_repo = str(payload.get("sourceRepo", "unknown")).strip() or "unknown"
+        category = str(payload.get("category", "")).strip()
+        source_repo = str(payload.get("sourceRepo", "")).strip()
         skill_md_raw = str(payload.get("skillMdRaw", "")).strip()
         if not skill_md_raw:
             raise GatewayValidationError("skillMdRaw is missing in skill content response.")
