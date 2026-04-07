@@ -23,4 +23,5 @@ services:
       - "80:80"
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - /home/ubuntu/.oci:/root/.oci:ro
     restart: unless-stopped
