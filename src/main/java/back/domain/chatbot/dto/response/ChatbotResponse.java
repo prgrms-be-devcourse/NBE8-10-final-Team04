@@ -16,4 +16,12 @@ public class ChatbotResponse {
     private ChatbotTopPickResponse topPick;
     private List<String> nextActions;
     private boolean outOfScope;
+
+    public List<ChatbotCardResponse> getCards() {
+        return cards == null ? null : List.copyOf(cards);
+    }
+
+    public List<String> getNextActions() {
+        return nextActions == null ? null : List.copyOf(nextActions);
+    }
 }
