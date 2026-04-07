@@ -30,8 +30,11 @@ import java.util.Set;
 import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -266,6 +269,39 @@ class SkillUpsertServiceTest {
         ArgumentCaptor<List> skillBatchCaptor = ArgumentCaptor.forClass(List.class);
         verify(skillRepository).saveAll(skillBatchCaptor.capture());
         assertThat(skillBatchCaptor.getValue()).hasSize(2);
+    }
+
+    @Test
+    @DisplayName("upsertSkills continues with per-item fallback when batch save fails")
+    void upsertSkills_fallbacksToSingleSaveWhenBatchFails() {
+        Repository repository = repository(
+                1L,
+                100L,
+                "owner/repo",
+                3,
+                1,
+                "etag-old",
+                LocalDateTime.parse("2026-03-26T10:00:00")
+        );
+        List<SkillDto> skillDtos = List.of(
+                skillData("valid-skill", "skills/valid.md", "valid content", "valid-hash"),
+                skillData(null, "skills/invalid.md", "invalid content", "invalid-hash")
+        );
+
+        when(skillRepository.findByRepositoryId(1L)).thenReturn(List.of());
+        doThrow(new RuntimeException("batch failed")).when(skillRepository).saveAll(any());
+        when(skillRepository.save(argThat(skill -> "valid-skill".equals(skill.getName()))))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+        doThrow(new RuntimeException("invalid row"))
+                .when(skillRepository)
+                .save(argThat(skill -> skill.getName() == null));
+        when(parser.extractTags(anyString(), anyString())).thenReturn(Set.of("batch"));
+        when(parser.extractCategory(anyString(), anyString())).thenReturn(Category.BACKEND);
+
+        assertThatNoException().isThrownBy(() -> skillNormalizeService.upsertSkills(repository, skillDtos));
+
+        verify(skillRepository).saveAll(any());
+        verify(skillRepository, times(2)).save(any());
     }
 
     @Test
