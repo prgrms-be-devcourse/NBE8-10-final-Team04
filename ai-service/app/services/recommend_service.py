@@ -10,6 +10,17 @@ from app.services.gemini_service import (
     generate_followup_answer,
 )
 
+# === 초기화면 멘트
+
+def get_welcome_message():
+    return {
+        "question": "INIT",
+        "message": "안녕하세요! AI 툴 추천, 스킬 추천을 도와드립니다!",
+        "nextActions": ["AI 툴 추천해줘", "내게 맞는 스킬은?"], 
+        "outOfScope": False,
+        "cards": [], 
+        "topPick": None
+    }
 
 
 def handle_chat(question: str) -> ChatResponse:

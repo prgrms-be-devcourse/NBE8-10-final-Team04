@@ -17,4 +17,9 @@ public class ChatbotController {
     public ChatbotResponse chat(@RequestBody ChatbotRequest request) {
         return chatbotService.chat(request.getQuestion());
     }
+
+    @GetMapping("/welcome")
+    public ChatbotResponse welcome() {
+        return chatbotService.getWelcome();
+    }
 }
