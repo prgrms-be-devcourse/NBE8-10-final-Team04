@@ -9,5 +9,4 @@ public interface RepositoryRepository extends JpaRepository<Repository, Long> {
 
     // github_id로 조회
     Optional<Repository> findByGithubId(Long githubId);
-
 }

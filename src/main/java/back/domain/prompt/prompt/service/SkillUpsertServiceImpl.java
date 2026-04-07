@@ -18,12 +18,20 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class SkillUpsertServiceImpl implements SkillUpsertService {
+
+    private static final int SKILL_INSERT_BATCH_SIZE = 200;
 
     private final RepositoryRepository repositoryRepository;
     private final SkillRepository skillRepository;
@@ -37,7 +45,6 @@ public class SkillUpsertServiceImpl implements SkillUpsertService {
 
         return repositoryRepository.findByGithubId(data.githubId())
                 .map(existing -> {
-                    // getSourceUpatedAt()으로 레포지터리 메타데이터 변경 감지
                     if (!existing.getSourceUpdatedAt().equals(data.sourceUpdatedAt())) {
                         existing.update(
                                 data.starCount(),
@@ -53,16 +60,12 @@ public class SkillUpsertServiceImpl implements SkillUpsertService {
                                 data.languageStats()
                         );
 
-                        // 레포 메타데이터 변경 -> skills tag와 category 업데이트
                         existing.getSkills().forEach(skill -> {
                             String summary = existing.getSummary() == null ? "" : existing.getSummary();
-
                             Set<String> tags = parser.extractTags(summary, skill.getContentMd());
                             Category category = parser.extractCategory(summary, skill.getContentMd());
-
                             skill.updateTagAndCategory(tags, category);
                         });
-
                     }
                     return existing;
                 })
@@ -93,6 +96,89 @@ public class SkillUpsertServiceImpl implements SkillUpsertService {
     }
 
     @Override
+    public void upsertSkills(Repository repository, List<SkillDto> skillDtos) {
+        // 계산(파싱)과 저장을 분리해서 트랜잭션 점유 시간을 줄인다.
+        if (skillDtos == null || skillDtos.isEmpty()) {
+            log.warn("[SkillUpsertServiceImpl#upsertSkills] 스킬 목록이 비어 있습니다. repo={}", repository.getSourceRepo());
+            return;
+        }
+
+        String summary = repository.getSummary() == null ? "" : repository.getSummary();
+        Map<String, Skill> existingSkillsByName = skillRepository.findByRepositoryId(repository.getId())
+                .stream()
+                .collect(Collectors.toMap(Skill::getName, Function.identity(), (left, right) -> left));
+
+        List<Skill> newSkills = new ArrayList<>();
+        List<Skill> changedSkills = new ArrayList<>();
+
+        for (SkillDto skillDto : skillDtos) {
+            if (skillDto == null) {
+                continue;
+            }
+
+            if (skillDto.contentMd() == null) {
+                log.warn("[SkillUpsertServiceImpl#upsertSkills] skill content_md가 없습니다. {}/{}",
+                        repository.getSourceRepo(), skillDto.name());
+                continue;
+            }
+
+            String name = skillDto.name();
+            String rawContent = skillDto.contentMd();
+            Set<String> tags = parser.extractTags(summary, rawContent);
+            Category category = parser.extractCategory(summary, rawContent);
+
+            Skill existing = existingSkillsByName.get(name);
+            if (existing != null) {
+                if (!Objects.equals(existing.getContentHash(), skillDto.contentHash())) {
+                    existing.update(rawContent, skillDto.contentHash(), tags, category);
+                    changedSkills.add(existing);
+                    log.info("[SkillUpsertServiceImpl#upsertSkills] 스킬 갱신 완료: {}/{}", repository.getSourceRepo(), name);
+                }
+                continue;
+            }
+
+            Skill created = Skill.builder()
+                    .repository(repository)
+                    .name(name)
+                    .contentMd(rawContent)
+                    .contentHash(skillDto.contentHash())
+                    .filePath(skillDto.filePath())
+                    .category(category)
+                    .tagsJson(tags)
+                    .build();
+            newSkills.add(created);
+            existingSkillsByName.put(name, created);
+        }
+
+        if (!newSkills.isEmpty()) {
+            saveSkillsInBatches(repository, newSkills, "신규");
+        }
+
+        if (!changedSkills.isEmpty()) {
+            saveSkillsInBatches(repository, changedSkills, "수정");
+        }
+    }
+
+    private void saveSkillsInBatches(Repository repository, List<Skill> skills, String mode) {
+        // saveAll 호출마다 짧은 트랜잭션이 열려서 커넥션 장기 점유를 줄일 수 있다.
+        int total = skills.size();
+        for (int from = 0; from < total; from += SKILL_INSERT_BATCH_SIZE) {
+            int to = Math.min(from + SKILL_INSERT_BATCH_SIZE, total);
+            List<Skill> batch = skills.subList(from, to);
+            skillRepository.saveAll(batch);
+
+            log.info(
+                    "[SkillUpsertServiceImpl#upsertSkills] {} 스킬 배치 저장 완료. repo={}, batchSize={}, progress={}/{}",
+                    mode,
+                    repository.getSourceRepo(),
+                    batch.size(),
+                    to,
+                    total
+            );
+        }
+    }
+
+    @Override
     @Transactional
     public Skill upsertSkill(Repository repository, SkillDto skillDto) {
         String name = skillDto.name();
@@ -105,7 +191,7 @@ public class SkillUpsertServiceImpl implements SkillUpsertService {
                 .map(existing -> {
                     if (!existing.getContentHash().equals(skillDto.contentHash())) {
                         existing.update(rawContent, skillDto.contentHash(), tags, category);
-                        log.info("[SkillUpsertServiceImpl#upsertSkill] Skill updated: {}/{}", repository.getSourceRepo(), name);
+                        log.info("[SkillUpsertServiceImpl#upsertSkill] 스킬 갱신 완료: {}/{}", repository.getSourceRepo(), name);
                     }
                     return existing;
                 })
@@ -131,7 +217,7 @@ public class SkillUpsertServiceImpl implements SkillUpsertService {
                 .map(existing -> {
                     if (!existing.getContentHash().equals(agentDto.contentHash())) {
                         existing.update(rawContent, agentDto.contentHash());
-                        log.info("[SkillUpsertServiceImpl#upsertAgent] Agent updated: {}", repository.getSourceRepo());
+                        log.info("[SkillUpsertServiceImpl#upsertAgent] 에이전트 갱신 완료: {}", repository.getSourceRepo());
                     }
                     return existing;
                 })
@@ -144,5 +230,4 @@ public class SkillUpsertServiceImpl implements SkillUpsertService {
                                 .build()
                 ));
     }
-
 }

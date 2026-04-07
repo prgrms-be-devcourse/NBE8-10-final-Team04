@@ -12,10 +12,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import tools.jackson.databind.ObjectMapper;
 
-import java.io.File;
-import java.nio.file.Files;
-import java.util.Arrays;
-import java.util.Comparator;
 import java.util.List;
 
 @Service
@@ -96,17 +92,11 @@ public class PromptServiceImpl implements PromptService {
             return;
         }
 
-        for (SkillDto skillDto : skills) {
-            if (skillDto.contentMd() == null) {
-                log.warn("[PromptServiceImpl#processSkills] skill content_md가 없습니다: {}/{}", sourceRepo, skillDto.name());
-                continue;
-            }
-
-            try {
-                skillUpsertService.upsertSkill(repository, skillDto);
-            } catch (Exception e) {
-                log.error("[PromptServiceImpl#processSkills] Skill 처리 실패: {}/{}", sourceRepo, skillDto.name(), e);
-            }
+        // 스킬 목록 전체를 한 번에 위임해 서비스 레이어에서 배치 업서트를 수행한다.
+        try {
+            skillUpsertService.upsertSkills(repository, skills);
+        } catch (Exception e) {
+            log.error("[PromptServiceImpl#processSkills] Skill 배치 처리 실패: {}", sourceRepo, e);
         }
     }
 
