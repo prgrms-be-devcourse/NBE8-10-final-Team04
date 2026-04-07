@@ -93,7 +93,7 @@ management:
 
 ai:
   service:
-    url: ${AI_SERVICE_URL}
+    url: ${AI_SERVICE_URL:http://localhost:8000}
 oci:
   namespace: ${OCI_NAMESPACE}
   bucket: ${OCI_BUCKET}
