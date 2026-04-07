@@ -110,6 +110,9 @@ management:
       probes:
         enabled: true
 
+ai:
+  service:
+    url: ${AI_SERVICE_URL:http://localhost:8000}
 oci:
   user: ${OCI_USER}
   fingerprint: ${OCI_FINGERPRINT}
@@ -157,7 +160,3 @@ github:
     tracker-update:
       crons:
         - ${CRON_TRACKER_UPDATE:0 0 3 * * *}           # 매일 KST 12:00 (UTC 03:00)
-
-ai:
-  service:
-    url: ${AI_SERVICE_URL}
