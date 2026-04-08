@@ -17,12 +17,17 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "ai_community_posts")
+@Table(
+        name = "ai_community_posts",
+        uniqueConstraints = @UniqueConstraint(
+                name = "uk_ai_community_posts_type_target_vendor",
+                columnNames = {"post_type", "target_date", "vendor_id"}))
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @SuppressFBWarnings(

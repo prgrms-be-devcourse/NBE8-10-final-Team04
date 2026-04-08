@@ -53,9 +53,21 @@ public class SecurityConfig {
                                 "/actuator/health/**",
                                 "/actuator/info",
                                 "/api/v1/prompts/run",
-                                "/api/v1/info/**",
                                 "/api/v1/skills/**")
                         .permitAll()
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/api/v1/info/vendors",
+                                "/api/v1/info/vendors/*/families",
+                                "/api/v1/info/families/*",
+                                "/api/v1/info/update/approved")
+                        .permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/info/model", "/api/v1/info/benchmark", "/api/v1/info/update")
+                        .hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/v1/info/update")
+                        .hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/v1/info/update")
+                        .hasRole("ADMIN")
                         .requestMatchers(HttpMethod.POST, "/api/v1/auth/google/login")
                         .permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/auth/token/refresh")

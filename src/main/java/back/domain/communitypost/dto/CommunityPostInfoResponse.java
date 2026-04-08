@@ -29,7 +29,7 @@ public record CommunityPostInfoResponse(
                 post.getBody(),
                 post.getStatus(),
                 post.getTargetDate(),
-                post.getVendorId(),
+                post.getPostType() == CommunityPostType.MODEL_INFO ? post.getVendorId() : null,
                 post.getPublishedAt(),
                 post.getCreatedAt(),
                 post.getUpdatedAt());

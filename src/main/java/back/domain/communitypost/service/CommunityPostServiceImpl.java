@@ -9,6 +9,7 @@ import java.util.Map;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -38,6 +39,7 @@ import lombok.RequiredArgsConstructor;
 public class CommunityPostServiceImpl implements CommunityPostService {
 
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+    private static final long NO_VENDOR_PLACEHOLDER = 0L;
 
     private final CommunityPostRepository communityPostRepository;
     private final MemberRepository memberRepository;
@@ -60,7 +62,7 @@ public class CommunityPostServiceImpl implements CommunityPostService {
                 request.targetDate(),
                 resolvedVendorId);
 
-        return CommunityPostInfoResponse.from(communityPostRepository.save(post));
+        return savePostWithDuplicateGuard(post);
     }
 
     @Override
@@ -254,7 +256,18 @@ public class CommunityPostServiceImpl implements CommunityPostService {
             }
             return vendorId;
         }
-        return null;
+        return NO_VENDOR_PLACEHOLDER;
+    }
+
+    private CommunityPostInfoResponse savePostWithDuplicateGuard(CommunityPost post) {
+        try {
+            return CommunityPostInfoResponse.from(communityPostRepository.save(post));
+        } catch (DataIntegrityViolationException ex) {
+            throw new ServiceException(
+                    CommonErrorCode.CONFLICT,
+                    "[CommunityPostServiceImpl#savePostWithDuplicateGuard] duplicated post by unique constraint",
+                    "해당 날짜와 타입의 게시글이 이미 존재합니다.");
+        }
     }
 
     private void validateAdminMember(long memberId) {
