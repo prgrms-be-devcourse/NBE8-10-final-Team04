@@ -1,0 +1,27 @@
+name: Nginx Deploy
+
+on:
+  push:
+    branches: [ "develop" ]
+    paths:
+      - 'infra/nginx/**'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy Nginx config
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          script: |
+            cd /home/ubuntu/NBE8-10-final-Team04
+            git fetch
+            git checkout develop
+            git pull origin develop
+            sudo cp infra/nginx/nginx.conf /etc/nginx/sites-available/nginx.conf
+            sudo nginx -t || (echo "Nginx config error" && exit 1)
+            sudo systemctl reload nginx
