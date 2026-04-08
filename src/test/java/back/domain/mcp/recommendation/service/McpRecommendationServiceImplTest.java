@@ -60,7 +60,6 @@ class McpRecommendationServiceImplTest {
                 "spring-infra-skill",
                 "repo-name",
                 "https://github.com/example/repo-name",
-                "# skill content",
                 "INFRA",
                 "summary",
                 0.91,

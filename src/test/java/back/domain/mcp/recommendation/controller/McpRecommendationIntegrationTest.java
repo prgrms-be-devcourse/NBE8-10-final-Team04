@@ -114,11 +114,7 @@ class McpRecommendationIntegrationTest {
         mockMvc.perform(post("/api/v1/mcp/recommendations/skill-content")
                         .header(HttpHeaders.AUTHORIZATION, "Bearer %s".formatted(rawMcpToken))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {
-                                  "skillId": %d
-                                }
-                                """.formatted(skill.getId())))
+                        .content("{\"skillId\": %d}".formatted(skill.getId())))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message").value("스킬 본문 조회 성공"))
                 .andExpect(jsonPath("$.data.skillId").value(skill.getId()))

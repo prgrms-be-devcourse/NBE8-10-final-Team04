@@ -71,7 +71,6 @@ class McpRecommendationRankerTest {
                 skillName,
                 "repo-%d".formatted(skillId),
                 "https://github.com/example/repo-%d".formatted(skillId),
-                "# skill content",
                 category,
                 "summary",
                 primaryScore,

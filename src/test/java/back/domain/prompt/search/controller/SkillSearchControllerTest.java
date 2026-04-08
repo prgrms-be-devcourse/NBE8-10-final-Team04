@@ -1,6 +1,7 @@
 package back.domain.prompt.search.controller;
 
 import back.domain.prompt.search.dto.chunk.SkillChunkSearchResultDto;
+import back.domain.prompt.search.dto.request.SkillSearchRequestDto;
 import back.domain.prompt.search.service.SkillSearchService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -20,11 +21,12 @@ class SkillSearchControllerTest {
         SkillSearchService skillSearchService = mock(SkillSearchService.class);
         SkillSearchController controller = new SkillSearchController(skillSearchService);
         SkillChunkSearchResultDto result = new SkillChunkSearchResultDto(List.of());
-        when(skillSearchService.search("spring")).thenReturn(result);
+        SkillSearchRequestDto request = new SkillSearchRequestDto(List.of("spring"));
+        when(skillSearchService.search(List.of("spring"))).thenReturn(result);
 
-        SkillChunkSearchResultDto response = controller.search("spring");
+        SkillChunkSearchResultDto response = controller.search(request);
 
-        verify(skillSearchService).search("spring");
+        verify(skillSearchService).search(List.of("spring"));
         assertThat(response).isSameAs(result);
     }
 }
