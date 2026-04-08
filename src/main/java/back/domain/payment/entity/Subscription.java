@@ -11,6 +11,7 @@ import java.time.LocalDateTime;
 @Table(name = "subscription")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@SuppressWarnings({"EI_EXPOSE_REP", "EI_EXPOSE_REP2"})
 public class Subscription extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -44,6 +45,7 @@ public class Subscription extends BaseEntity {
     private String pgProvider;
 
     @Builder
+    @SuppressWarnings({"EI_EXPOSE_REP", "EI_EXPOSE_REP2"})
     private Subscription(Member member, SubscriptionPlanType planType, Integer amount,
                          String billingKey, String pgProvider, LocalDateTime nextBillingAt) {
         this.member = member;

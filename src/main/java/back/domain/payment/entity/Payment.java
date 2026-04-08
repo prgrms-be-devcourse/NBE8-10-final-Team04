@@ -18,6 +18,7 @@ import java.util.Optional;
 @Table(name = "payment")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@SuppressWarnings({"EI_EXPOSE_REP", "EI_EXPOSE_REP2"})
 public class Payment extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -69,6 +70,7 @@ public class Payment extends BaseEntity {
     }
 
     @Builder(access = AccessLevel.PRIVATE)
+    @SuppressWarnings({"EI_EXPOSE_REP", "EI_EXPOSE_REP2"})
     private Payment(Member member, Subscription subscription, String orderId, String paymentKey,
                     PaymentStatus status, SubscriptionPlanType planType, Map<String, Object> rawPayload) {
         this.member = member;
