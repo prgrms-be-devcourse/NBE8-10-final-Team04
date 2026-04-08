@@ -1,7 +1,9 @@
+"""
+test_notify.py
+"""
 import os
 from unittest.mock import patch, MagicMock
 
-import httpx
 import pytest
 
 from collectors.scripts.shared.notify import (
@@ -18,18 +20,24 @@ def test_mask_sensitive() -> None:
 
 
 @patch("collectors.scripts.shared.notify.DISCORD_WEBHOOK_URL", "http://test-webhook")
-@patch("httpx.Client.post")
-def test_send_embed_success(mock_post: MagicMock) -> None:
-    mock_post.return_value.status_code = 204
+@patch("collectors.scripts.shared.notify.httpx.Client")
+def test_send_embed_success(mock_client_class: MagicMock) -> None:
+    # Context Manager(with 구문) 모킹 설정
+    mock_client = MagicMock()
+    mock_response = MagicMock()
+    mock_response.status_code = 204
+    mock_client.post.return_value = mock_response
+    mock_client_class.return_value.__enter__.return_value = mock_client
+
     send_embed({"test": "data"})
-    mock_post.assert_called_once_with("http://test-webhook", json={"test": "data"})
+    mock_client.post.assert_called_once_with("http://test-webhook", json={"test": "data"})
 
 
 @patch("collectors.scripts.shared.notify.DISCORD_WEBHOOK_URL", "")
-@patch("httpx.Client.post")
-def test_send_embed_no_webhook(mock_post: MagicMock) -> None:
+@patch("collectors.scripts.shared.notify.httpx.Client")
+def test_send_embed_no_webhook(mock_client_class: MagicMock) -> None:
     send_embed({"test": "data"})
-    mock_post.assert_not_called()
+    mock_client_class.assert_not_called()
 
 
 @patch("collectors.scripts.shared.notify.send_embed")
@@ -40,7 +48,10 @@ def test_send_error(mock_send_embed: MagicMock) -> None:
         send_error("Test Error", e)
 
     mock_send_embed.assert_called_once()
-    embeds = mock_send_embed.call_args[0][0]["embeds"]
+    args, kwargs = mock_send_embed.call_args
+    payload = args[0]
+    embeds = payload["embeds"]
+
     assert len(embeds) == 1
     assert "Test Error" in embeds[0]["title"]
     assert "ValueError: test error" in embeds[0]["description"]

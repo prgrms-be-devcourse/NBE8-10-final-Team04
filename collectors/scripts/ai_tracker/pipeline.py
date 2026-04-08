@@ -34,7 +34,7 @@ def main() -> None:
     # 2. 직렬화
     content: bytes = build_json(items).encode("utf-8")
 
-    # 3. OCI 업로드
+    # 3. OCI 업로드 TODO: latest 한 건 더 업로드 [TM-184]
     manager = AiTrackerOciManager()
     etag = manager.upload_updates(content)
 

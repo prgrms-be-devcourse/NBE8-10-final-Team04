@@ -1,7 +1,7 @@
 package back.global.security;
 
-import java.util.List;
-
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -17,8 +17,7 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import lombok.RequiredArgsConstructor;
+import java.util.List;
 
 @Configuration
 @SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "스프링 DI로 주입되는 빈 참조이며, 의도된 패턴입니다.")
@@ -72,10 +71,6 @@ public class SecurityConfig {
                         .permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/auth/token/refresh")
                         .permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/v1/ai-model/pipeline/*")
-                        .permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/v1/ai-tracker/pipeline/*")
-                        .permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/mcp/template/start-agent")
                         .permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/mcp/recommendations")
@@ -88,6 +83,15 @@ public class SecurityConfig {
                         .authenticated()
                         .requestMatchers("/api/v1/admin/**")
                         .hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST,
+                                "/api/v1/ai-model/pipeline/trigger",
+                                "/api/v1/ai-tracker/pipeline/trigger"
+                        ).permitAll()
+
+                        .requestMatchers(HttpMethod.POST,
+                                "/api/v1/ai-tracker/pipeline/**",
+                                "/api/v1/ai-model/pipeline/**"
+                        ).hasRole("ADMIN")
                         .anyRequest()
                         .authenticated())
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

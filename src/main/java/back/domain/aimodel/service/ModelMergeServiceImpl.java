@@ -78,6 +78,30 @@ public class ModelMergeServiceImpl implements ModelMergeService {
 
     private Client geminiClient;
 
+    /**
+     * 패밀리 병합 중 상태를 누적하기 위한 내부 클래스
+     */
+    private static class FamilyData {
+        final String createdAt;
+        final Set<String> inputTypes = new HashSet<>();
+        final Set<String> outputTypes = new HashSet<>();
+
+        FamilyData(String createdAt) {
+            this.createdAt = createdAt;
+        }
+
+        void addModalities(OrModel.Architecture arch) {
+            if (arch != null) {
+                if (arch.inputModalities() != null) {
+                    inputTypes.addAll(arch.inputModalities());
+                }
+                if (arch.outputModalities() != null) {
+                    outputTypes.addAll(arch.outputModalities());
+                }
+            }
+        }
+    }
+
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings(
             value = "EI_EXPOSE_REP2",
             justification = "스프링이 관리하는 ObjectMapper를 DI로 주입받아 서비스 내부에서만 사용한다."
@@ -102,11 +126,10 @@ public class ModelMergeServiceImpl implements ModelMergeService {
         String now = LocalDateTime.now()
                 .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
 
-        // ── 1차: 규칙 기반 그룹핑 ────────────────────────────────────────────
-        // vendorSlug → (familyName → createdAt)
-        Map<String, Map<String, String>> vendorFamilyMap = new LinkedHashMap<>();
-        // vendorSlug → (규칙으로 못 잡은 원본 modelName 목록)
-        Map<String, List<String>> unresolved = new LinkedHashMap<>();
+        // vendorSlug → (familyName → FamilyData)
+        Map<String, Map<String, FamilyData>> vendorFamilyMap = new LinkedHashMap<>();
+        // vendorSlug → (규칙으로 못 잡은 원본 OrModel 객체 목록)
+        Map<String, List<OrModel>> unresolved = new LinkedHashMap<>();
 
         int included = 0, skipped = 0;
 
@@ -128,44 +151,42 @@ public class ModelMergeServiceImpl implements ModelMergeService {
             String familyName = extractFamilyName(modelName);
 
             if (familyName.equals("OTHERS")) {
-                // 규칙으로 패밀리를 특정하지 못한 케이스 → 2차 Gemini 판별 대상
-                unresolved.computeIfAbsent(vendorSlug, k -> new ArrayList<>()).add(modelName);
+                unresolved.computeIfAbsent(vendorSlug, k -> new ArrayList<>()).add(or);
             } else {
-                vendorFamilyMap
+                FamilyData data = vendorFamilyMap
                         .computeIfAbsent(vendorSlug, k -> new LinkedHashMap<>())
-                        .putIfAbsent(familyName, now);
+                        .computeIfAbsent(familyName, k -> new FamilyData(now));
+                data.addModalities(or.architecture());
             }
             included++;
         }
 
-        log.info("1차 규칙 그룹핑: {}개 모델 포함 / {}개 제외", included, skipped);
-        vendorFamilyMap.forEach((vendorSlug, familyMap) ->
-                log.info("  [{}] 패밀리 {}개: {}", vendorSlug, familyMap.size(), familyMap.keySet())
-        );
-        unresolved.forEach((vendorSlug, models) ->
-                log.info("  [{}] 미분류 {}개: {}", vendorSlug, models.size(), models)
-        );
+        log.info("[ModelMergeServiceImpl#merge] 1차 규칙 그룹핑: {}개 모델 포함 / {}개 제외", included, skipped);
 
-        // ── 2차: Gemini 판별 (미분류 모델이 있을 때만 1회 호출) ───────────────
         if (!unresolved.isEmpty()) {
             resolveWithGemini(unresolved, vendorFamilyMap, now);
         }
 
-        // ── 벤더 구조로 변환 ──────────────────────────────────────────────────
         List<IntegratedVendor> result = new ArrayList<>();
-        for (Map.Entry<String, Map<String, String>> vendorEntry : vendorFamilyMap.entrySet()) {
+        for (Map.Entry<String, Map<String, FamilyData>> vendorEntry : vendorFamilyMap.entrySet()) {
             String vendorSlug  = vendorEntry.getKey();
             String vendorName  = VENDOR_DISPLAY_NAMES.getOrDefault(vendorSlug, capitalize(vendorSlug));
             String officialUrl = VENDOR_URLS.getOrDefault(vendorSlug, "");
 
             List<IntegratedFamily> families = vendorEntry.getValue().entrySet().stream()
-                    .map(e -> new IntegratedFamily(e.getKey(), "", e.getValue()))
+                    .map(e -> new IntegratedFamily(
+                            e.getKey(),
+                            "",
+                            e.getValue().createdAt,
+                            e.getValue().inputTypes.stream().sorted().toList(),
+                            e.getValue().outputTypes.stream().sorted().toList()
+                    ))
                     .toList();
 
             result.add(new IntegratedVendor(vendorName, officialUrl, true, false, families));
         }
 
-        log.info("최종 통합 벤더: {}개 / 총 패밀리: {}개",
+        log.info("[ModelMergeServiceImpl#merge] 최종 통합 벤더: {}개 / 총 패밀리: {}개",
                 result.size(),
                 result.stream().mapToInt(v -> v.families().size()).sum());
         return result;
@@ -178,18 +199,24 @@ public class ModelMergeServiceImpl implements ModelMergeService {
      * 실패 시 미분류 모델은 OTHERS로 처리하고 파이프라인 계속 진행.
      */
     private void resolveWithGemini(
-            Map<String, List<String>> unresolved,
-            Map<String, Map<String, String>> vendorFamilyMap,
+            Map<String, List<OrModel>> unresolved,
+            Map<String, Map<String, FamilyData>> vendorFamilyMap,
             String now
     ) {
-        // 벤더별 기존 패밀리 + 미분류 모델 목록을 프롬프트로 구성
         StringBuilder context = new StringBuilder();
         unresolved.forEach((vendorSlug, models) -> {
-            Set<String> existingFamilies = vendorFamilyMap
-                    .getOrDefault(vendorSlug, Map.of()).keySet();
+            Set<String> existingFamilies = vendorFamilyMap.getOrDefault(vendorSlug, Map.of()).keySet();
+            List<String> modelNames = models.stream()
+                    .map(m -> {
+                        String mp = m.id().substring(m.id().indexOf('/') + 1);
+                        return mp.contains(":") ? mp.substring(0, mp.indexOf(':')) : mp;
+                    })
+                    .distinct()
+                    .toList();
+
             context.append(String.format("vendor: %s%n", vendorSlug));
             context.append(String.format("existing_families: %s%n", existingFamilies));
-            context.append(String.format("unresolved_models: %s%n%n", models));
+            context.append(String.format("unresolved_models: %s%n%n", modelNames));
         });
 
         String prompt = """
@@ -226,7 +253,7 @@ public class ModelMergeServiceImpl implements ModelMergeService {
             );
 
             if (response.text() == null) {
-                log.warn("Gemini 패밀리 판별 응답 없음 — 미분류 모델 OTHERS 처리");
+                log.warn("[ModelMergeServiceImpl#resolveWithGemini] Gemini 패밀리 판별 응답 없음 — 미분류 모델 제외");
                 return;
             }
 
@@ -235,31 +262,35 @@ public class ModelMergeServiceImpl implements ModelMergeService {
                     .replaceAll("(?s)```\\s*", "")
                     .trim();
 
-            // { vendorSlug: { modelName: familyName } } 구조로 파싱
             Map<String, Map<String, String>> geminiResult = jsonMapper.readValue(
                     cleaned, new TypeReference<>() {}
             );
 
             int resolved = 0;
-            for (Map.Entry<String, Map<String, String>> vendorEntry : geminiResult.entrySet()) {
-                String vendorSlug   = vendorEntry.getKey();
-                Map<String, String> modelToFamily = vendorEntry.getValue();
+            for (Map.Entry<String, List<OrModel>> entry : unresolved.entrySet()) {
+                String vendorSlug = entry.getKey();
+                List<OrModel> models = entry.getValue();
+                Map<String, String> modelToFamily = geminiResult.getOrDefault(vendorSlug, Map.of());
 
-                for (Map.Entry<String, String> entry : modelToFamily.entrySet()) {
-                    String familyName = entry.getValue();
-                    if (familyName == null || familyName.isBlank()) continue;
+                for (OrModel or : models) {
+                    String modelPart = or.id().substring(or.id().indexOf('/') + 1);
+                    String mName = modelPart.contains(":") ? modelPart.substring(0, modelPart.indexOf(':')) : modelPart;
+                    String familyName = modelToFamily.get(mName);
 
-                    vendorFamilyMap
-                            .computeIfAbsent(vendorSlug, k -> new LinkedHashMap<>())
-                            .putIfAbsent(familyName, now);
-                    resolved++;
+                    if (familyName != null && !familyName.isBlank()) {
+                        FamilyData data = vendorFamilyMap
+                                .computeIfAbsent(vendorSlug, k -> new LinkedHashMap<>())
+                                .computeIfAbsent(familyName, k -> new FamilyData(now));
+                        data.addModalities(or.architecture());
+                        resolved++;
+                    }
                 }
             }
 
-            log.info("2차 Gemini 판별: {}개 미분류 모델 처리 완료", resolved);
+            log.info("[ModelMergeServiceImpl#resolveWithGemini] 2차 Gemini 판별: {}개 미분류 모델 처리 완료", resolved);
 
         } catch (Exception e) {
-            log.warn("Gemini 패밀리 판별 실패 — 미분류 모델 OTHERS 처리: {}", e.getMessage());
+            log.warn("[ModelMergeServiceImpl#resolveWithGemini] Gemini 패밀리 판별 실패: {}", e.getMessage());
         }
     }
 

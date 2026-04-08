@@ -1,16 +1,7 @@
-"""
-test_upload_to_oci.py — upload_to_oci.main() 단위 테스트
-
-검증 대상:
-  - 전체 성공 → notify_success 호출, sys.exit 없음
-  - 파일 없음 → failed 처리 후 sys.exit(1)
-  - OCI 업로드 실패(etag None) → failed 처리 후 sys.exit(1)
-  - 부분 실패 → succeeded/failed 모두 notify_failure에 전달 후 sys.exit(1)
-"""
-
+"""test_upload_to_oci.py"""
 import pytest
 from pathlib import Path
-from unittest.mock import patch, MagicMock, call
+from unittest.mock import patch, MagicMock
 
 
 @patch("collectors.scripts.ai_info.upload_to_oci.setup_logging")

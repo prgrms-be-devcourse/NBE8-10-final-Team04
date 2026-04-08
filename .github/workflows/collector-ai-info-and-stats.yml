@@ -1,4 +1,4 @@
-name: collector-ai-info-and-stats
+name: Collector-ai-info-and-stats
 
 on:
   # schedule:
@@ -79,7 +79,7 @@ jobs:
           github.event_name == 'schedule' ||
           contains(fromJSON('["fetch_or_models","fetch_aa_benchmark","upload_to_oci","webhook_trigger"]'), github.event.inputs.start_from)
         env:
-          SPRING_WEBHOOK_URL:    ${{ secrets.SPRING_WEBHOOK_URL }}
+          SPRING_WEBHOOK_URL:    ${{ secrets.SPRING_AI_MODEL_WEBHOOK_URL }}
           SPRING_WEBHOOK_SECRET: ${{ secrets.SPRING_WEBHOOK_SECRET }}
         run: python -m collectors.scripts.shared.webhook_trigger
 

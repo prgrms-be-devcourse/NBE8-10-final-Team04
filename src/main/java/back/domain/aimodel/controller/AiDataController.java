@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
  * X-Webhook-Secret 헤더로 간단한 인증.
  */
 @RestController
-@RequestMapping("/api/v1/ai-model")
+@RequestMapping("/api/v1/ai-model/pipeline")
 public class AiDataController {
 
     private static final Logger log = LoggerFactory.getLogger(AiDataController.class);
@@ -36,7 +36,7 @@ public class AiDataController {
      * GitHub Actions → Spring Webhook 호출 엔드포인트.
      * POST /api/v1/ai-model/pipeline/trigger
      */
-    @PostMapping("/pipeline/trigger")
+    @PostMapping("/trigger")
     public ResponseEntity<RsData<String>> trigger(
             @RequestHeader(value = "X-Webhook-Secret", required = false) String secret
     ) {
@@ -63,11 +63,11 @@ public class AiDataController {
     }
 
     /**
-     * 수동 실행용 (개발/테스트 환경에서만 사용).
+     * 수동 실행용
      * POST /api/v1/ai-model/pipeline/run
+     * <p>정상 운영 시 스케줄러가 자동 실행하며, 이 엔드포인트는 수동 트리거 및 장애 복구용입니다.
      */
-    // TODO: admin만 실행할 수 있도록. hasRole Admin으로 변경 TM-135
-    @PostMapping("/pipeline/run")
+    @PostMapping("/run")
     public ResponseEntity<RsData<String>> runManually() {
         log.info("수동 파이프라인 실행");
         try {

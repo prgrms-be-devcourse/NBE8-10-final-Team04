@@ -26,6 +26,7 @@ public class AiTrackerPipelineController {
 
     /**
      * GitHub Actions → Webhook 호출 엔드포인트 (비동기 실행).
+     * POST /api/v1/ai-tracker/pipeline/trigger
      */
     @PostMapping("/trigger")
     public ResponseEntity<RsData<String>> trigger(
@@ -54,10 +55,9 @@ public class AiTrackerPipelineController {
 
     /**
      * 파이프라인을 수동으로 실행합니다.
-     *
+     * POST /api/v1/ai-tracker/pipeline/run
      * <p>정상 운영 시 스케줄러가 자동 실행하며, 이 엔드포인트는 수동 트리거 및 장애 복구용입니다.
      */
-    // TODO: admin만 실행할 수 있도록. hasRole Admin으로 변경 [TM-135]
     @PostMapping("/run")
     public ResponseEntity<RsData<PipelineResult>> run() {
         log.info("AI Tracker 파이프라인 수동 실행");
