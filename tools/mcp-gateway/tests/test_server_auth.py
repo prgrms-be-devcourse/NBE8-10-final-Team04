@@ -14,8 +14,12 @@ class _FakeContext:
 
 
 class _FakeFastMCP:
+    last_init_args = None
+    last_init_kwargs = None
+
     def __init__(self, *_args, **_kwargs):
-        pass
+        _FakeFastMCP.last_init_args = _args
+        _FakeFastMCP.last_init_kwargs = _kwargs
 
     def tool(self, **_kwargs):
         def decorator(func):
@@ -112,6 +116,21 @@ class _FakeMcpWithSettings:
 
 
 class ServerStreamableHttpRunCompatibilityTest(unittest.TestCase):
+    def test_create_mcp_server_uses_gateway_settings_in_constructor(self):
+        fake_constructor = mock.Mock(return_value=_FakeMcpVarKeywordRun())
+        with mock.patch.object(server, "FastMCP", fake_constructor):
+            created = server._create_mcp_server(
+                _build_settings(None, host="0.0.0.0", port=9000, path="/mcp")
+            )
+
+        self.assertEqual(created, fake_constructor.return_value)
+        fake_constructor.assert_called_once_with(
+            "start-ai-mcp-gateway",
+            host="0.0.0.0",
+            port=9000,
+            streamable_http_path="/mcp",
+        )
+
     def test_resolve_streamable_http_run_kwargs_supports_var_keyword_signature(self):
         with mock.patch.object(server, "mcp", _FakeMcpVarKeywordRun()), \
                 mock.patch.object(server, "settings", _build_settings(None, host="127.0.0.1", port=9100, path="/mcp")):
