@@ -8,6 +8,8 @@ services:
       - ../.env
     environment:
       SPRING_PROFILES_ACTIVE: loadtest
+    volumes:
+      - ~/.oci:/root/.oci:ro
     ports:
       - "8080:8080"
     restart: unless-stopped

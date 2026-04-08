@@ -2,6 +2,10 @@ ratelimit:
   enabled: false
 
 spring:
+  config:
+    activate:
+      on-profile: loadtest
+
   # JPA
   jpa:
     show-sql: false                    # 필수 - 로그 왜곡 방지
@@ -11,6 +15,8 @@ spring:
       hibernate:
         format_sql: false
         default_batch_fetch_size: 100
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
 
   # HikariCP 커넥션풀 고정
   datasource:
@@ -20,6 +26,10 @@ spring:
       connection-timeout: 30000
       idle-timeout: 600000
       max-lifetime: 1800000
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
 
   # Cache 설정 (loadtest 프로파일에서는 Redis 미사용)
   cache:
