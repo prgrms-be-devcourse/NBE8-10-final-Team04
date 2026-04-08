@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 import back.domain.auth.dto.request.CreateMcpTokenRequest;
 import back.domain.auth.dto.response.CreateMcpTokenResponse;
 import back.domain.auth.dto.response.McpTokenListResponse;
+import back.domain.auth.controller.docs.McpTokenControllerDocs;
 import back.domain.auth.service.McpTokenService;
 import back.global.exception.CommonErrorCode;
 import back.global.exception.ServiceException;
@@ -28,9 +29,10 @@ import lombok.RequiredArgsConstructor;
 @RequestMapping("/api/v1/mcp/tokens")
 @Validated
 @RequiredArgsConstructor
-public class McpTokenController {
+public class McpTokenController implements McpTokenControllerDocs {
     private final McpTokenService mcpTokenService;
 
+    @Override
     @PostMapping
     public ResponseEntity<RsData<CreateMcpTokenResponse>> issueToken(
             @AuthenticationPrincipal AuthenticatedMember authenticatedMember,
@@ -40,6 +42,7 @@ public class McpTokenController {
         return ResponseEntity.status(HttpStatus.CREATED).body(new RsData<>(response, "MCP 토큰 발급 성공"));
     }
 
+    @Override
     @GetMapping
     public ResponseEntity<RsData<McpTokenListResponse>> getTokens(
             @AuthenticationPrincipal AuthenticatedMember authenticatedMember) {
@@ -48,6 +51,7 @@ public class McpTokenController {
         return ResponseEntity.ok(new RsData<>(response, "조회 성공"));
     }
 
+    @Override
     @DeleteMapping("/{tokenId}")
     public ResponseEntity<RsData<Void>> revokeToken(
             @AuthenticationPrincipal AuthenticatedMember authenticatedMember,

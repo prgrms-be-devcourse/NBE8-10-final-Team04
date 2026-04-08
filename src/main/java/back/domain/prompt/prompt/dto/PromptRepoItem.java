@@ -2,24 +2,21 @@ package back.domain.prompt.prompt.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
 
 import java.util.List;
 
-@Getter
-@NoArgsConstructor
 @SuppressFBWarnings(
         value = "EI_EXPOSE_REP",
-        justification = "Jackson DTO는 JSON 리스트를 그대로 전달한다.")
-public class PromptRepoItem {
+        justification = "Jackson DTO 필드는 역직렬화된 값을 그대로 전송용으로 노출한다."
+)
+public record PromptRepoItem(
+        @JsonProperty("repository")
+        RepositoryDto repository,
 
-    @JsonProperty("repository")
-    private RepositoryDto repository;
+        @JsonProperty("skills")
+        List<SkillDto> skills,
 
-    @JsonProperty("skills")
-    private List<SkillDto> skills;
-
-    @JsonProperty("agent")
-    private AgentDto agent;
+        @JsonProperty("agent")
+        AgentDto agent
+) {
 }

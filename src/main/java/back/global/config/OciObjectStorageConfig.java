@@ -20,9 +20,9 @@ public class OciObjectStorageConfig {
 
     @Bean
     AbstractAuthenticationDetailsProvider ociAuthenticationDetailsProvider(
-            @Value("${app.storage.oci.auth-type:config-file}") String authType,
-            @Value("${app.storage.oci.config-file-path:}") String configFilePath,
-            @Value("${app.storage.oci.profile:DEFAULT}") String profile
+            @Value("${oci.auth-type:config-file}") String authType,
+            @Value("${oci.config-file-path:}") String configFilePath,
+            @Value("${oci.profile:DEFAULT}") String profile
     ) throws IOException {
         if ("instance-principal".equalsIgnoreCase(authType)) {
             return InstancePrincipalsAuthenticationDetailsProvider.builder().build();
@@ -38,7 +38,7 @@ public class OciObjectStorageConfig {
     @Bean(destroyMethod = "close")
     ObjectStorage objectStorage(
             AbstractAuthenticationDetailsProvider authenticationDetailsProvider,
-            @Value("${app.storage.oci.region:}") String region
+            @Value("${oci.region:}") String region
     ) {
         ObjectStorageClient client = ObjectStorageClient.builder().build(authenticationDetailsProvider);
         if (region != null && !region.isBlank()) {

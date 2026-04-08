@@ -4,5 +4,5 @@ import back.domain.prompt.search.dto.chunk.SkillChunkSearchResultDto;
 
 public interface SkillSearchService {
 
-    public SkillChunkSearchResultDto search(String query);
+    SkillChunkSearchResultDto search(String query);
 }

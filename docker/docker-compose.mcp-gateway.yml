@@ -1,0 +1,26 @@
+version: "3.8"
+
+services:
+  mcp-gateway:
+    build:
+      context: ../tools/mcp-gateway
+      dockerfile: Dockerfile
+    container_name: mcp-gateway
+    restart: unless-stopped
+    environment:
+      MCP_GATEWAY_TRANSPORT: ${MCP_GATEWAY_TRANSPORT:-streamable-http}
+      MCP_GATEWAY_HOST: ${MCP_GATEWAY_HOST:-0.0.0.0}
+      MCP_GATEWAY_PORT: ${MCP_GATEWAY_PORT:-9000}
+      MCP_GATEWAY_PATH: ${MCP_GATEWAY_PATH:-/mcp}
+      SPRING_API_BASE_URL: ${SPRING_API_BASE_URL:-http://app-dev:8080}
+      GATEWAY_HTTP_TIMEOUT_SECONDS: ${GATEWAY_HTTP_TIMEOUT_SECONDS:-10}
+      MCP_PERSONAL_TOKEN: ${MCP_PERSONAL_TOKEN:-}
+    ports:
+      - "${MCP_GATEWAY_PORT:-9000}:${MCP_GATEWAY_PORT:-9000}"
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    external: true
+    name: app-network

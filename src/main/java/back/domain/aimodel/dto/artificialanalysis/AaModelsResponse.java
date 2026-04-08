@@ -7,7 +7,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.util.List;
 
 /**
- * Artificial Analysis /api/v2/data/llms/models raw 응답 구조
+ * Artificial Analysis /api/v1/data/llms/models raw 응답 구조
  */
 @SuppressFBWarnings(
         value = "EI_EXPOSE_REP",

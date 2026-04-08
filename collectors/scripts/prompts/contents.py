@@ -66,7 +66,7 @@ def _get_content(
                 timeout=30,
             )
 
-            # rate limit 처리 (github_client의 로직과 동일하게) # TODO: 이건 그냥 동일하게가 아니라 가져다 쓰면 되는 거 아닌가? TM-135
+            # rate limit 처리
             remaining = int(resp.headers.get("X-RateLimit-Remaining", 9999))
             reset_at  = int(resp.headers.get("X-RateLimit-Reset", 0))
             if resp.status_code == 403 and remaining == 0:
@@ -118,17 +118,14 @@ def _get_content(
 
 
 # ── 단일 레포 처리 ────────────────────────────────────────────────────────────
-def fetch_one(gid_str: str, index: dict, work_dir: Path) -> bool:
-    # TODO: 단일 레포에 700개 이렇게 있는 경우도 있는데 이런 건 어떻게 처리해야 할지? 100개마다 저장할 수 있게 하는 게 낫지 않을까? TM-135
+def fetch_one(gid_str: str, index: dict, work_dir: Path) -> str:
     """
-    content_pending 큐의 레포 1개를 처리.
-    work_dir의 JSON을 읽어 skill 내용을 채운 뒤 원자적으로 덮어씀.
-    성공 시 True, 실패 시 False.
+    반환값: "updated", "skipped", "failed" 중 하나
     """
     meta = index["repos"].get(gid_str)
     if not meta:
         logger.warning("index에 없는 github_id: %s", gid_str)
-        return False
+        return "failed"
 
     source_repo = meta["source_repo"]
     filename    = meta["filename"]
@@ -136,7 +133,7 @@ def fetch_one(gid_str: str, index: dict, work_dir: Path) -> bool:
 
     if not local_path.exists():
         logger.warning("로컬 파일 없음: %s", filename)
-        return False
+        return "failed"
 
     data   = load_json(local_path)
     branch = data.get("repository", {}).get("default_branch", "main")
@@ -144,6 +141,12 @@ def fetch_one(gid_str: str, index: dict, work_dir: Path) -> bool:
 
     logger.info("  %s — %d개 skill 확인", source_repo, len(skills))
 
+    # [임시 방어 로직] 1000개 초과 시 스킵 TODO: 서버 이식 시 삭제 [TM-184]
+    if len(skills) > 1000:
+        logger.warning("    → SKILL.md 개수 초과 (%d개 > 1000개). 수집 스킵.", len(skills))
+        return "skipped"
+
+    changed = False
     for skill in skills:
         file_path  = skill["file_path"]
         stored_sha = skill.get("content_hash")
@@ -151,7 +154,7 @@ def fetch_one(gid_str: str, index: dict, work_dir: Path) -> bool:
         result = _get_content(source_repo, file_path, branch)
         time.sleep(BASE_DELAY)
 
-        if result is None: # TODO: 수집 실패 이유 명시 필요 (TM-135)
+        if result is None:
             logger.warning("    → 수집 실패: %s", file_path)
             continue
 
@@ -170,7 +173,11 @@ def fetch_one(gid_str: str, index: dict, work_dir: Path) -> bool:
         if skill.get("raw_metadata") is None:
             skill["raw_metadata"] = {}
         skill["raw_metadata"]["has_encoding_error"] = has_err
+        changed = True
 
-    # 원자적 저장
+    # 변경된 내용이 없다면 OCI 재업로드를 막기 위해 skipped 반환
+    if not changed:
+        return "skipped"
+
     save_json(data, local_path)
-    return True
+    return "updated"

@@ -41,7 +41,7 @@ logger = logging.getLogger(__name__)
 
 IS_MONDAY_MIDNIGHT = os.environ.get("IS_MONDAY_MIDNIGHT", "false").lower() == "true"
 
-
+# TODO: 서버 이식시 interrupted 관련 로직 삭제 [TM-184]
 def main() -> None:
     setup_logging()
     start_time = time.time()

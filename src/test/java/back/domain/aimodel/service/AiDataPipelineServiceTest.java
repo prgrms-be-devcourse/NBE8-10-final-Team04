@@ -5,6 +5,7 @@ import back.domain.aimodel.dto.integrated.BenchmarkRecord;
 import back.domain.aimodel.dto.integrated.IntegratedVendor;
 import back.domain.aimodel.dto.openrouter.OrModelsResponse;
 import back.global.exception.ServiceException;
+import back.global.infra.oci.OciStorageService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -14,7 +15,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
@@ -80,7 +82,7 @@ class AiDataPipelineServiceTest {
     @DisplayName("OCI 다운로드 실패 시 ServiceException이 발생한다")
     void run_ociDownloadFails_throwsServiceException() {
         when(ociStorageService.objectName(anyString())).thenAnswer(i -> "data/ai-info/" + i.getArgument(0));
-        when(ociStorageService.downloadJson(anyString(), any())).thenThrow(new ServiceException(
+        when(ociStorageService.downloadJson(anyString(), (Class<Object>) any())).thenThrow(new ServiceException(
                 back.global.exception.CommonErrorCode.INTERNAL_SERVER_ERROR,
                 "[OciStorageServiceImpl#download] OCI 다운로드 실패",
                 "OCI 스토리지에서 파일을 다운로드하는데 실패했습니다."

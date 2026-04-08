@@ -1,8 +1,9 @@
 package back.domain.aimodel.service;
 
 import back.domain.aimodel.config.AiModelProperties;
-import back.domain.aimodel.config.GeminiProperties;
+import back.global.config.properties.GeminiProperties;
 import back.domain.aimodel.dto.integrated.IntegratedVendor;
+import back.domain.aimodel.dto.integrated.IntegratedVendor.IntegratedFamily;
 import back.domain.aimodel.dto.openrouter.OrModelsResponse;
 import back.domain.aimodel.dto.openrouter.OrModelsResponse.OrModel;
 import com.google.genai.Client;
@@ -131,6 +132,26 @@ class ModelMergeServiceTest {
         }
 
         @Test
+        @DisplayName("같은 패밀리의 모델 모달리티(input/output)가 중복 없이 정렬되어 병합된다")
+        void merge_modalitiesMergedAndSorted() {
+            OrModelsResponse.OrModel.Architecture arch1 = new OrModelsResponse.OrModel.Architecture(List.of("text", "image"), List.of("text"));
+            OrModelsResponse.OrModel.Architecture arch2 = new OrModelsResponse.OrModel.Architecture(List.of("text", "video"), List.of("text", "json"));
+
+            OrModelsResponse orResponse = new OrModelsResponse(List.of(
+                    new OrModel("openai/gpt-4o", "gpt-4o", null, null, arch1, null, null),
+                    new OrModel("openai/gpt-4o-mini", "gpt-4o-mini", null, null, arch2, null, null)
+            ));
+
+            List<IntegratedVendor> result = mergeService.merge(orResponse);
+
+            IntegratedFamily family = result.get(0).families().get(0);
+
+            assertThat(family.familyName()).isEqualTo("GPT-4O");
+            assertThat(family.inputTypes()).containsExactly("image", "text", "video");
+            assertThat(family.outputTypes()).containsExactly("json", "text");
+        }
+
+        @Test
         @DisplayName("미분류 모델이 없으면 Gemini를 호출하지 않는다")
         void merge_noUnresolved_geminiNotCalled() {
             OrModelsResponse orResponse = new OrModelsResponse(List.of(
@@ -182,7 +203,6 @@ class ModelMergeServiceTest {
         @Test
         @DisplayName("Gemini 판별 성공 시 미분류 모델이 패밀리로 병합된다")
         void resolveWithGemini_success_mergesFamilies() throws Exception {
-            // mini-nano-lite 는 모든 토큰이 TIER_KEYWORDS → OTHERS → Gemini 호출 대상
             OrModelsResponse orResponse = new OrModelsResponse(List.of(
                     orModel("openai/gpt-4o"),
                     orModel("openai/mini-nano-lite")

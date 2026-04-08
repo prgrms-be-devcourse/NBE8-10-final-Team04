@@ -24,7 +24,11 @@ public class SkillSearchMcpRecommendationCandidateProvider implements McpRecomme
     @Override
     public List<McpRecommendationCandidate> findTopCandidates(McpRecommendationQuery query) {
         SkillChunkSearchResultDto response = skillSearchService.search(query.query());
-        return response.getCandidates().stream()
+        if (response == null || response.candidates() == null) {
+            return List.of();
+        }
+
+        return response.candidates().stream()
                 .map(this::toMcpRecommendationCandidate)
                 .toList();
     }
@@ -48,8 +52,8 @@ public class SkillSearchMcpRecommendationCandidateProvider implements McpRecomme
         }
 
         return new McpRecommendationCandidateMetadata(
-                metadata.getStars(),
-                metadata.getForks(),
-                metadata.getUpdatedAt());
+                metadata.stars(),
+                metadata.forks(),
+                metadata.updatedAt());
     }
 }

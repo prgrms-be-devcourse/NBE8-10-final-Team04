@@ -1,5 +1,15 @@
 package back.domain.prompt.chunking.controller;
 
+import back.domain.prompt.chunking.service.ChunkingService;
+import back.global.response.RsData;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.isEmptyOrNullString;
 import static org.hamcrest.Matchers.not;
@@ -10,17 +20,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-
-import back.domain.prompt.chunking.service.ChunkingService;
-import back.global.response.RsData;
 
 class SkillChunkControllerTest {
 
@@ -37,7 +36,7 @@ class SkillChunkControllerTest {
 
     @Test
     @DisplayName("run은 ChunkingService를 호출하고 메시지 응답을 반환한다")
-    void run_returnsMessageOnlyResponse() throws Exception {
+    void run_returnsMessageOnlyResponse() {
         ResponseEntity<RsData<Void>> response = skillChunkController.run();
         RsData<Void> body = response.getBody();
 

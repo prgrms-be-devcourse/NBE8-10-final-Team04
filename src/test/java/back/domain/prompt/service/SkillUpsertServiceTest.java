@@ -29,7 +29,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
-
 import back.domain.prompt.prompt.parser.SkillNormalizeParser;
 import back.domain.prompt.prompt.repository.AgentRepository;
 import back.domain.prompt.prompt.repository.RepositoryRepository;
@@ -273,21 +272,14 @@ class SkillUpsertServiceTest {
             Integer forkCount,
             String etag
     ) {
-        PromptRepoItem promptRepoItem = new PromptRepoItem();
-        ReflectionTestUtils.setField(
-                promptRepoItem,
-                "repository",
-                repositoryData(githubId, sourceUpdatedAt, starCount, forkCount, etag)
-        );
-        ReflectionTestUtils.setField(
-                promptRepoItem,
-                "skills",
+        return new PromptRepoItem(
+                repositoryData(githubId, sourceUpdatedAt, starCount, forkCount, etag),
                 List.of(
                         skillData("alpha", "skills/alpha.md", "```java\\nSystem.out.println();\\n```", "alpha-hash"),
                         skillData("beta", "skills/beta.md", "```kotlin\\nprintln()\\n```", "beta-hash")
-                )
+                ),
+                null
         );
-        return promptRepoItem;
     }
 
     private RepositoryDto repositoryData(
@@ -297,41 +289,35 @@ class SkillUpsertServiceTest {
             Integer forkCount,
             String etag
     ) {
-        RepositoryDto repositoryDto = new RepositoryDto();
-        ReflectionTestUtils.setField(repositoryDto, "githubId", githubId);
-        ReflectionTestUtils.setField(repositoryDto, "name", "demo-repo");
-        ReflectionTestUtils.setField(repositoryDto, "sourceRepo", "owner/repo");
-        ReflectionTestUtils.setField(repositoryDto, "sourceUrl", "https://example.com/owner/repo");
-        ReflectionTestUtils.setField(repositoryDto, "summary", "demo summary");
-        ReflectionTestUtils.setField(repositoryDto, "starCount", starCount);
-        ReflectionTestUtils.setField(repositoryDto, "forkCount", forkCount);
-        ReflectionTestUtils.setField(repositoryDto, "size", 50);
-        ReflectionTestUtils.setField(repositoryDto, "license", "MIT");
-        ReflectionTestUtils.setField(repositoryDto, "ownerType", "user");
-        ReflectionTestUtils.setField(repositoryDto, "isOfficial", true);
-        ReflectionTestUtils.setField(repositoryDto, "defaultBranch", "main");
-        ReflectionTestUtils.setField(repositoryDto, "etag", etag);
-        ReflectionTestUtils.setField(repositoryDto, "sourceUpdatedAt", sourceUpdatedAt);
-        ReflectionTestUtils.setField(repositoryDto, "active", true);
-        return repositoryDto;
+        return new RepositoryDto(
+                githubId,
+                "demo-repo",
+                "owner/repo",
+                "https://example.com/owner/repo",
+                "demo summary",
+                starCount,
+                forkCount,
+                50,
+                null,
+                "MIT",
+                null,
+                null,
+                "user",
+                true,
+                "main",
+                etag,
+                sourceUpdatedAt,
+                true,
+                null
+        );
     }
 
     private SkillDto skillData(String name, String filePath, String contentMd, String contentHash) {
-        SkillDto skillDto = new SkillDto();
-        ReflectionTestUtils.setField(skillDto, "name", name);
-        ReflectionTestUtils.setField(skillDto, "filePath", filePath);
-        ReflectionTestUtils.setField(skillDto, "contentMd", contentMd);
-        ReflectionTestUtils.setField(skillDto, "contentHash", contentHash);
-        return skillDto;
+        return new SkillDto(name, filePath, contentMd, contentHash, null);
     }
 
     private AgentDto agentData(String name, String filePath, String contentMd, String contentHash) {
-        AgentDto agentDto = new AgentDto();
-        ReflectionTestUtils.setField(agentDto, "name", name);
-        ReflectionTestUtils.setField(agentDto, "filePath", filePath);
-        ReflectionTestUtils.setField(agentDto, "contentMd", contentMd);
-        ReflectionTestUtils.setField(agentDto, "contentHash", contentHash);
-        return agentDto;
+        return new AgentDto(name, filePath, contentMd, contentHash, null);
     }
 
     private Repository repository(

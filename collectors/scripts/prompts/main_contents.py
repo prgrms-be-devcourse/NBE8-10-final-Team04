@@ -3,15 +3,17 @@ prompts/main_contents.py — 화~토 contents 스케줄러
 
 실행 주기: 화~토 0시 / 6시 / 12시 / 18시 (6시간, 5시간 40분부터 종료 준비)
 
-흐름:
+흐름 (리팩토링됨):
   1. lock 획득
   2. index.json 로드
   3. content_pending 큐 확인 → 비어있으면 조기 종료
-  4. OCI에서 미처리 파일 다운로드
-  5. content_pending 큐 이어서 처리
+  4. content_pending 큐 순회 처리 (Chunk / Lazy Loading 방식)
+     - 대상 파일을 OCI에서 단건 다운로드
      - SHA 비교로 변경된 파일만 재수집
+     - OCI에 수정된 파일 단건 업로드
+     - 로컬 파일 즉시 삭제 (디스크 누수 방지)
      - CHECKPOINT_N개마다 index.json 중간 저장
-  6. 최종 index.json 저장 + Discord 알림
+  5. 최종 index.json 저장 + Discord 알림
 """
 
 import logging
@@ -19,6 +21,7 @@ import shutil
 import sys
 import time
 from datetime import datetime, timezone
+from pathlib import Path
 
 from collectors.scripts.prompts.config import CHECKPOINT_N, MAX_RUNTIME_SEC, WORK_DIR
 from collectors.scripts.prompts.contents import fetch_one
@@ -32,7 +35,7 @@ from collectors.scripts.shared.utils import setup_logging
 
 logger = logging.getLogger(__name__)
 
-
+# TODO: 서버 이식시 interrupted 관련 로직 삭제 [TM-184]
 def main() -> None:
     setup_logging()
     start_time = time.time()
@@ -61,11 +64,8 @@ def _run(oci: OciManager, start_time: float) -> None:
 
     if not q["content_pending"]:
         logger.info("content_pending 큐가 비어있습니다. 종료합니다.")
-        notify_complete({"updated": 0, "skipped": 0, "failed": 0}, 0)
+        notify_complete({"updated": 0, "skipped": 0, "failed": 0}, 0.0)
         return
-
-    # OCI에서 미처리 파일 다운로드
-    _download_pending(oci, index, q["content_pending"])
 
     logger.info("=== contents 처리 시작 ===")
     stats   = {"updated": 0, "skipped": 0, "failed": 0}
@@ -79,33 +79,64 @@ def _run(oci: OciManager, start_time: float) -> None:
             break
 
         meta = index["repos"].get(gid_str, {})
+        filename = meta.get("filename")
         logger.info("[%d/%d] %s", i, total, meta.get("source_repo", gid_str))
 
+        if not filename:
+            logger.warning("  ✗ filename 정보 없음: %s", gid_str)
+            stats["failed"] += 1
+            notify_fail_warning(stats["failed"], total)
+            continue
+
+        local_path = WORK_DIR / filename
+
         try:
-            if not fetch_one(gid_str, index, WORK_DIR):
+            # 단건 지연 로딩
+            if not oci.download_file(filename, WORK_DIR):
+                logger.warning("  ✗ OCI 다운로드 실패: %s", filename)
                 stats["failed"] += 1
                 notify_fail_warning(stats["failed"], total)
                 continue
 
-            filename = meta.get("filename")
-            oci_etag = oci.upload_file(filename, WORK_DIR) if filename else None
+            # 상태 문자열 반환 받기
+            fetch_status = fetch_one(gid_str, index, WORK_DIR)
 
-            if oci_etag:
-                index["repos"][gid_str].update({
-                    "oci_etag":       oci_etag,
-                    "content_status": "done",
-                    "last_content":   now,
-                })
-                q["content_pending"].remove(gid_str)
-                stats["updated"] += 1
-            else:
+            if fetch_status == "failed":
                 stats["failed"] += 1
                 notify_fail_warning(stats["failed"], total)
+                continue
+
+            elif fetch_status == "skipped":
+                # OCI 업로드 건너뜀 (핵심 병목 해결)
+                index["repos"][gid_str]["content_status"] = "done"
+                index["repos"][gid_str]["last_content"] = now
+                q["content_pending"].remove(gid_str)
+                stats["skipped"] += 1
+                continue
+
+            elif fetch_status == "updated":
+                oci_etag = oci.upload_file(filename, WORK_DIR)
+                if oci_etag:
+                    index["repos"][gid_str].update({
+                        "oci_etag":       oci_etag,
+                        "content_status": "done",
+                        "last_content":   now,
+                    })
+                    q["content_pending"].remove(gid_str)
+                    stats["updated"] += 1
+                else:
+                    stats["failed"] += 1
+                    notify_fail_warning(stats["failed"], total)
 
         except Exception as e:
             logger.error("  ✗ %s: %s", gid_str, e)
             stats["failed"] += 1
             notify_fail_warning(stats["failed"], total)
+
+        finally:
+            # 디스크 누수 방지용 Cleanup
+            if local_path.exists():
+                local_path.unlink(missing_ok=True)
 
         if i % CHECKPOINT_N == 0:
             logger.info("  💾 체크포인트 (%d/%d)", i, total)
@@ -122,18 +153,6 @@ def _run(oci: OciManager, start_time: float) -> None:
         "=== %s === updated:%d skipped:%d failed:%d",
         status, stats["updated"], stats["skipped"], stats["failed"],
     )
-
-
-def _download_pending(oci: OciManager, index: dict, pending: list) -> None:
-    """content_pending 중 work_dir에 없는 파일을 OCI에서 다운로드."""
-    WORK_DIR.mkdir(exist_ok=True)
-    downloaded = 0
-    for gid_str in pending:
-        filename = index["repos"].get(gid_str, {}).get("filename")
-        if filename and oci.download_file(filename, WORK_DIR):
-            downloaded += 1
-    if downloaded:
-        logger.info("OCI에서 %d개 파일 다운로드 완료", downloaded)
 
 
 def _cleanup() -> None:
