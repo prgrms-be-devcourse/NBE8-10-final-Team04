@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import hashlib
 import re
-from dataclasses import dataclass
+import uuid
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
@@ -10,11 +12,16 @@ from gateway.input_normalizer import (
     normalize_agent_type,
     normalize_chunk_size,
     normalize_cursor,
+    normalize_customization_applied,
     normalize_finalize_decision,
+    normalize_flow_id,
     normalize_flow_step,
     normalize_keywords,
     normalize_skill_id,
+    normalize_user_decision_confirmed,
     normalize_user_input_confirmed,
+    normalize_written_length,
+    normalize_written_sha256,
 )
 from gateway.spring_proxy_client import SpringProxyClient
 
@@ -25,7 +32,6 @@ class SelectedSkill:
     skill_id: int
     final_score: float
     source_repo: str
-    skill_md_raw: str
 
 
 @dataclass(frozen=True)
@@ -35,11 +41,38 @@ class SkillContent:
     skill_md_raw: str
 
 
+@dataclass
+class AutoFlowState:
+    flow_id: str
+    agent_type: str
+    current_step: str = "START"
+    keywords: str = ""
+    selected_skills: list[SelectedSkill] = field(default_factory=list)
+    skill_contents: dict[int, SkillContent] = field(default_factory=dict)
+    fetched_skill_ids: set[int] = field(default_factory=set)
+    verified_skill_ids: set[int] = field(default_factory=set)
+    decision: str | None = None
+    customization_notes: str = ""
+    customization_applied: bool = False
+
+    def selected_skill_ids(self) -> set[int]:
+        return {skill.skill_id for skill in self.selected_skills}
+
+    def has_all_skills_fetched(self) -> bool:
+        selected_ids = self.selected_skill_ids()
+        return bool(selected_ids) and selected_ids.issubset(self.fetched_skill_ids)
+
+    def has_all_skills_verified(self) -> bool:
+        selected_ids = self.selected_skill_ids()
+        return bool(selected_ids) and selected_ids.issubset(self.verified_skill_ids)
+
+
 class AutoFlowService:
     DEFAULT_AGENT_TYPE = "CODEX"
 
     def __init__(self, spring_proxy_client: SpringProxyClient):
         self.spring_proxy_client = spring_proxy_client
+        self._flows: dict[str, AutoFlowState] = {}
 
     def run(
         self,
@@ -47,13 +80,18 @@ class AutoFlowService:
         step: str,
         mcp_personal_token: str | None,
         agent_type: str | None,
+        flow_id: str | None,
         keywords: str | None,
         user_input_confirmed: bool | None,
-        skill_id: int | None = None,
-        cursor: int | None = None,
-        chunk_size: int | None = None,
+        skill_id: int | float | str | None = None,
+        cursor: int | float | str | None = None,
+        chunk_size: int | float | str | None = None,
+        written_length: int | float | str | None = None,
+        written_sha256: str | None = None,
+        user_decision_confirmed: bool | None = None,
         decision: str | None = None,
         customization_notes: str | None = None,
+        customization_applied: bool | None = None,
     ) -> dict[str, Any]:
         normalized_step = normalize_flow_step(step)
 
@@ -65,6 +103,7 @@ class AutoFlowService:
 
         if normalized_step == "COLLECTED":
             return self._collected(
+                flow_id=flow_id,
                 mcp_personal_token=mcp_personal_token,
                 keywords=keywords,
                 user_input_confirmed=user_input_confirmed,
@@ -72,17 +111,32 @@ class AutoFlowService:
 
         if normalized_step == "FETCH_SKILL":
             return self._fetch_skill(
+                flow_id=flow_id,
                 mcp_personal_token=mcp_personal_token,
                 skill_id=skill_id,
                 cursor=cursor,
                 chunk_size=chunk_size,
             )
 
+        if normalized_step == "VERIFY_SKILL":
+            return self._verify_skill(
+                flow_id=flow_id,
+                skill_id=skill_id,
+                written_length=written_length,
+                written_sha256=written_sha256,
+            )
+
+        if normalized_step == "DECIDE":
+            return self._decide(
+                flow_id=flow_id,
+                user_decision_confirmed=user_decision_confirmed,
+                decision=decision,
+                customization_notes=customization_notes,
+            )
+
         return self._finalize(
-            mcp_personal_token=mcp_personal_token,
-            keywords=keywords,
-            decision=decision,
-            customization_notes=customization_notes,
+            flow_id=flow_id,
+            customization_applied=customization_applied,
         )
 
     def _start(self, *, mcp_personal_token: str | None, agent_type: str | None) -> dict[str, Any]:
@@ -94,8 +148,15 @@ class AutoFlowService:
         )
         template_name, version, template_markdown = self._extract_template(template_response)
 
+        flow_id = f"flow_{uuid.uuid4().hex}"
+        self._flows[flow_id] = AutoFlowState(
+            flow_id=flow_id,
+            agent_type=normalized_agent_type,
+        )
+
         return {
             "success": True,
+            "flowId": flow_id,
             "flowStep": "START",
             "message": "start-agent 템플릿 조회 및 파일 생성 준비 완료",
             "templateMeta": {
@@ -117,16 +178,25 @@ class AutoFlowService:
                     "기획 입력이 끝났으면 '기획 입력 끝'이라고 알려주세요.",
                 ],
                 "nextStep": "COLLECTED",
+                "nextStepParamsExample": {
+                    "step": "COLLECTED",
+                    "flowId": flow_id,
+                    "keywords": "SpringBoot infra DevOps",
+                    "userInputConfirmed": True,
+                },
             },
         }
 
     def _collected(
         self,
         *,
+        flow_id: str | None,
         mcp_personal_token: str | None,
         keywords: str | None,
         user_input_confirmed: bool | None,
     ) -> dict[str, Any]:
+        flow = self._require_flow(flow_id)
+        self._assert_step_allowed(flow, {"START"})
         normalize_user_input_confirmed(user_input_confirmed)
         normalized_keywords = normalize_keywords(keywords)
 
@@ -134,11 +204,21 @@ class AutoFlowService:
             mcp_personal_token=mcp_personal_token,
             keywords=normalized_keywords,
         )
-
         selected_skills = self._extract_selected_skills(recommendation_response)
+
+        flow.keywords = normalized_keywords
+        flow.selected_skills = selected_skills
+        flow.skill_contents.clear()
+        flow.fetched_skill_ids.clear()
+        flow.verified_skill_ids.clear()
+        flow.decision = None
+        flow.customization_notes = ""
+        flow.customization_applied = False
+        flow.current_step = "COLLECTED"
 
         return {
             "success": True,
+            "flowId": flow.flow_id,
             "flowStep": "COLLECTED",
             "message": "추천 스킬 메타 조회 완료 (본문은 FETCH_SKILL 단계에서 분할 전달)",
             "recommendation": {
@@ -156,13 +236,14 @@ class AutoFlowService:
             "actions": {
                 "writeFiles": [],
                 "askUser": [
-                    "각 selectedSkills의 skillId에 대해 FETCH_SKILL(step=FETCH_SKILL)을 호출해 skills 파일을 생성하세요.",
-                    "FETCH_SKILL은 chunk 단위로 본문을 전달합니다. hasNext=true인 동안 같은 skillId로 반복 호출하세요.",
-                    "모든 skills 파일 생성이 끝난 뒤 사용자에게 진행/보정 여부를 물은 다음 FINALIZE를 호출하세요.",
+                    "selectedSkills의 skillId별로 FETCH_SKILL을 반복 호출해 파일을 완성하세요.",
+                    "원문 보존을 위해 chunk를 임의 요약/축약하지 말고 write/append 그대로 반영하세요.",
+                    "모든 skill 파일을 만든 뒤 VERIFY_SKILL 단계로 무결성 검증을 진행하세요.",
                 ],
                 "nextStep": "FETCH_SKILL",
                 "nextStepParamsExample": {
                     "step": "FETCH_SKILL",
+                    "flowId": flow.flow_id,
                     "skillId": selected_skills[0].skill_id,
                     "cursor": 0,
                     "chunkSize": 3000,
@@ -170,32 +251,316 @@ class AutoFlowService:
             },
         }
 
-    def _finalize(
+    def _fetch_skill(
         self,
         *,
+        flow_id: str | None,
         mcp_personal_token: str | None,
-        keywords: str | None,
+        skill_id: int | float | str | None,
+        cursor: int | float | str | None,
+        chunk_size: int | float | str | None,
+    ) -> dict[str, Any]:
+        flow = self._require_flow(flow_id)
+        self._assert_step_allowed(flow, {"COLLECTED", "FETCH_SKILL", "VERIFY_SKILL"})
+        normalized_skill_id = normalize_skill_id(skill_id)
+        normalized_cursor = normalize_cursor(cursor)
+        normalized_chunk_size = normalize_chunk_size(chunk_size)
+
+        if normalized_skill_id not in flow.selected_skill_ids():
+            raise GatewayValidationError("skillId is not included in current flow selectedSkills.")
+
+        skill_content = self._get_skill_content(
+            flow=flow,
+            mcp_personal_token=mcp_personal_token,
+            skill_id=normalized_skill_id,
+        )
+        safe_category = self._slug(skill_content.category or "unknown")
+        path = f"skills/{safe_category}.md"
+        full_markdown = self._build_skill_markdown_from_content(
+            skill_id=normalized_skill_id,
+            category=skill_content.category or "unknown",
+            source_repo=skill_content.source_repo or "unknown",
+            raw_content=skill_content.skill_md_raw,
+        )
+
+        chunk, next_cursor, has_next = self._slice_content(
+            content=full_markdown,
+            cursor=normalized_cursor,
+            chunk_size=normalized_chunk_size,
+        )
+        if not chunk:
+            raise GatewayValidationError("No remaining content for the given cursor.")
+
+        if not has_next:
+            flow.fetched_skill_ids.add(normalized_skill_id)
+        flow.current_step = "FETCH_SKILL"
+
+        expected_hash = hashlib.sha256(full_markdown.encode("utf-8")).hexdigest()
+        has_all_fetched = flow.has_all_skills_fetched()
+        next_unfetched_id = self._find_next_skill_id(
+            flow=flow,
+            excluded=flow.fetched_skill_ids,
+        )
+
+        next_step = "FETCH_SKILL"
+        next_step_params_example: dict[str, Any]
+        ask_user: list[str]
+
+        if has_next:
+            next_step_params_example = {
+                "step": "FETCH_SKILL",
+                "flowId": flow.flow_id,
+                "skillId": normalized_skill_id,
+                "cursor": next_cursor,
+                "chunkSize": normalized_chunk_size,
+            }
+            ask_user = [
+                "같은 skillId로 hasNext=false가 될 때까지 FETCH_SKILL을 반복하세요.",
+            ]
+        elif not has_all_fetched and next_unfetched_id is not None:
+            next_step_params_example = {
+                "step": "FETCH_SKILL",
+                "flowId": flow.flow_id,
+                "skillId": next_unfetched_id,
+                "cursor": 0,
+                "chunkSize": normalized_chunk_size,
+            }
+            ask_user = [
+                "현재 skill 파일은 완료되었습니다. 다음 skillId로 FETCH_SKILL을 진행하세요.",
+            ]
+        else:
+            next_step = "VERIFY_SKILL"
+            first_verifiable_id = self._find_next_skill_id(
+                flow=flow,
+                excluded=flow.verified_skill_ids,
+            ) or normalized_skill_id
+            next_step_params_example = {
+                "step": "VERIFY_SKILL",
+                "flowId": flow.flow_id,
+                "skillId": first_verifiable_id,
+                "writtenLength": len(full_markdown),
+                "writtenSha256": expected_hash,
+            }
+            ask_user = [
+                "모든 skills 파일 생성이 완료되었습니다. 각 파일의 길이/sha256으로 VERIFY_SKILL을 진행하세요.",
+            ]
+
+        return {
+            "success": True,
+            "flowId": flow.flow_id,
+            "flowStep": "FETCH_SKILL",
+            "message": "스킬 본문 chunk 전달 완료",
+            "skillChunk": {
+                "skillId": normalized_skill_id,
+                "category": skill_content.category,
+                "sourceRepo": skill_content.source_repo,
+                "path": path,
+                "cursor": normalized_cursor,
+                "nextCursor": next_cursor,
+                "chunkSize": normalized_chunk_size,
+                "hasNext": has_next,
+                "totalLength": len(full_markdown),
+            },
+            "integrity": {
+                "expectedFileLength": len(full_markdown),
+                "expectedFileSha256": expected_hash,
+                "hashAlgorithm": "sha256",
+            },
+            "actions": {
+                "writeFiles": [
+                    {
+                        "path": path,
+                        "content": chunk,
+                        "mode": "write" if normalized_cursor == 0 else "append",
+                        "reason": "추천 스킬 원문 chunk 저장",
+                    }
+                ],
+                "askUser": ask_user,
+                "nextStep": next_step,
+                "nextStepParamsExample": next_step_params_example,
+            },
+        }
+
+    def _verify_skill(
+        self,
+        *,
+        flow_id: str | None,
+        skill_id: int | float | str | None,
+        written_length: int | float | str | None,
+        written_sha256: str | None,
+    ) -> dict[str, Any]:
+        flow = self._require_flow(flow_id)
+        self._assert_step_allowed(flow, {"FETCH_SKILL", "VERIFY_SKILL"})
+        normalized_skill_id = normalize_skill_id(skill_id)
+        normalized_written_length = normalize_written_length(written_length)
+        normalized_written_sha256 = normalize_written_sha256(written_sha256)
+
+        if normalized_skill_id not in flow.selected_skill_ids():
+            raise GatewayValidationError("skillId is not included in current flow selectedSkills.")
+
+        if normalized_skill_id not in flow.fetched_skill_ids:
+            raise GatewayValidationError("skillId file is not completed yet. Finish FETCH_SKILL first.")
+
+        skill_content = self._get_skill_content(
+            flow=flow,
+            mcp_personal_token=None,
+            skill_id=normalized_skill_id,
+        )
+        expected_content = self._build_skill_markdown_from_content(
+            skill_id=normalized_skill_id,
+            category=skill_content.category or "unknown",
+            source_repo=skill_content.source_repo or "unknown",
+            raw_content=skill_content.skill_md_raw,
+        )
+        expected_length = len(expected_content)
+        expected_hash = hashlib.sha256(expected_content.encode("utf-8")).hexdigest()
+
+        if normalized_written_length != expected_length or normalized_written_sha256 != expected_hash:
+            raise GatewayValidationError(
+                "Skill file integrity mismatch. Do not summarize/truncate raw content; write exact chunk output."
+            )
+
+        flow.verified_skill_ids.add(normalized_skill_id)
+        flow.current_step = "VERIFY_SKILL"
+
+        all_verified = flow.has_all_skills_verified()
+        next_unverified_id = self._find_next_skill_id(
+            flow=flow,
+            excluded=flow.verified_skill_ids,
+        )
+
+        next_step = "DECIDE" if all_verified else "VERIFY_SKILL"
+        next_step_params_example: dict[str, Any]
+        ask_user: list[str]
+
+        if all_verified:
+            next_step_params_example = {
+                "step": "DECIDE",
+                "flowId": flow.flow_id,
+                "userDecisionConfirmed": True,
+                "decision": "ACCEPT",
+                "customizationNotes": "",
+            }
+            ask_user = [
+                "사용자에게 '이대로 진행(ACCEPT)' 또는 '사용자 맞춤 보정(CUSTOMIZE)' 결정을 받아 DECIDE를 호출하세요.",
+            ]
+        else:
+            next_step_params_example = {
+                "step": "VERIFY_SKILL",
+                "flowId": flow.flow_id,
+                "skillId": next_unverified_id,
+                "writtenLength": "해당 파일 길이",
+                "writtenSha256": "해당 파일 sha256",
+            }
+            ask_user = [
+                "다음 skill 파일 무결성을 VERIFY_SKILL로 검증하세요.",
+            ]
+
+        return {
+            "success": True,
+            "flowId": flow.flow_id,
+            "flowStep": "VERIFY_SKILL",
+            "message": "skill 파일 무결성 검증 완료",
+            "verification": {
+                "skillId": normalized_skill_id,
+                "verified": True,
+                "verifiedCount": len(flow.verified_skill_ids),
+                "totalCount": len(flow.selected_skills),
+            },
+            "actions": {
+                "writeFiles": [],
+                "askUser": ask_user,
+                "nextStep": next_step,
+                "nextStepParamsExample": next_step_params_example,
+            },
+        }
+
+    def _decide(
+        self,
+        *,
+        flow_id: str | None,
+        user_decision_confirmed: bool | None,
         decision: str | None,
         customization_notes: str | None,
     ) -> dict[str, Any]:
-        normalized_keywords = normalize_keywords(keywords)
+        flow = self._require_flow(flow_id)
+        self._assert_step_allowed(flow, {"VERIFY_SKILL", "DECIDE"})
+        if not flow.has_all_skills_verified():
+            raise GatewayValidationError("All selected skill files must be verified before DECIDE step.")
+
+        normalize_user_decision_confirmed(user_decision_confirmed)
         normalized_decision = normalize_finalize_decision(decision)
+        normalized_notes = (customization_notes or "").strip()
+        if normalized_decision == "CUSTOMIZE" and not normalized_notes:
+            raise GatewayValidationError("customizationNotes is required when decision is CUSTOMIZE.")
+
+        flow.decision = normalized_decision
+        flow.customization_notes = normalized_notes
+        flow.customization_applied = False
+        flow.current_step = "DECIDE"
+
+        ask_user = [
+            "FINALIZE 호출 전, 사용자 결정에 맞는 최종 파일 반영을 완료하세요.",
+        ]
+        if normalized_decision == "CUSTOMIZE":
+            ask_user = [
+                "기존 skills 파일을 기반으로 필요한 섹션만 부분 보정하세요.",
+                "보정 완료 후 FINALIZE에서 customizationApplied=true로 호출하세요.",
+            ]
+
+        return {
+            "success": True,
+            "flowId": flow.flow_id,
+            "flowStep": "DECIDE",
+            "message": "사용자 결정이 저장되었습니다. FINALIZE 단계로 진행하세요.",
+            "decision": {
+                "decision": normalized_decision,
+                "customizationNotes": normalized_notes,
+            },
+            "actions": {
+                "writeFiles": [],
+                "askUser": ask_user,
+                "nextStep": "FINALIZE",
+                "nextStepParamsExample": {
+                    "step": "FINALIZE",
+                    "flowId": flow.flow_id,
+                    "customizationApplied": normalized_decision != "CUSTOMIZE",
+                },
+            },
+        }
+
+    def _finalize(self, *, flow_id: str | None, customization_applied: bool | None) -> dict[str, Any]:
+        flow = self._require_flow(flow_id)
+        self._assert_step_allowed(flow, {"DECIDE", "FINALIZE"})
+        if flow.decision is None:
+            raise GatewayValidationError("DECIDE step must be completed before FINALIZE.")
+
+        normalized_customization_applied = normalize_customization_applied(customization_applied)
+        if flow.decision == "CUSTOMIZE" and not normalized_customization_applied:
+            raise GatewayValidationError(
+                "customizationApplied=true is required for FINALIZE when decision is CUSTOMIZE."
+            )
+
+        flow.customization_applied = normalized_customization_applied
+        flow.current_step = "FINALIZE"
 
         agents_markdown = self._build_agents_markdown(
-            selected_skills=None,
-            keywords=normalized_keywords,
-            decision=normalized_decision,
-            customization_notes=customization_notes,
+            selected_skills=flow.selected_skills,
+            keywords=flow.keywords,
+            decision=flow.decision,
+            customization_notes=flow.customization_notes,
         )
 
         return {
             "success": True,
+            "flowId": flow.flow_id,
             "flowStep": "FINALIZE",
             "message": "최종 agents.md 생성 준비 완료",
             "finalize": {
-                "decision": normalized_decision,
-                "keywords": normalized_keywords,
-                "customizationNotes": customization_notes or "",
+                "decision": flow.decision,
+                "keywords": flow.keywords,
+                "customizationNotes": flow.customization_notes,
+                "customizationApplied": flow.customization_applied,
                 "customizationPolicy": (
                     "CUSTOMIZE 선택 시 기존 skills 파일을 기반으로 필요한 부분만 보정하고, "
                     "새 문서를 처음부터 작성하지 않습니다."
@@ -213,98 +578,20 @@ class AutoFlowService:
             },
         }
 
-    def _fetch_skill(
-        self,
-        *,
-        mcp_personal_token: str | None,
-        skill_id: int | None,
-        cursor: int | None,
-        chunk_size: int | None,
-    ) -> dict[str, Any]:
-        normalized_skill_id = normalize_skill_id(skill_id)
-        normalized_cursor = normalize_cursor(cursor)
-        normalized_chunk_size = normalize_chunk_size(chunk_size)
+    def _require_flow(self, flow_id: str | None) -> AutoFlowState:
+        normalized_flow_id = normalize_flow_id(flow_id)
+        flow = self._flows.get(normalized_flow_id)
+        if flow is None:
+            raise GatewayValidationError("Unknown flowId. Start with start_auto_flow(step=START) first.")
 
-        content_response = self.spring_proxy_client.get_recommendation_skill_content(
-            mcp_personal_token=mcp_personal_token,
-            skill_id=normalized_skill_id,
-        )
-        skill_content = self._extract_skill_content(content_response)
-        safe_category = self._slug(skill_content.category or "unknown")
-        path = f"skills/{safe_category}.md"
+        return flow
 
-        chunk, next_cursor, has_next = self._slice_content(
-            content=skill_content.skill_md_raw,
-            cursor=normalized_cursor,
-            chunk_size=normalized_chunk_size,
-        )
-        if not chunk:
-            raise GatewayValidationError("No remaining content for the given cursor.")
-
-        write_mode = "write" if normalized_cursor == 0 else "append"
-        write_content = self._build_first_chunk_prefix(
-            skill_id=normalized_skill_id,
-            category=skill_content.category or "unknown",
-            source_repo=skill_content.source_repo or "unknown",
-            first_chunk=chunk,
-        ) if write_mode == "write" else chunk
-
-        ask_user = [
-            "같은 skillId로 hasNext=false가 될 때까지 FETCH_SKILL을 반복하세요.",
-        ]
-        if not has_next:
-            ask_user = [
-                "이 skill 파일 생성을 완료했습니다. 다음 selectedSkills의 skillId로 FETCH_SKILL을 진행하세요.",
-                "모든 skills 파일 생성 완료 후 사용자에게 진행/보정 여부를 확인하고 FINALIZE를 호출하세요.",
-            ]
-
-        return {
-            "success": True,
-            "flowStep": "FETCH_SKILL",
-            "message": "스킬 본문 chunk 전달 완료",
-            "skillChunk": {
-                "skillId": normalized_skill_id,
-                "category": skill_content.category,
-                "sourceRepo": skill_content.source_repo,
-                "path": path,
-                "cursor": normalized_cursor,
-                "nextCursor": next_cursor,
-                "chunkSize": normalized_chunk_size,
-                "hasNext": has_next,
-                "totalLength": len(skill_content.skill_md_raw),
-            },
-            "actions": {
-                "writeFiles": [
-                    {
-                        "path": path,
-                        "content": write_content,
-                        "mode": write_mode,
-                        "reason": "추천 스킬 원문 chunk 저장",
-                    }
-                ],
-                "askUser": ask_user,
-                "nextStep": "FETCH_SKILL",
-                "nextStepParamsExample": (
-                    {
-                        "step": "FETCH_SKILL",
-                        "skillId": normalized_skill_id,
-                        "cursor": next_cursor,
-                        "chunkSize": normalized_chunk_size,
-                    } if has_next else {
-                        "step": "FETCH_SKILL",
-                        "skillId": "다음 selectedSkills의 skillId",
-                        "cursor": 0,
-                        "chunkSize": normalized_chunk_size,
-                    }
-                ),
-                "finalizeParamsExample": {
-                    "step": "FINALIZE",
-                    "keywords": "기존 COLLECTED keywords 값 사용",
-                    "decision": "ACCEPT",
-                    "customizationNotes": "optional",
-                },
-            },
-        }
+    def _assert_step_allowed(self, flow: AutoFlowState, allowed_steps: set[str]) -> None:
+        if flow.current_step not in allowed_steps:
+            allowed = ", ".join(sorted(allowed_steps))
+            raise GatewayValidationError(
+                f"Invalid step order. Current flow state is {flow.current_step}; allowed previous states: {allowed}."
+            )
 
     def _extract_template(self, response: dict[str, Any]) -> tuple[str, str, str]:
         payload = response.get("data", response)
@@ -351,37 +638,29 @@ class AutoFlowService:
                     skill_id=skill_id,
                     final_score=final_score,
                     source_repo=source_repo,
-                    skill_md_raw="",
                 )
             )
 
         return selected_skills
 
-    def _resolve_selected_skill_contents(
+    def _get_skill_content(
         self,
         *,
+        flow: AutoFlowState,
         mcp_personal_token: str | None,
-        selected_skills_summary: list[SelectedSkill],
-    ) -> list[SelectedSkill]:
-        resolved_skills: list[SelectedSkill] = []
+        skill_id: int,
+    ) -> SkillContent:
+        cached = flow.skill_contents.get(skill_id)
+        if cached is not None:
+            return cached
 
-        for skill_summary in selected_skills_summary:
-            content_response = self.spring_proxy_client.get_recommendation_skill_content(
-                mcp_personal_token=mcp_personal_token,
-                skill_id=skill_summary.skill_id,
-            )
-            skill_content = self._extract_skill_content(content_response)
-            resolved_skills.append(
-                SelectedSkill(
-                    category=skill_content.category or skill_summary.category,
-                    skill_id=skill_summary.skill_id,
-                    final_score=skill_summary.final_score,
-                    source_repo=skill_content.source_repo or skill_summary.source_repo,
-                    skill_md_raw=skill_content.skill_md_raw,
-                )
-            )
-
-        return resolved_skills
+        response = self.spring_proxy_client.get_recommendation_skill_content(
+            mcp_personal_token=mcp_personal_token,
+            skill_id=skill_id,
+        )
+        parsed = self._extract_skill_content(response)
+        flow.skill_contents[skill_id] = parsed
+        return parsed
 
     def _extract_skill_content(self, response: dict[str, Any]) -> SkillContent:
         payload = response.get("data", response)
@@ -410,16 +689,6 @@ class AutoFlowService:
         has_next = chunk_end < content_length
         return chunk, chunk_end, has_next
 
-    def _build_first_chunk_prefix(self, *, skill_id: int, category: str, source_repo: str, first_chunk: str) -> str:
-        return (
-            f"# Skill: {category} ({skill_id})\n\n"
-            f"- category: {category}\n"
-            f"- skillId: {skill_id}\n"
-            f"- sourceRepo: {source_repo}\n\n"
-            "## Skill Markdown\n"
-            f"{first_chunk}"
-        )
-
     def _parse_skill_id(self, raw_skill_id: Any) -> int:
         if isinstance(raw_skill_id, bool):
             return 0
@@ -439,35 +708,13 @@ class AutoFlowService:
 
         return 0
 
-    def _build_skill_file_action(self, selected_skill: SelectedSkill) -> dict[str, str]:
-        safe_category = self._slug(selected_skill.category)
-        path = f"skills/{safe_category}.md"
-        content = self._build_skill_markdown(selected_skill)
-
-        return {
-            "path": path,
-            "content": content,
-            "reason": "추천 스킬 원문 파일 생성",
-        }
-
-    def _build_skill_markdown(self, selected_skill: SelectedSkill) -> str:
-        return (
-            f"# Skill: {selected_skill.category} ({selected_skill.skill_id})\n\n"
-            f"- category: {selected_skill.category}\n"
-            f"- skillId: {selected_skill.skill_id}\n"
-            f"- finalScore: {selected_skill.final_score:.4f}\n"
-            f"- sourceRepo: {selected_skill.source_repo}\n\n"
-            "## Skill Markdown\n"
-            f"{selected_skill.skill_md_raw}\n"
-        )
-
     def _build_agents_markdown(
         self,
         *,
-        selected_skills: list[SelectedSkill] | None,
+        selected_skills: list[SelectedSkill],
         keywords: str,
         decision: str,
-        customization_notes: str | None,
+        customization_notes: str,
     ) -> str:
         lines = [
             "# AGENTS Routing",
@@ -475,26 +722,17 @@ class AutoFlowService:
             "## Generation Context",
             f"- decision: {decision}",
             f"- keywords: {keywords}",
-            f"- customizationNotes: {customization_notes or ''}",
+            f"- customizationNotes: {customization_notes}",
             "",
             "## Skill Inventory",
         ]
 
-        inventory_paths: list[str] = []
-        if selected_skills:
-            for selected_skill in selected_skills:
-                safe_category = self._slug(selected_skill.category)
-                skill_path = f"skills/{safe_category}.md"
-                inventory_paths.append(skill_path)
-                lines.append(f"- {skill_path} (category={selected_skill.category}, finalScore={selected_skill.final_score:.4f})")
-        else:
-            inventory_paths = self._discover_skill_paths()
-            if inventory_paths:
-                for skill_path in inventory_paths:
-                    inferred_category = self._infer_category_from_path(skill_path)
-                    lines.append(f"- {skill_path} (category={inferred_category})")
-            else:
-                lines.append("- skills/*.md (COLLECTED 단계에서 이미 생성된 파일 기준)")
+        for selected_skill in selected_skills:
+            safe_category = self._slug(selected_skill.category)
+            skill_path = f"skills/{safe_category}.md"
+            lines.append(
+                f"- {skill_path} (category={selected_skill.category}, finalScore={selected_skill.final_score:.4f})"
+            )
 
         lines.extend(
             [
@@ -527,6 +765,21 @@ class AutoFlowService:
 
         return "\n".join(lines) + "\n"
 
+    def _find_next_skill_id(self, *, flow: AutoFlowState, excluded: set[int]) -> int | None:
+        for selected_skill in flow.selected_skills:
+            if selected_skill.skill_id not in excluded:
+                return selected_skill.skill_id
+
+        return None
+
+    def _slug(self, raw_value: str) -> str:
+        normalized = re.sub(r"[^a-zA-Z0-9_-]+", "-", raw_value.strip().lower())
+        normalized = normalized.strip("-")
+        return normalized or "unknown"
+
+    def _resolve_agent_type(self, request_agent_type: str | None) -> str:
+        return normalize_agent_type(request_agent_type or self.DEFAULT_AGENT_TYPE)
+
     def _discover_skill_paths(self) -> list[str]:
         skills_dir = Path("skills")
         if not skills_dir.exists() or not skills_dir.is_dir():
@@ -539,10 +792,19 @@ class AutoFlowService:
         category = file_name.removesuffix(".md").strip()
         return category or "unknown"
 
-    def _slug(self, raw_value: str) -> str:
-        normalized = re.sub(r"[^a-zA-Z0-9_-]+", "-", raw_value.strip().lower())
-        normalized = normalized.strip("-")
-        return normalized or "unknown"
-
-    def _resolve_agent_type(self, request_agent_type: str | None) -> str:
-        return normalize_agent_type(request_agent_type or self.DEFAULT_AGENT_TYPE)
+    def _build_skill_markdown_from_content(
+        self,
+        *,
+        skill_id: int,
+        category: str,
+        source_repo: str,
+        raw_content: str,
+    ) -> str:
+        return (
+            f"# Skill: {category} ({skill_id})\n\n"
+            f"- category: {category}\n"
+            f"- skillId: {skill_id}\n"
+            f"- sourceRepo: {source_repo}\n\n"
+            "## Skill Markdown\n"
+            f"{raw_content}"
+        )

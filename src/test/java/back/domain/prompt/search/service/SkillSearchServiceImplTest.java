@@ -6,6 +6,8 @@ import static org.mockito.Mockito.when;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -17,6 +19,7 @@ import back.domain.prompt.chunking.service.EmbeddingService;
 import back.domain.prompt.prompt.enums.Category;
 import back.domain.prompt.search.dto.chunk.SkillChunkSearchResultDto;
 import back.domain.prompt.search.dto.chunk.SkillChunkVectorSearchRowDto;
+import back.domain.prompt.search.provider.QueryTypeRuleProvider;
 import back.domain.prompt.search.repository.SkillChunkVectorSearchRepository;
 
 @ExtendWith(MockitoExtension.class)
@@ -28,11 +31,18 @@ class SkillSearchServiceImplTest {
     @Mock
     private SkillChunkVectorSearchRepository skillChunkVectorSearchRepository;
 
+    @Mock
+    private QueryTypeRuleProvider queryTypeRuleProvider;
+
     @Test
     @DisplayName("search는 chunk 결과를 skill 기준으로 묶고 점수 순으로 반환한다")
     void search_groupsAndSortsCandidates() {
         SkillSearchServiceImpl skillSearchService =
-                new SkillSearchServiceImpl(embeddingService, skillChunkVectorSearchRepository);
+                new SkillSearchServiceImpl(embeddingService, skillChunkVectorSearchRepository, queryTypeRuleProvider);
+
+        when(queryTypeRuleProvider.getTechQueryWhitelist()).thenReturn(Set.of());
+        when(queryTypeRuleProvider.getFunctionHintWords()).thenReturn(Set.of("search"));
+        when(queryTypeRuleProvider.getAliasGroups()).thenReturn(Map.of());
 
         when(embeddingService.embed("spring search")).thenReturn(List.of(0.1f, 0.2f));
         when(skillChunkVectorSearchRepository.searchTopK("[0.1,0.2]", 90)).thenReturn(List.of(
@@ -42,7 +52,7 @@ class SkillSearchServiceImplTest {
                         LocalDateTime.parse("2026-04-01T00:00:00"))
         ));
 
-        SkillChunkSearchResultDto result = skillSearchService.search("spring search");
+        SkillChunkSearchResultDto result = skillSearchService.search(List.of("spring search"));
 
         verify(skillChunkVectorSearchRepository).searchTopK("[0.1,0.2]", 90);
         assertThat(result.candidates()).hasSize(2);
@@ -50,7 +60,7 @@ class SkillSearchServiceImplTest {
         assertThat(result.candidates().get(0).skillId()).isEqualTo(1L);
         assertThat(result.candidates().get(0).category()).isEqualTo(Category.BACKEND);
         assertThat(result.candidates().get(0).summary()).isNull();
-        assertThat(result.candidates().get(0).primaryScore()).isEqualTo(0.82f);
+        assertThat(result.candidates().get(0).primaryScore()).isEqualTo(0.84f);
 
         assertThat(result.candidates().get(1).skillId()).isEqualTo(2L);
         assertThat(result.candidates().get(1).category()).isEqualTo(Category.FRONTEND);
@@ -74,7 +84,6 @@ class SkillSearchServiceImplTest {
                 skillName,
                 "demo-repo",
                 "https://example.com/" + skillName,
-                skillName + " content",
                 category,
                 summary,
                 10,

@@ -8,7 +8,6 @@ public record SkillChunkVectorSearchRowDto(
         String skillName,
         String repositoryName,
         String repositoryUrl,
-        String contentMd,
         String category,
         String summary,
         Integer stars,
