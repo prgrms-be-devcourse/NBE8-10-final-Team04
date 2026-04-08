@@ -22,12 +22,7 @@ class StartAgentTemplateServiceTest {
         assertThat(response.templateName()).isEqualTo("start.agent.md");
         assertThat(response.version()).isEqualTo("v4");
         assertThat(response.templateMarkdown()).contains("CLAUDE");
-        assertThat(response.templateMarkdown()).contains("start_auto_flow");
-        assertThat(response.templateMarkdown()).contains("자동화 워크 플로우 진행해줘");
-        assertThat(response.templateMarkdown()).contains("actions.writeFiles");
-        assertThat(response.templateMarkdown()).contains("부분 보정");
-        assertThat(response.templateMarkdown()).contains("새 문서를 처음부터 다시 작성하지 말고");
-        assertThat(response.templateMarkdown()).contains("추천 API를 다시 호출하지 않고, 이미 생성된 skills 파일 기준으로 최종화");
+        assertTemplateContainsCoreFlowRules(response.templateMarkdown());
     }
 
     @Test
@@ -38,12 +33,7 @@ class StartAgentTemplateServiceTest {
         assertThat(response.templateName()).isEqualTo("start.agent.md");
         assertThat(response.version()).isEqualTo("v4");
         assertThat(response.templateMarkdown()).contains("CODEX");
-        assertThat(response.templateMarkdown()).contains("start_auto_flow");
-        assertThat(response.templateMarkdown()).contains("자동화 워크 플로우 진행해줘");
-        assertThat(response.templateMarkdown()).contains("actions.writeFiles");
-        assertThat(response.templateMarkdown()).contains("부분 보정");
-        assertThat(response.templateMarkdown()).contains("새 문서를 처음부터 다시 작성하지 말고");
-        assertThat(response.templateMarkdown()).contains("추천 API를 다시 호출하지 않고, 이미 생성된 skills 파일 기준으로 최종화");
+        assertTemplateContainsCoreFlowRules(response.templateMarkdown());
     }
 
     @Test
@@ -54,11 +44,17 @@ class StartAgentTemplateServiceTest {
         assertThat(response.templateName()).isEqualTo("start.agent.md");
         assertThat(response.version()).isEqualTo("v4");
         assertThat(response.templateMarkdown()).contains("GEMINI");
-        assertThat(response.templateMarkdown()).contains("start_auto_flow");
-        assertThat(response.templateMarkdown()).contains("자동화 워크 플로우 진행해줘");
-        assertThat(response.templateMarkdown()).contains("actions.writeFiles");
-        assertThat(response.templateMarkdown()).contains("부분 보정");
-        assertThat(response.templateMarkdown()).contains("새 문서를 처음부터 다시 작성하지 말고");
-        assertThat(response.templateMarkdown()).contains("추천 API를 다시 호출하지 않고, 이미 생성된 skills 파일 기준으로 최종화");
+        assertTemplateContainsCoreFlowRules(response.templateMarkdown());
+    }
+
+    private static void assertTemplateContainsCoreFlowRules(String templateMarkdown) {
+        assertThat(templateMarkdown).contains("start_auto_flow");
+        assertThat(templateMarkdown).contains("자동화 워크 플로우 진행해줘");
+        assertThat(templateMarkdown).contains("actions.writeFiles");
+        assertThat(templateMarkdown).contains("부분 보정");
+        assertThat(templateMarkdown).contains("새 문서를 처음부터 다시 작성하지 말고");
+        assertThat(templateMarkdown).contains("VERIFY_SKILL");
+        assertThat(templateMarkdown).contains("DECIDE");
+        assertThat(templateMarkdown).contains("customizationApplied=true");
     }
 }

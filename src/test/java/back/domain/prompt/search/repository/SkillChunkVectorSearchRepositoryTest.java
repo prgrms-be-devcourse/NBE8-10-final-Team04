@@ -48,7 +48,6 @@ class SkillChunkVectorSearchRepositoryTest {
             org.mockito.Mockito.when(rs.getString("skill_name")).thenReturn("alpha");
             org.mockito.Mockito.when(rs.getString("repository_name")).thenReturn("demo-repo");
             org.mockito.Mockito.when(rs.getString("repository_url")).thenReturn("https://example.com/repo");
-            org.mockito.Mockito.when(rs.getString("content_md")).thenReturn("content");
             org.mockito.Mockito.when(rs.getString("category")).thenReturn("BACKEND");
             org.mockito.Mockito.when(rs.getString("summary")).thenReturn("summary");
             org.mockito.Mockito.when(rs.getObject("stars", Integer.class)).thenReturn(10);

@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+import re
+
 SUPPORTED_AGENT_TYPES = {"CLAUDE", "CODEX", "GEMINI"}
-SUPPORTED_FLOW_STEPS = ("START", "COLLECTED", "FETCH_SKILL", "FINALIZE")
+SUPPORTED_FLOW_STEPS = ("START", "COLLECTED", "FETCH_SKILL", "VERIFY_SKILL", "DECIDE", "FINALIZE")
 SUPPORTED_FINALIZE_DECISIONS = {"ACCEPT", "CUSTOMIZE"}
+SHA256_PATTERN = re.compile(r"^[0-9a-fA-F]{64}$")
 
 
 class GatewayValidationError(ValueError):
@@ -57,6 +60,17 @@ def normalize_flow_step(step: str) -> str:
     return normalized
 
 
+def normalize_flow_id(flow_id: str | None) -> str:
+    if flow_id is None:
+        raise GatewayValidationError("flowId is required for this step.")
+
+    normalized = flow_id.strip()
+    if not normalized:
+        raise GatewayValidationError("flowId must not be blank.")
+
+    return normalized
+
+
 def normalize_finalize_decision(decision: str) -> str:
     if decision is None:
         raise GatewayValidationError("decision is required for FINALIZE step.")
@@ -74,6 +88,15 @@ def normalize_user_input_confirmed(user_input_confirmed: bool | None) -> bool:
     if user_input_confirmed is not True:
         raise GatewayValidationError(
             "userInputConfirmed must be true for COLLECTED step."
+        )
+
+    return True
+
+
+def normalize_user_decision_confirmed(user_decision_confirmed: bool | None) -> bool:
+    if user_decision_confirmed is not True:
+        raise GatewayValidationError(
+            "userDecisionConfirmed must be true for DECIDE step."
         )
 
     return True
@@ -111,6 +134,35 @@ def normalize_chunk_size(chunk_size: int | float | str | None) -> int:
         raise GatewayValidationError("chunkSize must be less than or equal to 20000.")
 
     return normalized
+
+
+def normalize_written_length(written_length: int | float | str | None) -> int:
+    normalized = _normalize_int(written_length)
+    if normalized < 0:
+        raise GatewayValidationError("writtenLength must be greater than or equal to 0.")
+
+    return normalized
+
+
+def normalize_written_sha256(written_sha256: str | None) -> str:
+    if written_sha256 is None:
+        raise GatewayValidationError("writtenSha256 is required for VERIFY_SKILL step.")
+
+    normalized = written_sha256.strip().lower()
+    if not SHA256_PATTERN.fullmatch(normalized):
+        raise GatewayValidationError("writtenSha256 must be a 64-char hex string.")
+
+    return normalized
+
+
+def normalize_customization_applied(customization_applied: bool | None) -> bool:
+    if customization_applied is None:
+        return False
+
+    if not isinstance(customization_applied, bool):
+        raise GatewayValidationError("customizationApplied must be a boolean.")
+
+    return customization_applied
 
 
 def _normalize_int(value: int | float | str | None) -> int:
