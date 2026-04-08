@@ -252,9 +252,11 @@ class AutoFlowServiceTest(unittest.TestCase):
 
         self.assertTrue(response["success"])
         self.assertEqual(response["actions"]["writeFiles"][0]["mode"], "append")
-        self.assertEqual(response["actions"]["nextStep"], "FINALIZE")
+        self.assertEqual(response["actions"]["nextStep"], "FETCH_SKILL")
         self.assertFalse(response["skillChunk"]["hasNext"])
         self.assertNotIn("# Skill:", response["actions"]["writeFiles"][0]["content"])
+        self.assertEqual(response["actions"]["nextStepParamsExample"]["cursor"], 0)
+        self.assertEqual(response["actions"]["finalizeParamsExample"]["step"], "FINALIZE")
 
     def test_finalize_step_returns_agents_write_and_start_file_delete_actions(self):
         response = self.service.run(

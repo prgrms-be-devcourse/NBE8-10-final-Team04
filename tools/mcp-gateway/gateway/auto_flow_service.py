@@ -283,7 +283,7 @@ class AutoFlowService:
                     }
                 ],
                 "askUser": ask_user,
-                "nextStep": "FETCH_SKILL" if has_next else "FINALIZE",
+                "nextStep": "FETCH_SKILL",
                 "nextStepParamsExample": (
                     {
                         "step": "FETCH_SKILL",
@@ -291,12 +291,18 @@ class AutoFlowService:
                         "cursor": next_cursor,
                         "chunkSize": normalized_chunk_size,
                     } if has_next else {
-                        "step": "FINALIZE",
-                        "keywords": "기존 COLLECTED keywords 값 사용",
-                        "decision": "ACCEPT",
-                        "customizationNotes": "optional",
+                        "step": "FETCH_SKILL",
+                        "skillId": "다음 selectedSkills의 skillId",
+                        "cursor": 0,
+                        "chunkSize": normalized_chunk_size,
                     }
                 ),
+                "finalizeParamsExample": {
+                    "step": "FINALIZE",
+                    "keywords": "기존 COLLECTED keywords 값 사용",
+                    "decision": "ACCEPT",
+                    "customizationNotes": "optional",
+                },
             },
         }
 
