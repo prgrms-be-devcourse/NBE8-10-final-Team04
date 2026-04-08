@@ -79,7 +79,8 @@ def _resolve_mcp_personal_token(ctx: Context | None) -> str:
         return settings.mcp_personal_token
 
     raise GatewayValidationError(
-        "MCP personal token is required. Provide Authorization: Bearer <mcp_token> in MCP connection settings."
+        "MCP personal token is required. Provide Authorization: Bearer <mcp_token> in MCP connection settings "
+        "or set MCP_PERSONAL_TOKEN."
     )
 
 
