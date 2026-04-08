@@ -2,6 +2,7 @@ package back.domain.payment.entity;
 
 import back.domain.member.entity.Member;
 import back.global.jpa.entity.BaseEntity;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -18,7 +19,7 @@ import java.util.Optional;
 @Table(name = "payment")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@SuppressWarnings({"EI_EXPOSE_REP", "EI_EXPOSE_REP2"})
+@SuppressFBWarnings({"EI_EXPOSE_REP", "EI_EXPOSE_REP2"})
 public class Payment extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -65,12 +66,22 @@ public class Payment extends BaseEntity {
     @Column(name = "raw_payload", columnDefinition = "jsonb")
     private Map<String, Object> rawPayload;
 
+    @SuppressFBWarnings("EI_EXPOSE_REP")
+    public Member getMember() {
+        return member;
+    }
+
+    @SuppressFBWarnings("EI_EXPOSE_REP")
+    public Subscription getSubscription() {
+        return subscription;
+    }
+
     public Map<String, Object> getRawPayload() {
         return rawPayload == null ? null : new HashMap<>(rawPayload);
     }
 
     @Builder(access = AccessLevel.PRIVATE)
-    @SuppressWarnings({"EI_EXPOSE_REP", "EI_EXPOSE_REP2"})
+    @SuppressFBWarnings({"EI_EXPOSE_REP", "EI_EXPOSE_REP2"})
     private Payment(Member member, Subscription subscription, String orderId, String paymentKey,
                     PaymentStatus status, SubscriptionPlanType planType, Map<String, Object> rawPayload) {
         this.member = member;
@@ -115,6 +126,7 @@ public class Payment extends BaseEntity {
         return this.status == PaymentStatus.READY;
     }
 
+    @SuppressFBWarnings("EI_EXPOSE_REP2")
     public void assignSubscription(Subscription subscription) {
         this.subscription = subscription;
     }

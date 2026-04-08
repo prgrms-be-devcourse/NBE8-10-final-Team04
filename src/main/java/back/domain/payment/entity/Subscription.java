@@ -2,6 +2,7 @@ package back.domain.payment.entity;
 
 import back.domain.member.entity.Member;
 import back.global.jpa.entity.BaseEntity;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -11,12 +12,17 @@ import java.time.LocalDateTime;
 @Table(name = "subscription")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@SuppressWarnings({"EI_EXPOSE_REP", "EI_EXPOSE_REP2"})
+@SuppressFBWarnings({"EI_EXPOSE_REP", "EI_EXPOSE_REP2"})
 public class Subscription extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false, updatable = false)
     private Member member;
+
+    @SuppressFBWarnings("EI_EXPOSE_REP")
+    public Member getMember() {
+        return member;
+    }
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
@@ -45,7 +51,7 @@ public class Subscription extends BaseEntity {
     private String pgProvider;
 
     @Builder
-    @SuppressWarnings({"EI_EXPOSE_REP", "EI_EXPOSE_REP2"})
+    @SuppressFBWarnings({"EI_EXPOSE_REP", "EI_EXPOSE_REP2"})
     private Subscription(Member member, SubscriptionPlanType planType, Integer amount,
                          String billingKey, String pgProvider, LocalDateTime nextBillingAt) {
         this.member = member;
