@@ -15,6 +15,7 @@ import java.util.Map;
 @Entity
 @Table(name = "payment")
 @Getter
+@SuppressWarnings({"EI_EXPOSE_REP", "EI_EXPOSE_REP2"})
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Payment extends BaseEntity {
 

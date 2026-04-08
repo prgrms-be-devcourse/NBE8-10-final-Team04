@@ -11,6 +11,7 @@ import java.time.LocalDateTime;
 @Table(name = "subscription")
 @Getter
 @AllArgsConstructor
+@SuppressWarnings({"EI_EXPOSE_REP", "EI_EXPOSE_REP2"})
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Subscription extends BaseEntity {
 

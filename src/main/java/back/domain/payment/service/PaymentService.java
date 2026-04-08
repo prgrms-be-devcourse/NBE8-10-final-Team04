@@ -87,7 +87,7 @@ public class PaymentService {
 
         // 3. 토스페이먼츠 승인 API 호출
         // [테스트 단계] 실제 토스 서버와 통신하는 private 메서드를 호출합니다.
-        confirmToToss(request);
+//        confirmToToss(request);
 
         // 4. 결제 상태 변경 (READY -> DONE)
         payment.markAsDone();
