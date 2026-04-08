@@ -1,5 +1,4 @@
 MONITORING_LOCAL := docker/monitoring/compose/docker-compose.monitoring.local.yml
-MONITORING_CLOUD := docker/monitoring/compose/docker-compose.monitoring.cloud.yml
 
 # ─── 모니터링 스택 (로컬) ─────────────────────────────────────
 .PHONY: monitor-up monitor-down monitor-logs
@@ -19,29 +18,22 @@ monitor-logs:
 	  -f docker/docker-compose.test.yml \
 	  -f $(MONITORING_LOCAL) --env-file .env logs -f
 
-# ─── 모니터링 스택 (클라우드) ─────────────────────────────────
-.PHONY: monitor-cloud-up monitor-cloud-down monitor-cloud-logs
-
-monitor-cloud-up:
-	docker compose -f $(MONITORING_CLOUD) up -d
-
-monitor-cloud-down:
-	docker compose -f $(MONITORING_CLOUD) down
-
-monitor-cloud-logs:
-	docker compose -f $(MONITORING_CLOUD) logs -f
-
 # ─── k6 실행 ────────────────────────────────────────────────
 .PHONY: k6
 
 k6:
 	docker compose \
-    	-f docker/monitoring/compose/docker-compose.k6.yml \
+    	-f $(K6_COMPOSE_FILE) \
     	run --rm k6
 
 # ─── 성능 테스트 ─────────────────────────────────────────────
+.PHONY: perf-check-env perf
+
 ENV ?= local
 ENV_FILE := perf/env/$(ENV).env
+K6_COMPOSE_LOCAL := docker/monitoring/compose/docker-compose.k6.yml
+K6_COMPOSE_CLOUD := docker/monitoring/compose/docker-compose.k6.cloud.yml
+K6_COMPOSE_FILE = $(if $(filter cloud,$(ENV)),$(K6_COMPOSE_CLOUD),$(K6_COMPOSE_LOCAL))
 
 PERF_SCENARIO ?= smoke-test
 DOMAIN ?= test
@@ -59,7 +51,7 @@ perf-check-env:
 perf: perf-check-env
 	@echo "▶ Running k6 scenario=$(PERF_SCENARIO) ENV=$(ENV)"
 	MSYS_NO_PATHCONV=1 docker compose \
-	  -f docker/monitoring/compose/docker-compose.k6.yml \
+	  -f $(K6_COMPOSE_FILE) \
 	  --profile k6 run --rm \
 	  $$(grep -vE '^\s*#|^\s*$$' "$(ENV_FILE)" | sed 's/\r$$//' | awk -F= '{printf "-e %s=%s ", $$1, $$2}') \
 	  k6 run \
