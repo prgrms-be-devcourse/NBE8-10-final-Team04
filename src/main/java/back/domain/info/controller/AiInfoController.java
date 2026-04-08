@@ -1,16 +1,23 @@
 package back.domain.info.controller;
 
-import back.domain.info.dto.response.PageUpdateRequestResponse;
-import back.domain.info.service.AiInfoService;
-import back.domain.info.service.ModelBenchmarkService;
-import back.domain.info.service.UpdateRequestService;
-import back.global.response.RsData;
-import lombok.RequiredArgsConstructor;
+import java.util.List;
+
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import back.domain.info.dto.response.FamilyDetailResponse;
+import back.domain.info.dto.response.FamilySummaryResponse;
+import back.domain.info.dto.response.PageUpdateRequestResponse;
+import back.domain.info.dto.response.VendorInfoResponse;
+import back.domain.info.service.AiInfoService;
+import back.domain.info.service.InfoCatalogQueryService;
+import back.domain.info.service.ModelBenchmarkService;
+import back.domain.info.service.UpdateRequestService;
+import back.global.response.RsData;
+import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequiredArgsConstructor
@@ -19,6 +26,7 @@ public class AiInfoController {
     private final AiInfoService inforService;
     private final ModelBenchmarkService benchmarkService;
     private final UpdateRequestService updateRequestService;
+    private final InfoCatalogQueryService infoCatalogQueryService;
 
     @PostMapping("/model")
     public ResponseEntity<RsData<Void>> getModel() {
@@ -44,9 +52,7 @@ public class AiInfoController {
 
     // PENDING 상태 update들 상태 업데이트 (PENDING -> APPROVED / REJECTED)
     @PutMapping("/update")
-    public ResponseEntity<RsData<Void>> updateStatus(
-            @RequestParam Long id,
-            @RequestParam String status) {
+    public ResponseEntity<RsData<Void>> updateStatus(@RequestParam Long id, @RequestParam String status) {
 
         updateRequestService.updateStatus(id, status);
 
@@ -67,4 +73,21 @@ public class AiInfoController {
         return updateRequestService.getUpdates(pageable);
     }
 
+    // 벤더 목록 조회 (공개)
+    @GetMapping("/vendors")
+    public ResponseEntity<RsData<List<VendorInfoResponse>>> getVendors() {
+        return ResponseEntity.ok(new RsData<>(infoCatalogQueryService.getVendors(), "벤더 목록 조회 성공"));
+    }
+
+    // 특정 벤더의 패밀리 목록 조회 (공개)
+    @GetMapping("/vendors/{vendorId}/families")
+    public ResponseEntity<RsData<List<FamilySummaryResponse>>> getFamiliesByVendor(@PathVariable Long vendorId) {
+        return ResponseEntity.ok(new RsData<>(infoCatalogQueryService.getFamiliesByVendorId(vendorId), "패밀리 목록 조회 성공"));
+    }
+
+    // 패밀리 상세 조회 (공개)
+    @GetMapping("/families/{familyId}")
+    public ResponseEntity<RsData<FamilyDetailResponse>> getFamilyDetail(@PathVariable Long familyId) {
+        return ResponseEntity.ok(new RsData<>(infoCatalogQueryService.getFamilyDetail(familyId), "패밀리 상세 조회 성공"));
+    }
 }
