@@ -43,6 +43,7 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-security-oauth2-client")
     implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("org.springframework.boot:spring-boot-starter-webmvc")
+    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.0")
     implementation("org.springframework.ai:spring-ai-starter-model-postgresml-embedding")
     implementation("org.springframework.ai:spring-ai-starter-vector-store-pgvector")
     compileOnly("com.github.spotbugs:spotbugs-annotations:4.8.6")
