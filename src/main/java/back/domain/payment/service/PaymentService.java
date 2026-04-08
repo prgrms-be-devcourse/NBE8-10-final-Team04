@@ -19,14 +19,14 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
+@SuppressWarnings({"EI_EXPOSE_REP", "EI_EXPOSE_REP2"})
 public class PaymentService {
 
     private final MemberRepository memberRepository;
     private final PaymentRepository paymentRepository;
     private final SubscriptionRepository subscriptionRepository;
 
-    @Value("${toss.secret-key}") // yml에 있는 값을 자동으로 가져옵니다.
-    private String secretKey;
+    private final back.domain.payment.client.TossPaymentClient tossPaymentClient;
 
     @Transactional
     public PaymentPrepareResponse prepare(Long memberId, PaymentPrepareRequest request){
@@ -87,14 +87,13 @@ public class PaymentService {
 
         // 3. 토스페이먼츠 승인 API 호출
         // [테스트 단계] 실제 토스 서버와 통신하는 private 메서드를 호출합니다.
-//        confirmToToss(request);
+        tossPaymentClient.confirm(request);
 
         // 4. 결제 상태 변경 (READY -> DONE)
         payment.markAsDone();
         payment.updatePaymentKey(request.paymentKey());
 
-
-        // 5. 구독 정보 생성/갱신 로직 (여기에 추가)
+        // 5. 구독 정보 생성/갱신 로직
         Subscription subscription = updateSubscription(payment.getMember(), payment.getPlanType());
         payment.assignSubscription(subscription);
 
@@ -102,45 +101,12 @@ public class PaymentService {
     }
 
     private Subscription updateSubscription(Member member, SubscriptionPlanType planType) {
-        // 기존 구독이 있으면 업데이트, 없으면 생성
         Subscription subscription = subscriptionRepository.findByMemberId(member.getId())
                 .orElseGet(() -> Subscription.builder()
                         .member(member)
                         .build());
 
-        // 구독 활성화 및 종료일 설정 (예: 1개월)
         subscription.activate(planType, java.time.LocalDateTime.now().plusMonths(1));
         return subscriptionRepository.save(subscription);
     }
-
-        /**
-         * 토스페이먼츠 API 서버로 최종 승인 요청을 보냅니다.
-         */
-        private void confirmToToss(PaymentConfirmRequest request) {
-            String basicAuth = "Basic " + java.util.Base64.getEncoder()
-                    .encodeToString((secretKey + ":").getBytes(java.nio.charset.StandardCharsets.UTF_8));
-
-            org.springframework.web.client.RestTemplate restTemplate = new org.springframework.web.client.RestTemplate();
-
-            org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
-            headers.set("Authorization", basicAuth);
-            headers.setContentType(org.springframework.http.MediaType.APPLICATION_JSON);
-
-            org.springframework.http.HttpEntity<PaymentConfirmRequest> entity = new org.springframework.http.HttpEntity<>(request, headers);
-
-            try {
-                org.springframework.http.ResponseEntity<String> response = restTemplate.postForEntity(
-                        "https://api.tosspayments.com/v1/payments/confirm",
-                        entity,
-                        String.class
-                );
-
-                if (!response.getStatusCode().is2xxSuccessful()) {
-                    throw new RuntimeException("토스 결제 승인 실패: " + response.getBody());
-                }
-            } catch (Exception e) {
-                throw new RuntimeException("결제 통신 중 오류 발생: " + e.getMessage());
-            }
-    }
-
 }

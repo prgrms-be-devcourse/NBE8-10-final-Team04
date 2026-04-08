@@ -41,6 +41,8 @@ public class PaymentServiceTest {
     private PaymentRepository paymentRepository;
     @Mock
     private SubscriptionRepository subscriptionRepository;
+    @Mock
+    private back.domain.payment.client.TossPaymentClient tossPaymentClient;
 
     private Member member;
     private Payment payment;
@@ -80,7 +82,7 @@ public class PaymentServiceTest {
     }
 
     @Test
-    @DisplayName("결제 승인 성공 - 상태가 PAID(DONE)로 바뀌고 구독이 생성되어야 한다")
+    @DisplayName("결제 승인 성공 - 상태가 PAID로 바뀌고 구독이 생성되어야 한다")
     void confirm_Success() {
         // given
         PaymentConfirmRequest request = new PaymentConfirmRequest("key-123", "order-123", 990L);
@@ -88,14 +90,15 @@ public class PaymentServiceTest {
         given(paymentRepository.findByOrderId("order-123")).willReturn(Optional.of(payment));
         given(subscriptionRepository.findByMemberId(1L)).willReturn(Optional.empty());
 
-        // save() 호출 시 인자로 넘어온 객체를 그대로 반환하도록 설정
+        Mockito.doNothing().when(tossPaymentClient).confirm(any());
+
         given(subscriptionRepository.save(any(Subscription.class))).willAnswer(invocation -> invocation.getArgument(0));
 
         // when
         Payment result = paymentService.confirm(1L, request);
 
         // then
-        assertThat(result.getStatus()).isEqualTo(PaymentStatus.PAID); // 아까 PAID로 확인했죠!
+        assertThat(result.getStatus()).isEqualTo(PaymentStatus.PAID);
         assertThat(result.getPaymentKey()).isEqualTo("key-123");
         assertThat(result.getSubscription()).isNotNull();
     }
