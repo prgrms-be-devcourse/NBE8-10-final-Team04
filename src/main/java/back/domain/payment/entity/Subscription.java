@@ -45,26 +45,32 @@ public class Subscription extends BaseEntity {
     private String pgProvider;
 
     @Builder
-    public Subscription(Member member, SubscriptionPlanType planType, Integer amount, String billingKey, String pgProvider ,LocalDateTime nextBillingAt) {
+    public Subscription(Member member, SubscriptionPlanType planType, Integer amount,
+                        String billingKey, String pgProvider, LocalDateTime nextBillingAt) {
         this.member = member;
         this.planType = planType;
         this.amount = amount;
         this.billingKey = billingKey;
         this.pgProvider = pgProvider;
 
-        this.activate(nextBillingAt);
+        this.activate(planType, nextBillingAt);
     }
 
     //    구독 활성화 및 재개
-    public void activate(LocalDateTime nextBillingAt) {
+    public void activate(SubscriptionPlanType planType, LocalDateTime nextBillingAt) {
+        this.planType = planType;
         this.status = SubscriptionStatus.ACTIVE;
         this.startedAt = LocalDateTime.now();
         this.nextBillingAt = nextBillingAt;
         this.canceledAt = null;
     }
 
-    //    구독 취소
-    public void cancel(){
+    // 구독 취소
+    public void cancel() {
+        if (this.status != SubscriptionStatus.ACTIVE) {
+            throw new IllegalStateException("현재 활성화된 구독만 해지할 수 있습니다.");
+        }
+
         this.status = SubscriptionStatus.CANCELED;
         this.canceledAt = LocalDateTime.now();
     }
@@ -73,6 +79,9 @@ public class Subscription extends BaseEntity {
     public boolean isActive() {
         return this.status == SubscriptionStatus.ACTIVE;
     }
+
+
+
 
 
 }

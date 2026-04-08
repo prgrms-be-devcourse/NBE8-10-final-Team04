@@ -3,7 +3,9 @@ package back.domain.payment.controller;
 import back.domain.member.entity.Member;
 import back.domain.payment.dto.request.PaymentConfirmRequest;
 import back.domain.payment.dto.request.PaymentPrepareRequest;
+import back.domain.payment.dto.response.PaymentConfirmResponse;
 import back.domain.payment.dto.response.PaymentPrepareResponse;
+import back.domain.payment.entity.Payment;
 import back.domain.payment.service.PaymentService;
 import back.global.security.AuthenticatedMember;
 import lombok.RequiredArgsConstructor;
@@ -22,25 +24,21 @@ public class PaymentController {
     //    구독 결제 준비/준비서 생성
     @PostMapping("/prepare")
     public PaymentPrepareResponse prepare(
-//            @AuthenticationPrincipal AuthenticatedMember authenticatedMember,
+            @AuthenticationPrincipal AuthenticatedMember authenticatedMember, // 주석 해제!
             @RequestBody PaymentPrepareRequest request
     ) {
-        Long tempMemberId = 225L; // 테스트 후 실제 연동 시 삭제
-        return paymentService.prepare(tempMemberId, request);
-//        return paymentService.prepare(authenticatedMember.memberId(), request);
+        return paymentService.prepare(authenticatedMember.memberId(), request);
     }
 
-    //    결제 승인
+    // 결제 승인
     @PostMapping("/confirm")
-    public ResponseEntity<String> confirm(
-//            @AuthenticationPrincipal AuthenticatedMember authenticatedMember,
+    public ResponseEntity<PaymentConfirmResponse> confirm(
+            @AuthenticationPrincipal AuthenticatedMember authenticatedMember,
             @RequestBody PaymentConfirmRequest request
     ) {
-        Long tempMemberId = 225L;// 테스트 후 실제 연동 시 삭제
-        paymentService.confirm(tempMemberId, request);
-
-//        paymentService.confirm(authenticatedMember.memberId(), request);
-        return ResponseEntity.ok("결제가 최종 승인되었습니다.");
+        // 이제 서비스의 confirm 메서드가 Payment 객체를 반환하도록 살짝 고쳐볼까요?
+        Payment payment = paymentService.confirm(authenticatedMember.memberId(), request);
+        return ResponseEntity.ok(PaymentConfirmResponse.success(payment));
     }
 
 //    =====================================================================

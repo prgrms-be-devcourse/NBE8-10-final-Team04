@@ -2,9 +2,11 @@ package back.domain.payment.service;
 
 import back.domain.member.entity.Member;
 import back.domain.member.repository.MemberRepository;
+import back.domain.payment.repository.SubscriptionRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mock;
 import org.mockito.Mockito;
 
 import java.util.Optional;
@@ -15,13 +17,18 @@ import static org.mockito.Mockito.*;
 class UsageServiceTest {
 
     private UsageService usageService;
+
+    @Mock
     private MemberRepository memberRepository;
+
+    @Mock
+    private SubscriptionRepository subscriptionRepository;
+
     private Member member;
 
     @BeforeEach
     void setUp() {
-        memberRepository = Mockito.mock(MemberRepository.class);
-        usageService = new UsageService(memberRepository);
+        usageService = new UsageService(memberRepository, subscriptionRepository);
 
         member = Member.createUser("google-sub-123", "test@test.com", "슬기");
 
@@ -33,7 +40,6 @@ class UsageServiceTest {
     @DisplayName("무료 사용 남은 횟수를 반환한다")
     void getRemainingUsage() {
         int remaining = usageService.getRemainingUsage(1L);
-
         assertEquals(3, remaining);
     }
 
@@ -41,7 +47,6 @@ class UsageServiceTest {
     @DisplayName("무료 사용 1회를 차감하면 freeUsageCount가 1 증가한다")
     void useOnce() {
         usageService.useOnce(1L);
-
         assertEquals(1, member.getFreeUsageCount());
     }
 

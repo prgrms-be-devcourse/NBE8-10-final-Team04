@@ -93,3 +93,6 @@ ai-model:
     - openai
     - anthropic
     - google
+
+toss:
+  secret-key: test_sk_4yKeq5bgrpyLD5Q0qmmA8GX0lzW6

@@ -23,13 +23,13 @@ public class Payment extends BaseEntity {
     private Member member;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name="subscription_id", nullable = true, updatable=false)
+    @JoinColumn(name="subscription_id", nullable = true)
     private Subscription subscription;
 
-    @Column(name = "order_id", updatable = false, nullable = false)
+    @Column(name = "order_id", updatable = false, nullable = true)
     private String orderId;
 
-    @Column(name = "payment_key", updatable = false, nullable = true)
+    @Column(name = "payment_key", nullable = true)
     private String paymentKey;
 
     @Enumerated(EnumType.STRING)
@@ -111,6 +111,23 @@ public class Payment extends BaseEntity {
 //    상태확인
     public boolean isReady() {
         return this.status == PaymentStatus.READY;
+    }
+
+    /**
+     * 결제 완료 시 해당 결제가 어떤 구독에 속하는지 연결합니다.
+     */
+    public void assignSubscription(Subscription subscription) {
+        this.subscription = subscription;
+    }
+
+    /**
+     * 결제 승인 완료 후 토스에서 발급한 paymentKey를 저장합니다.
+     */
+    public void updatePaymentKey(String paymentKey) {
+        if (paymentKey == null || paymentKey.isBlank()) {
+            throw new IllegalArgumentException("유효하지 않은 결제 키입니다.");
+        }
+        this.paymentKey = paymentKey;
     }
 
 }

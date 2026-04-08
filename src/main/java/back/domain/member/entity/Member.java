@@ -85,25 +85,29 @@ public class Member extends BaseEntity {
     private static final int MAX_FREE_USAGE = 3;
 
     @Column(name = "free_usage_count")
-    private int freeUsageCount;  //이번 달 사용 횟수
+    private Integer freeUsageCount;  //이번 달 사용 횟수
 
     @Column(name = "free_usage_reset_at")
     private LocalDateTime freeUsageResetAt;  //초기화 날짜 (다음달 1일)
 
-//   사용횟수 확인
+    //   사용횟수 확인
     public boolean canUseFree() {
-        return this.freeUsageCount < MAX_FREE_USAGE;
+        return getUsageCount() < MAX_FREE_USAGE;
     }
 
     public int getRemainingUsage() {
-        return MAX_FREE_USAGE - this.freeUsageCount;
+        return MAX_FREE_USAGE - getUsageCount();
+    }
+
+    private int getUsageCount() {
+        return this.freeUsageCount != null ? this.freeUsageCount : 0;
     }
 
     public void increaseFreeUsageCount() {
-        if(!canUseFree()) {
+        if (!canUseFree()) {
             throw new IllegalStateException("무료 사용 횟수를 초과하였습니다.");
         }
-        this.freeUsageCount++;
+        this.freeUsageCount = getUsageCount() + 1;
     }
 
 //    사용량 리셋
@@ -120,16 +124,11 @@ public class Member extends BaseEntity {
                 .atStartOfDay();
     }
 
-    public void resetFreeUsageIfNeeded(){
+    public void resetFreeUsageIfNeeded() {
         LocalDateTime now = LocalDateTime.now();
 
-        if (this.freeUsageResetAt == null) {
-            this.freeUsageResetAt = calculateNextResetAt();
-            return;
-        }
-
-        if (!this.freeUsageResetAt.isAfter(now)) {
-            resetFreeUsage();
+        if (this.freeUsageResetAt == null || !this.freeUsageResetAt.isAfter(now)) {
+            resetFreeUsage();  // freeUsageCount = 0 + resetAt 갱신 같이 처리
         }
     }
 }
