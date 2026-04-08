@@ -1,5 +1,6 @@
 package back.domain.mcp.candidate.provider;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -23,7 +24,9 @@ public class SkillSearchMcpRecommendationCandidateProvider implements McpRecomme
 
     @Override
     public List<McpRecommendationCandidate> findTopCandidates(McpRecommendationQuery query) {
-        SkillChunkSearchResultDto response = skillSearchService.search(query.query());
+        List<String> arr = new ArrayList<>();
+        arr.add(query.query());
+        SkillChunkSearchResultDto response = skillSearchService.search(arr);
         if (response == null || response.candidates() == null) {
             return List.of();
         }
@@ -39,7 +42,6 @@ public class SkillSearchMcpRecommendationCandidateProvider implements McpRecomme
                 candidate.skillName(),
                 candidate.repositoryName(),
                 candidate.repositoryUrl(),
-                candidate.contentMd(),
                 candidate.category() != null ? candidate.category().name() : null,
                 candidate.summary(),
                 (double) candidate.primaryScore(),
