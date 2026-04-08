@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import inspect
 from typing import Any
+from urllib.parse import parse_qs, urlparse
 
 from mcp.server.fastmcp import Context, FastMCP
 
@@ -76,6 +77,45 @@ def _extract_authorization_header(ctx: Context | None) -> str | None:
     return None
 
 
+def _extract_query_token(ctx: Context | None) -> str | None:
+    if ctx is None:
+        return None
+
+    request_context = getattr(ctx, "request_context", None)
+    request = getattr(request_context, "request", None)
+    if request is None:
+        return None
+
+    query_params = getattr(request, "query_params", None)
+    query_token = _read_query_token_from_mapping(query_params)
+    if query_token:
+        return query_token
+
+    url = getattr(request, "url", None)
+    if url is None:
+        return None
+
+    parsed_query = parse_qs(urlparse(str(url)).query)
+    return _read_query_token_from_mapping(parsed_query)
+
+
+def _read_query_token_from_mapping(mapping: Any) -> str | None:
+    if mapping is None or not hasattr(mapping, "get"):
+        return None
+
+    for key in ("token", "mcp_token", "mcpPersonalToken"):
+        raw_value = mapping.get(key)
+        if raw_value is None:
+            continue
+
+        value = raw_value[0] if isinstance(raw_value, list) else raw_value
+        normalized = str(value).strip()
+        if normalized:
+            return normalized
+
+    return None
+
+
 def _resolve_mcp_personal_token(ctx: Context | None) -> str:
     authorization_header = _extract_authorization_header(ctx)
     if authorization_header:
@@ -87,12 +127,16 @@ def _resolve_mcp_personal_token(ctx: Context | None) -> str:
 
         raise GatewayValidationError("Authorization header must be in the format: Bearer <mcp_token>.")
 
+    query_token = _extract_query_token(ctx)
+    if query_token:
+        return query_token
+
     if settings.mcp_personal_token:
         return settings.mcp_personal_token
 
     raise GatewayValidationError(
-        "MCP personal token is required. Provide Authorization: Bearer <mcp_token> in MCP connection settings "
-        "or set MCP_PERSONAL_TOKEN."
+        "MCP personal token is required. Provide Authorization: Bearer <mcp_token>, "
+        "append ?token=<mcp_token> to the MCP URL, or set MCP_PERSONAL_TOKEN."
     )
 
 
