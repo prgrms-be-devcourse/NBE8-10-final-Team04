@@ -13,4 +13,6 @@ RUN pip install --upgrade pip setuptools wheel && \
 COPY server.py .
 COPY gateway ./gateway
 
+EXPOSE 9000
+
 CMD ["python", "server.py"]

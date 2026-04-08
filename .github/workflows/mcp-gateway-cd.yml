@@ -1,9 +1,9 @@
-name: Backend CD
+name: MCP Gateway CD
 
 on:
   push:
-    branches: [ "develop" ]
-    paths-ignore:
+    branches: ["develop"]
+    paths:
       - "tools/mcp-gateway/**"
       - "docker/docker-compose.mcp-gateway.yml"
       - ".github/workflows/mcp-gateway-cd.yml"
@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Deploy to server
+      - name: Deploy MCP Gateway to server
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SERVER_HOST }}
@@ -25,6 +25,6 @@ jobs:
             git checkout develop
             git pull origin develop
             cd docker
-            docker compose down
-            docker compose build
-            docker compose up -d
+            docker compose -f docker-compose.mcp-gateway.yml down
+            docker compose -f docker-compose.mcp-gateway.yml build
+            docker compose -f docker-compose.mcp-gateway.yml up -d
