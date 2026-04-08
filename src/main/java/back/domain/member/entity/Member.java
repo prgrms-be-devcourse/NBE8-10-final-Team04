@@ -84,7 +84,7 @@ public class Member extends BaseEntity {
     private static final int MAX_FREE_USAGE = 3;
 
     @Column(name = "free_usage_count")
-    private Integer freeUsageCount;  //이번 달 사용 횟수
+    private Integer freeUsageCount = 0;  //이번 달 사용 횟수
 
     @Column(name = "free_usage_reset_at")
     private LocalDateTime freeUsageResetAt;  //초기화 날짜 (다음달 1일)

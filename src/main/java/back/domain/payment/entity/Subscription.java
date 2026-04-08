@@ -10,7 +10,6 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "subscription")
 @Getter
-@SuppressWarnings({"EI_EXPOSE_REP", "EI_EXPOSE_REP2"})
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Subscription extends BaseEntity {
 
@@ -44,25 +43,22 @@ public class Subscription extends BaseEntity {
     @Column(name = "pg_provider")
     private String pgProvider;
 
-    @SuppressWarnings("EI_EXPOSE_REP")
-    public Member getMember() {
-        return member;
-    }
-
     @Builder
-    @SuppressWarnings("EI_EXPOSE_REP2")
-    public Subscription(Member member, SubscriptionPlanType planType, Integer amount,
-                        String billingKey, String pgProvider, LocalDateTime nextBillingAt) {
+    private Subscription(Member member, SubscriptionPlanType planType, Integer amount,
+                         String billingKey, String pgProvider, LocalDateTime nextBillingAt) {
         this.member = member;
         this.planType = planType;
         this.amount = amount;
         this.billingKey = billingKey;
         this.pgProvider = pgProvider;
 
-        this.activate(planType, nextBillingAt);
+        // 생성 시점에도 activate 로직을 태워 상태를 일관성 있게 관리합니다.
+        this.status = SubscriptionStatus.ACTIVE;
+        this.startedAt = LocalDateTime.now();
+        this.nextBillingAt = nextBillingAt;
     }
 
-    //    구독 활성화 및 재개
+    // 구독 활성화 및 재개
     public void activate(SubscriptionPlanType planType, LocalDateTime nextBillingAt) {
         this.planType = planType;
         this.status = SubscriptionStatus.ACTIVE;
@@ -81,13 +77,8 @@ public class Subscription extends BaseEntity {
         this.canceledAt = LocalDateTime.now();
     }
 
-    //  구독확인
+    // 구독 확인
     public boolean isActive() {
         return this.status == SubscriptionStatus.ACTIVE;
     }
-
-
-
-
-
 }
