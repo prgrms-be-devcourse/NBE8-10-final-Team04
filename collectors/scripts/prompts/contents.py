@@ -66,7 +66,7 @@ def _get_content(
                 timeout=30,
             )
 
-            # rate limit 처리 (github_client의 로직과 동일하게) # TODO: 이건 그냥 동일하게가 아니라 가져다 쓰면 되는 거 아닌가? TM-135
+            # rate limit 처리
             remaining = int(resp.headers.get("X-RateLimit-Remaining", 9999))
             reset_at  = int(resp.headers.get("X-RateLimit-Reset", 0))
             if resp.status_code == 403 and remaining == 0:
@@ -141,7 +141,7 @@ def fetch_one(gid_str: str, index: dict, work_dir: Path) -> str:
 
     logger.info("  %s — %d개 skill 확인", source_repo, len(skills))
 
-    # [임시 방어 로직] 1000개 초과 시 스킵 TODO: 서버 이식 시 삭제 [TM-183]
+    # [임시 방어 로직] 1000개 초과 시 스킵 TODO: 서버 이식 시 삭제 [TM-184]
     if len(skills) > 1000:
         logger.warning("    → SKILL.md 개수 초과 (%d개 > 1000개). 수집 스킵.", len(skills))
         return "skipped"
