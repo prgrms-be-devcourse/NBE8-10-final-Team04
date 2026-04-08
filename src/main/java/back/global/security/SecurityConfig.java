@@ -70,10 +70,15 @@ public class SecurityConfig {
                         .authenticated()
                         .requestMatchers("/api/v1/admin/**")
                         .hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.POST, "/api/v1/ai-model/pipeline/*")
-                        .hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.POST, "/api/v1/ai-tracker/pipeline/*")
-                        .hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST,
+                                "/api/v1/ai-model/pipeline/trigger",
+                                "/api/v1/ai-tracker/pipeline/trigger"
+                        ).permitAll()
+
+                        .requestMatchers(HttpMethod.POST,
+                                "/api/v1/ai-tracker/pipeline/**",
+                                "/api/v1/ai-model/pipeline/**"
+                        ).hasRole("ADMIN")
                         .anyRequest()
                         .authenticated())
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

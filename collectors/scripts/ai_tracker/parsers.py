@@ -54,11 +54,12 @@ def parse_generic_changelog(html: str, source: dict[str, Any]) -> list[dict[str,
             sib = sib.find_next_sibling()
 
         if content_parts:
-            summary: str = content_parts
-            title: str = f"{provider} Update ({heading_text}): {summary[:20]}..."
+            summary_str: str = " ".join(content_parts)[:200] # 요약용은 짧게
             raw_content: str = "\n".join(f"- {part}" for part in content_parts)
 
-            item = make_item(source, title, source["url"], summary, "scrape", heading_text)
+            title: str = f"{provider} Update ({heading_text}): {summary_str[:20]}..."
+
+            item = make_item(source, title, source["url"], summary_str, "scrape", heading_text)
             item["raw_content"] = raw_content
             items.append(item)
 
@@ -173,10 +174,10 @@ def parse_anthropic_changelog(html: str, source: dict[str, Any]) -> list[dict[st
             continue
 
         title: str = f"Anthropic Release: {date_text}"
-        summary: str = content_parts
-        raw_content: str = "\n".join(f"- {part}" for part in content_parts)
+        summary_str: str = "\n".join(f"- {part}" for part in content_parts)
+        raw_content: str = summary_str
 
-        item = make_item(source, title, source["url"], summary, "scrape", date_text)
+        item = make_item(source, title, source["url"], summary_str, "scrape", date_text)
         item["raw_content"] = raw_content
         items.append(item)
 
@@ -208,10 +209,10 @@ def parse_google_changelog(html: str, source: dict[str, Any]) -> list[dict[str, 
             continue
 
         title: str = f"Gemini API Update: {date_text}"
-        summary: str = bullets
-        raw_content: str = "\n".join(f"- {b}" for b in bullets)
+        summary_str: str = "\n".join(f"- {b}" for b in bullets)
+        raw_content: str = summary_str
 
-        item = make_item(source, title, source["url"], summary, "scrape", date_text)
+        item = make_item(source, title, source["url"], summary_str, "scrape", date_text)
         item["raw_content"] = raw_content
         items.append(item)
 
