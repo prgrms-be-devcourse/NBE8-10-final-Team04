@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 SUPPORTED_AGENT_TYPES = {"CLAUDE", "CODEX", "GEMINI"}
-SUPPORTED_FLOW_STEPS = {"START", "COLLECTED", "FETCH_SKILL", "FINALIZE"}
+SUPPORTED_FLOW_STEPS = ("START", "COLLECTED", "FETCH_SKILL", "FINALIZE")
 SUPPORTED_FINALIZE_DECISIONS = {"ACCEPT", "CUSTOMIZE"}
 
 
@@ -49,9 +49,9 @@ def normalize_flow_step(step: str) -> str:
         raise GatewayValidationError("step is required.")
 
     normalized = step.strip().upper()
-    if normalized not in SUPPORTED_FLOW_STEPS:
+    if normalized not in set(SUPPORTED_FLOW_STEPS):
         raise GatewayValidationError(
-            "step must be one of: START, COLLECTED, FINALIZE."
+            f"step must be one of: {', '.join(SUPPORTED_FLOW_STEPS)}."
         )
 
     return normalized
@@ -79,31 +79,61 @@ def normalize_user_input_confirmed(user_input_confirmed: bool | None) -> bool:
     return True
 
 
-def normalize_skill_id(skill_id: int | None) -> int:
-    if skill_id is None or skill_id <= 0:
+def normalize_skill_id(skill_id: int | float | str | None) -> int:
+    normalized = _normalize_int(skill_id)
+    if normalized <= 0:
         raise GatewayValidationError("skillId must be a positive integer for FETCH_SKILL step.")
 
-    return skill_id
+    return normalized
 
 
-def normalize_cursor(cursor: int | None) -> int:
+def normalize_cursor(cursor: int | float | str | None) -> int:
     if cursor is None:
         return 0
 
-    if cursor < 0:
+    normalized = _normalize_int(cursor)
+    if normalized < 0:
         raise GatewayValidationError("cursor must be greater than or equal to 0.")
 
-    return cursor
+    return normalized
 
 
-def normalize_chunk_size(chunk_size: int | None) -> int:
+def normalize_chunk_size(chunk_size: int | float | str | None) -> int:
     if chunk_size is None:
         return 3000
 
-    if chunk_size <= 0:
+    normalized = _normalize_int(chunk_size)
+
+    if normalized <= 0:
         raise GatewayValidationError("chunkSize must be a positive integer.")
 
-    if chunk_size > 20000:
+    if normalized > 20000:
         raise GatewayValidationError("chunkSize must be less than or equal to 20000.")
 
-    return chunk_size
+    return normalized
+
+
+def _normalize_int(value: int | float | str | None) -> int:
+    if value is None:
+        raise GatewayValidationError("numeric value is required.")
+
+    if isinstance(value, bool):
+        raise GatewayValidationError("boolean is not allowed for numeric value.")
+
+    if isinstance(value, int):
+        return value
+
+    if isinstance(value, float):
+        if value.is_integer():
+            return int(value)
+        raise GatewayValidationError("numeric value must be an integer.")
+
+    if isinstance(value, str):
+        normalized = value.strip()
+        if not normalized:
+            raise GatewayValidationError("numeric string must not be blank.")
+        if normalized.lstrip("-").isdigit():
+            return int(normalized)
+        raise GatewayValidationError("numeric string must be an integer format.")
+
+    raise GatewayValidationError("numeric value must be int, float, or numeric string.")

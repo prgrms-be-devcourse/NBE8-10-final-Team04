@@ -43,7 +43,10 @@ class InputNormalizerTest(unittest.TestCase):
         self.assertEqual(normalize_flow_step(" finalize "), "FINALIZE")
 
     def test_normalize_flow_step_raises_when_invalid(self):
-        with self.assertRaises(GatewayValidationError):
+        with self.assertRaisesRegex(
+                GatewayValidationError,
+                "step must be one of: START, COLLECTED, FETCH_SKILL, FINALIZE."
+        ):
             normalize_flow_step("DONE")
 
     def test_normalize_finalize_decision(self):
@@ -66,6 +69,8 @@ class InputNormalizerTest(unittest.TestCase):
 
     def test_normalize_skill_id_requires_positive(self):
         self.assertEqual(normalize_skill_id(7), 7)
+        self.assertEqual(normalize_skill_id("7"), 7)
+        self.assertEqual(normalize_skill_id(7.0), 7)
 
         with self.assertRaises(GatewayValidationError):
             normalize_skill_id(0)
@@ -73,22 +78,44 @@ class InputNormalizerTest(unittest.TestCase):
         with self.assertRaises(GatewayValidationError):
             normalize_skill_id(None)
 
+        with self.assertRaises(GatewayValidationError):
+            normalize_skill_id("bad")
+
+        with self.assertRaises(GatewayValidationError):
+            normalize_skill_id(3.14)
+
     def test_normalize_cursor(self):
         self.assertEqual(normalize_cursor(None), 0)
         self.assertEqual(normalize_cursor(3), 3)
+        self.assertEqual(normalize_cursor("3"), 3)
+        self.assertEqual(normalize_cursor(3.0), 3)
 
         with self.assertRaises(GatewayValidationError):
             normalize_cursor(-1)
 
+        with self.assertRaises(GatewayValidationError):
+            normalize_cursor("bad")
+
+        with self.assertRaises(GatewayValidationError):
+            normalize_cursor(2.7)
+
     def test_normalize_chunk_size(self):
         self.assertEqual(normalize_chunk_size(None), 3000)
         self.assertEqual(normalize_chunk_size(4096), 4096)
+        self.assertEqual(normalize_chunk_size("4096"), 4096)
+        self.assertEqual(normalize_chunk_size(4096.0), 4096)
 
         with self.assertRaises(GatewayValidationError):
             normalize_chunk_size(0)
 
         with self.assertRaises(GatewayValidationError):
             normalize_chunk_size(20001)
+
+        with self.assertRaises(GatewayValidationError):
+            normalize_chunk_size("bad")
+
+        with self.assertRaises(GatewayValidationError):
+            normalize_chunk_size(1024.5)
 
 
 if __name__ == "__main__":
