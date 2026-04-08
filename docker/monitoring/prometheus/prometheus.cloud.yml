@@ -4,13 +4,13 @@ global:
 scrape_configs:
   - job_name: "prometheus"
     static_configs:
-      - targets: ["prometheus:9090"]
+      - targets: ["prometheus-cloud:9090"]
 
-  - job_name: "spring-canary"
+  - job_name: "spring"
     metrics_path: "/actuator/prometheus"
     static_configs:
-      - targets: ["back-app-canary:8080"]
+      - targets: ["app-dev:8080"]
 
   - job_name: "loki"
     static_configs:
-      - targets: ["loki:3100"]
+      - targets: ["loki-cloud:3100"]

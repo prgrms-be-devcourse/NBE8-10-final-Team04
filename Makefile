@@ -43,7 +43,8 @@ k6:
 ENV ?= local
 ENV_FILE := perf/env/$(ENV).env
 
-PERF_SCENARIO ?= test
+PERF_SCENARIO ?= smoke-test
+DOMAIN ?= test
 PERF_SCRIPT   ?= /scripts/$(DOMAIN)/$(PERF_SCENARIO).js
 
 PERF_RESULTS_ROOT := perf/results
