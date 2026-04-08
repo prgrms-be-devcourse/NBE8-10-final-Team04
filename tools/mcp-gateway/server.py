@@ -14,8 +14,19 @@ from gateway.spring_proxy_client import (
     SpringProxyClient,
 )
 
-mcp = FastMCP("start-ai-mcp-gateway")
 settings = GatewaySettings.from_env()
+
+
+def _create_mcp_server(gateway_settings: GatewaySettings) -> FastMCP:
+    return FastMCP(
+        "start-ai-mcp-gateway",
+        host=gateway_settings.host,
+        port=gateway_settings.port,
+        streamable_http_path=gateway_settings.path,
+    )
+
+
+mcp = _create_mcp_server(settings)
 client = SpringProxyClient(
     spring_base_url=settings.spring_base_url,
     timeout_seconds=settings.timeout_seconds,
