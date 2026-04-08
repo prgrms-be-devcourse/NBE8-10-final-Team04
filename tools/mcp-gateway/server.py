@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from mcp.server.fastmcp import FastMCP
+from mcp.server.fastmcp import Context, FastMCP
 
 from gateway.auto_flow_service import AutoFlowService
 from gateway.input_normalizer import GatewayValidationError
@@ -42,12 +42,55 @@ def _success(payload: Any) -> dict[str, Any]:
     return response
 
 
+def _extract_authorization_header(ctx: Context | None) -> str | None:
+    if ctx is None:
+        return None
+
+    request_context = getattr(ctx, "request_context", None)
+    request = getattr(request_context, "request", None)
+    headers = getattr(request, "headers", None)
+    if headers is None:
+        return None
+
+    if hasattr(headers, "get"):
+        header = headers.get("authorization")
+        if header:
+            return str(header)
+
+        header = headers.get("Authorization")
+        if header:
+            return str(header)
+
+    return None
+
+
+def _resolve_mcp_personal_token(ctx: Context | None) -> str:
+    authorization_header = _extract_authorization_header(ctx)
+    if authorization_header:
+        normalized = authorization_header.strip()
+        if normalized.lower().startswith("bearer "):
+            token = normalized[7:].strip()
+            if token:
+                return token
+
+        raise GatewayValidationError("Authorization header must be in the format: Bearer <mcp_token>.")
+
+    if settings.mcp_personal_token:
+        return settings.mcp_personal_token
+
+    raise GatewayValidationError(
+        "MCP personal token is required. Provide Authorization: Bearer <mcp_token> in MCP connection settings "
+        "or set MCP_PERSONAL_TOKEN."
+    )
+
+
 @mcp.tool(name="get_start_agent_template")
-def get_start_agent_template(agentType: str, mcpPersonalToken: str | None = None) -> dict[str, Any]:
-    """Fetches start.agent.md template. Uses tool token first, then MCP_PERSONAL_TOKEN env fallback."""
+def get_start_agent_template(agentType: str, ctx: Context | None = None) -> dict[str, Any]:
+    """Fetches start.agent.md template. Token is resolved from Authorization header (or env fallback)."""
     try:
+        mcp_personal_token = _resolve_mcp_personal_token(ctx)
         response = client.get_start_agent_template(
-            mcp_personal_token=mcpPersonalToken,
+            mcp_personal_token=mcp_personal_token,
             agent_type=agentType,
         )
         return _success(response)
@@ -65,11 +108,12 @@ def get_start_agent_template(agentType: str, mcpPersonalToken: str | None = None
 
 
 @mcp.tool(name="recommend_skills")
-def recommend_skills(keywords: str, mcpPersonalToken: str | None = None) -> dict[str, Any]:
-    """Fetches ranked skills recommendation. Uses tool token first, then MCP_PERSONAL_TOKEN env fallback."""
+def recommend_skills(keywords: str, ctx: Context | None = None) -> dict[str, Any]:
+    """Fetches ranked skills recommendation. Token is resolved from Authorization header (or env fallback)."""
     try:
+        mcp_personal_token = _resolve_mcp_personal_token(ctx)
         response = client.recommend_skills(
-            mcp_personal_token=mcpPersonalToken,
+            mcp_personal_token=mcp_personal_token,
             keywords=keywords,
         )
         return _success(response)
@@ -94,7 +138,7 @@ def start_auto_flow(
         userInputConfirmed: bool | None = None,
         decision: str | None = None,
         customizationNotes: str | None = None,
-        mcpPersonalToken: str | None = None,
+        ctx: Context | None = None,
 ) -> dict[str, Any]:
     """
     Runs single-tool auto flow in three steps:
@@ -106,9 +150,10 @@ def start_auto_flow(
     - otherwise CODEX fallback
     """
     try:
+        mcp_personal_token = _resolve_mcp_personal_token(ctx)
         return auto_flow_service.run(
             step=step,
-            mcp_personal_token=mcpPersonalToken,
+            mcp_personal_token=mcp_personal_token,
             agent_type=agentType,
             keywords=keywords,
             user_input_confirmed=userInputConfirmed,
@@ -129,4 +174,13 @@ def start_auto_flow(
 
 
 if __name__ == "__main__":
-    mcp.run(transport="stdio")
+    if settings.transport == "stdio":
+        mcp.run(transport="stdio")
+    else:
+        if hasattr(mcp, "settings") and hasattr(mcp.settings, "streamable_http_path"):
+            mcp.settings.streamable_http_path = settings.path
+        mcp.run(
+            transport="streamable-http",
+            host=settings.host,
+            port=settings.port,
+        )
