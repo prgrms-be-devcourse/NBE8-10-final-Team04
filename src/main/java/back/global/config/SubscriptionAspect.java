@@ -17,6 +17,7 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 @Aspect
 @Component
 @RequiredArgsConstructor
+@SuppressWarnings("EI_EXPOSE_REP2")
 public class SubscriptionAspect {
     private final SubscriptionRepository subscriptionRepository;
     private final McpTokenAuthenticationService mcpTokenAuthenticationService;

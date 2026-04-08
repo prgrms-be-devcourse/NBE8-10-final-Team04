@@ -53,7 +53,9 @@ public class SecurityConfig {
                                 "/actuator/health/**",
                                 "/actuator/info",
                                 "/api/v1/prompts/run",
-                                "/api/v1/skills/**")
+                                "/api/v1/skills/**",
+                                "/api/payments/**",
+                                "/api/subscriptions/**")
                         .permitAll()
                         .requestMatchers(
                                 HttpMethod.GET,

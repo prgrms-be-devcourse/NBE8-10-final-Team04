@@ -10,7 +10,6 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "subscription")
 @Getter
-@AllArgsConstructor
 @SuppressWarnings({"EI_EXPOSE_REP", "EI_EXPOSE_REP2"})
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Subscription extends BaseEntity {
@@ -45,7 +44,13 @@ public class Subscription extends BaseEntity {
     @Column(name = "pg_provider")
     private String pgProvider;
 
+    @SuppressWarnings("EI_EXPOSE_REP")
+    public Member getMember() {
+        return member;
+    }
+
     @Builder
+    @SuppressWarnings("EI_EXPOSE_REP2")
     public Subscription(Member member, SubscriptionPlanType planType, Integer amount,
                         String billingKey, String pgProvider, LocalDateTime nextBillingAt) {
         this.member = member;

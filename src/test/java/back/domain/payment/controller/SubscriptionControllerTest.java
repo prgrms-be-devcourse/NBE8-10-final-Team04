@@ -99,7 +99,10 @@ class SubscriptionControllerTest {
         given(mockSubscription.getNextBillingAt()).willReturn(LocalDateTime.now().plusDays(30));
         given(mockSubscription.getStatus()).willReturn(SubscriptionStatus.CANCELED);
 
-        given(subscriptionService.cancelSubscription(anyLong()))
+        given(subscriptionService.cancelWithRefund(anyLong()))
+                .willReturn(false);
+
+        given(subscriptionService.findByMemberId(anyLong()))
                 .willReturn(mockSubscription);
 
         // when & then
@@ -107,7 +110,7 @@ class SubscriptionControllerTest {
                         .with(csrf()) // 스프링 시큐리티 CSRF 토큰 대응
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.message").value(containsString("해지가 완료되었습니다")))
+                .andExpect(jsonPath("$.message").value(containsString("혜택 유지 후")))
                 .andExpect(jsonPath("$.status").value("CANCELED"))
                 .andExpect(jsonPath("$.nextBillingAt").exists());
     }
@@ -117,7 +120,10 @@ class SubscriptionControllerTest {
     @DisplayName("구독 중이 아닐 때 해지 요청 시 - 400 에러를 반환한다")
     void cancelSubscription_Fail_NoActiveSubscription() throws Exception {
         // given
-        given(subscriptionService.cancelSubscription(anyLong()))
+        given(subscriptionService.cancelWithRefund(anyLong()))
+                .willReturn(false);
+
+        given(subscriptionService.findByMemberId(anyLong()))
                 .willThrow(new IllegalArgumentException("해지할 수 있는 활성 구독권이 없습니다."));
 
         // when & then

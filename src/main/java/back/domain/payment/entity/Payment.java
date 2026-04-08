@@ -63,8 +63,25 @@ public class Payment extends BaseEntity {
     @Column(name = "raw_payload", columnDefinition = "jsonb")
     private Map<String, Object> rawPayload;
 
+    @SuppressWarnings("EI_EXPOSE_REP")
+    public Member getMember() {
+        return member;
+    }
+
+    @SuppressWarnings("EI_EXPOSE_REP")
+    public Subscription getSubscription() {
+        return subscription;
+    }
+
+    @SuppressWarnings("EI_EXPOSE_REP")
+    public Map<String, Object> getRawPayload() {
+        return rawPayload;
+    }
+
     @Builder(access = AccessLevel.PRIVATE)
-    public Payment(Member member, Subscription subscription, String orderId, String paymentKey ,Integer amount, PaymentStatus status, SubscriptionPlanType planType, Map<String, Object> rawPayload) {
+    @SuppressWarnings("EI_EXPOSE_REP2")
+    public Payment(Member member, Subscription subscription, String orderId, String paymentKey,
+                   PaymentStatus status, SubscriptionPlanType planType, Map<String, Object> rawPayload) {
         this.member = member;
         this.subscription = subscription;
         this.orderId = orderId;
@@ -87,6 +104,7 @@ public class Payment extends BaseEntity {
     }
 
 //    결제 성공 시 호출
+    @SuppressWarnings("EI_EXPOSE_REP2")
     public void complete(LocalDateTime approvedAt, Map<String, Object> finalPayload) {
         this.status = PaymentStatus.PAID;
         this.approvedAt = approvedAt;
@@ -96,6 +114,7 @@ public class Payment extends BaseEntity {
 
 
 //    결제 실패 시 호출
+    @SuppressWarnings("EI_EXPOSE_REP2")
     public void fail(String reason, Map<String, Object> errorPayload) {
         this.status = PaymentStatus.FAILED;
         this.failReason = reason;
@@ -117,6 +136,7 @@ public class Payment extends BaseEntity {
     /**
      * 결제 완료 시 해당 결제가 어떤 구독에 속하는지 연결합니다.
      */
+    @SuppressWarnings("EI_EXPOSE_REP2")
     public void assignSubscription(Subscription subscription) {
         this.subscription = subscription;
     }

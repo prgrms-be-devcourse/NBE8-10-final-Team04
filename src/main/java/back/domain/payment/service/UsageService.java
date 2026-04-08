@@ -11,6 +11,7 @@ import java.time.LocalDateTime;
 
 @Service
 @RequiredArgsConstructor
+@SuppressWarnings("EI_EXPOSE_REP2")
 public class UsageService {
 
     private final MemberRepository memberRepository;

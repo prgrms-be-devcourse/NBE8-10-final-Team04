@@ -118,7 +118,7 @@ public class PaymentService {
          */
         private void confirmToToss(PaymentConfirmRequest request) {
             String basicAuth = "Basic " + java.util.Base64.getEncoder()
-                    .encodeToString((secretKey + ":").getBytes());
+                    .encodeToString((secretKey + ":").getBytes(java.nio.charset.StandardCharsets.UTF_8));
 
             org.springframework.web.client.RestTemplate restTemplate = new org.springframework.web.client.RestTemplate();
 

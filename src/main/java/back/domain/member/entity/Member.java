@@ -9,7 +9,6 @@ import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.springframework.cglib.core.Local;
 
 import java.time.LocalDateTime;
 
@@ -32,7 +31,7 @@ public class Member extends BaseEntity {
     @Column(name = "role", nullable = false, length = 20)
     private MemberRole role;
 
-    private Member(String googleSub, String email, String name ,MemberRole role) {
+    private Member(String googleSub, String email, String name, MemberRole role) {
         this.googleSub = googleSub;
         this.email = email;
         this.name = name;

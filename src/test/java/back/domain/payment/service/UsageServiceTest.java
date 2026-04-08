@@ -6,14 +6,16 @@ import back.domain.payment.repository.SubscriptionRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.Mockito;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.when;
 
+@ExtendWith(MockitoExtension.class)
 class UsageServiceTest {
 
     private UsageService usageService;
@@ -32,7 +34,6 @@ class UsageServiceTest {
 
         member = Member.createUser("google-sub-123", "test@test.com", "슬기");
 
-        // 기본 설정: id 1 요청하면 member 반환
         when(memberRepository.findById(1L)).thenReturn(Optional.of(member));
     }
 
