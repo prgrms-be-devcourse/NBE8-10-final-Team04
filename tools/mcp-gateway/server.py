@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import inspect
 from typing import Any
 
 from mcp.server.fastmcp import Context, FastMCP
@@ -177,10 +178,29 @@ if __name__ == "__main__":
     if settings.transport == "stdio":
         mcp.run(transport="stdio")
     else:
-        if hasattr(mcp, "settings") and hasattr(mcp.settings, "streamable_http_path"):
-            mcp.settings.streamable_http_path = settings.path
-        mcp.run(
-            transport="streamable-http",
-            host=settings.host,
-            port=settings.port,
-        )
+        if hasattr(mcp, "settings"):
+            # Keep compatibility across MCP SDK versions:
+            # some versions read network/path from mcp.settings, while run()
+            # may not accept host/port/path kwargs directly.
+            if hasattr(mcp.settings, "host"):
+                mcp.settings.host = settings.host
+            if hasattr(mcp.settings, "port"):
+                mcp.settings.port = settings.port
+            if hasattr(mcp.settings, "streamable_http_path"):
+                mcp.settings.streamable_http_path = settings.path
+            elif hasattr(mcp.settings, "mount_path"):
+                mcp.settings.mount_path = settings.path
+
+        run_signature = inspect.signature(mcp.run)
+        run_kwargs: dict[str, Any] = {}
+
+        if "transport" in run_signature.parameters:
+            run_kwargs["transport"] = "streamable-http"
+        if "host" in run_signature.parameters:
+            run_kwargs["host"] = settings.host
+        if "port" in run_signature.parameters:
+            run_kwargs["port"] = settings.port
+        if "path" in run_signature.parameters:
+            run_kwargs["path"] = settings.path
+
+        mcp.run(**run_kwargs)
