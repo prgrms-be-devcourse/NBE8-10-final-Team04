@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 SUPPORTED_AGENT_TYPES = {"CLAUDE", "CODEX", "GEMINI"}
-SUPPORTED_FLOW_STEPS = {"START", "COLLECTED", "FINALIZE"}
+SUPPORTED_FLOW_STEPS = {"START", "COLLECTED", "FETCH_SKILL", "FINALIZE"}
 SUPPORTED_FINALIZE_DECISIONS = {"ACCEPT", "CUSTOMIZE"}
 
 
@@ -77,3 +77,33 @@ def normalize_user_input_confirmed(user_input_confirmed: bool | None) -> bool:
         )
 
     return True
+
+
+def normalize_skill_id(skill_id: int | None) -> int:
+    if skill_id is None or skill_id <= 0:
+        raise GatewayValidationError("skillId must be a positive integer for FETCH_SKILL step.")
+
+    return skill_id
+
+
+def normalize_cursor(cursor: int | None) -> int:
+    if cursor is None:
+        return 0
+
+    if cursor < 0:
+        raise GatewayValidationError("cursor must be greater than or equal to 0.")
+
+    return cursor
+
+
+def normalize_chunk_size(chunk_size: int | None) -> int:
+    if chunk_size is None:
+        return 3000
+
+    if chunk_size <= 0:
+        raise GatewayValidationError("chunkSize must be a positive integer.")
+
+    if chunk_size > 20000:
+        raise GatewayValidationError("chunkSize must be less than or equal to 20000.")
+
+    return chunk_size

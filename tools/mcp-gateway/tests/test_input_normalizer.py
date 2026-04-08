@@ -2,11 +2,14 @@ import unittest
 
 from gateway.input_normalizer import (
     GatewayValidationError,
+    normalize_chunk_size,
+    normalize_cursor,
     normalize_agent_type,
     normalize_finalize_decision,
     normalize_flow_step,
     normalize_keywords,
     normalize_mcp_personal_token,
+    normalize_skill_id,
     normalize_user_input_confirmed,
 )
 
@@ -36,6 +39,7 @@ class InputNormalizerTest(unittest.TestCase):
     def test_normalize_flow_step(self):
         self.assertEqual(normalize_flow_step("start"), "START")
         self.assertEqual(normalize_flow_step("COLLECTED"), "COLLECTED")
+        self.assertEqual(normalize_flow_step("fetch_skill"), "FETCH_SKILL")
         self.assertEqual(normalize_flow_step(" finalize "), "FINALIZE")
 
     def test_normalize_flow_step_raises_when_invalid(self):
@@ -59,6 +63,32 @@ class InputNormalizerTest(unittest.TestCase):
 
         with self.assertRaises(GatewayValidationError):
             normalize_user_input_confirmed(None)
+
+    def test_normalize_skill_id_requires_positive(self):
+        self.assertEqual(normalize_skill_id(7), 7)
+
+        with self.assertRaises(GatewayValidationError):
+            normalize_skill_id(0)
+
+        with self.assertRaises(GatewayValidationError):
+            normalize_skill_id(None)
+
+    def test_normalize_cursor(self):
+        self.assertEqual(normalize_cursor(None), 0)
+        self.assertEqual(normalize_cursor(3), 3)
+
+        with self.assertRaises(GatewayValidationError):
+            normalize_cursor(-1)
+
+    def test_normalize_chunk_size(self):
+        self.assertEqual(normalize_chunk_size(None), 3000)
+        self.assertEqual(normalize_chunk_size(4096), 4096)
+
+        with self.assertRaises(GatewayValidationError):
+            normalize_chunk_size(0)
+
+        with self.assertRaises(GatewayValidationError):
+            normalize_chunk_size(20001)
 
 
 if __name__ == "__main__":
