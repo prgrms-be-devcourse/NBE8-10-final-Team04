@@ -136,7 +136,7 @@ ai-model:
     - google
 
 toss:
-  secret-key: ${TOSS_SECRITE_KEY}
+  secret-key: ${TOSS_SECRET_KEY}
 github:
   owner-repo: ${GH_OWNER_REPO:prgrms-be-devcourse/NBE8-10-final-Team04}
   workflows:
