@@ -87,7 +87,7 @@ public class PaymentService {
 
         // 3. 토스페이먼츠 승인 API 호출
         // [테스트 단계] 실제 토스 서버와 통신하는 private 메서드를 호출합니다.
-//        confirmToToss(request);
+        confirmToToss(request);
 
         // 4. 결제 상태 변경 (READY -> DONE)
         payment.markAsDone();
@@ -117,8 +117,6 @@ public class PaymentService {
          * 토스페이먼츠 API 서버로 최종 승인 요청을 보냅니다.
          */
         private void confirmToToss(PaymentConfirmRequest request) {
-            // [주의] 실제 서비스 시에는 Secret Key를 설정 파일(yml)
-//            String secretKey = "test_sk_4yKeq5bgrpyLD5Q0qmmA8GX0lzW6";
             String basicAuth = "Basic " + java.util.Base64.getEncoder()
                     .encodeToString((secretKey + ":").getBytes());
 

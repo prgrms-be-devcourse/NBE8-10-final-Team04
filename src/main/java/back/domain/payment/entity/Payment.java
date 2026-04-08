@@ -130,4 +130,19 @@ public class Payment extends BaseEntity {
         this.paymentKey = paymentKey;
     }
 
+//    결제 취소
+    public void markAsCanceled() {
+        // 이미 취소된 상태라면 에러를 던져서 중복 환불을 방지합니다.
+        if (this.status == PaymentStatus.CANCELED) {
+            throw new IllegalStateException("이미 취소된 결제 건입니다.");
+        }
+
+        // 상태를 CANCELED로 변경! (슬기님이 만든 Enum 이름에 맞춰주세요)
+        this.status = PaymentStatus.CANCELED;
+    }
+
+    public void unlinkSubscription() {
+        this.subscription = null; // 구독 참조를 제거
+    }
+
 }

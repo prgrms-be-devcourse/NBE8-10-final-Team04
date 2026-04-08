@@ -3,8 +3,7 @@ package back.global.config;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.web.reactive.function.client.ExchangeStrategies;
-import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.client.RestClient;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
@@ -18,6 +17,9 @@ public class WebConfig implements WebMvcConfigurer {
     @Value("${app.storage.local.upload-dir:./uploads}")
     private String uploadDir;
 
+    @Value("${app.embedding.base-url}")
+    private String embeddingBaseUrl;
+
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
         if (!STORAGE_TYPE_LOCAL.equalsIgnoreCase(storageType)) {
@@ -29,15 +31,9 @@ public class WebConfig implements WebMvcConfigurer {
     }
 
     @Bean
-    public WebClient embeddingWebClient() {
-        // 기본 256KB → 임베딩 배치 응답(32개 × 1024차원 JSON) 초과 방지를 위해 10MB로 확장
-        ExchangeStrategies exchangeStrategies = ExchangeStrategies.builder()
-                .codecs(configurer -> configurer.defaultCodecs().maxInMemorySize(10 * 1024 * 1024))
-                .build();
-
-        return WebClient.builder()
-                .baseUrl("https://embedding-server-domain")
-                .exchangeStrategies(exchangeStrategies)
+    public RestClient embeddingRestClient() {
+        return RestClient.builder()
+                .baseUrl(embeddingBaseUrl)
                 .build();
     }
 }

@@ -3,7 +3,6 @@ package back.domain.payment.controller;
 import back.domain.payment.dto.response.SubscriptionCancelResponse;
 import back.domain.payment.dto.response.SubscriptionStatusResponse;
 import back.domain.payment.entity.Subscription;
-import back.domain.payment.entity.SubscriptionStatus;
 import back.domain.payment.service.UsageService;
 import back.global.security.AuthenticatedMember;
 import lombok.RequiredArgsConstructor;
@@ -15,7 +14,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import back.domain.payment.service.SubscriptionService;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.time.format.DateTimeFormatter;
 import java.util.Map;
 
 @RestController
@@ -53,10 +51,23 @@ public class SubscriptionController {
     public ResponseEntity<SubscriptionCancelResponse> cancelSubscription(
             @AuthenticationPrincipal AuthenticatedMember member
     ) {
-        // 서비스는 엔티티를 반환하지만, 컨트롤러에서 바로 DTO로 변환합니다.
-        Subscription subscription = subscriptionService.cancelSubscription(member.memberId());
+        // 1. 서비스 호출 (환불 여부를 결과로 받음)
+        boolean refunded = subscriptionService.cancelWithRefund(member.memberId());
 
-        return ResponseEntity.ok(SubscriptionCancelResponse.from(subscription));
+        // 2. 결과에 따른 분기 처리
+        if (refunded) {
+            // [CASE 1] 환불 성공: 데이터가 삭제되었으므로 직접 응답 생성
+            return ResponseEntity.ok(new SubscriptionCancelResponse(
+                    "당일 결제 및 미사용 건으로 확인되어 전액 환불 및 해지 완료되었습니다.",
+                    null,
+                    "INACTIVE",
+                    true
+            ));
+        } else {
+            // [CASE 2] 일반 해지: 데이터가 남아있으므로 DB 조회 후 DTO 변환
+            Subscription s = subscriptionService.findByMemberId(member.memberId());
+            return ResponseEntity.ok(SubscriptionCancelResponse.from(s, false));
+        }
     }
 
 }

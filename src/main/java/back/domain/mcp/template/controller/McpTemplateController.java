@@ -1,5 +1,8 @@
 package back.domain.mcp.template.controller;
 
+import back.domain.payment.service.UsageService;
+import back.global.annotation.RequiresSubscription;
+import back.global.util.SecurityUtils;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -24,11 +27,17 @@ import lombok.RequiredArgsConstructor;
 public class McpTemplateController {
     private final McpTokenAuthenticationService mcpTokenAuthenticationService;
     private final StartAgentTemplateService startAgentTemplateService;
+    private final UsageService usageService;
 
+    @RequiresSubscription
     @PostMapping("/start-agent")
     public ResponseEntity<RsData<StartAgentTemplateResponse>> getStartAgentTemplate(
             @RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) String authorizationHeader,
             @Valid @RequestBody StartAgentTemplateRequest request) {
+
+        Long memberId = SecurityUtils.getCurrentMemberId();
+        usageService.validateAndConsume(memberId);
+
         mcpTokenAuthenticationService.authenticate(authorizationHeader);
         StartAgentTemplateResponse response = startAgentTemplateService.getTemplate(request.agentType());
         return ResponseEntity.ok(new RsData<>(response, "템플릿 조회 성공"));

@@ -12,6 +12,8 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
 
     Optional<Payment> findByOrderId(String orderId);
 
-    @Query("SELECT p FROM Payment p WHERE p.member.id = :memberId ORDER BY p.createdAt DESC")
-    List<Payment> findMemberPayments(@Param("memberId") Long memberId);
+    @Query("SELECT p FROM Payment p WHERE p.member.id = :memberId " +
+            "AND p.status = 'PAID' " +
+            "AND p.createdAt >= CURRENT_DATE")
+    Optional<Payment> findTodayPaymentByMemberId(@Param("memberId") Long memberId);
 }

@@ -90,6 +90,9 @@ public class Member extends BaseEntity {
     @Column(name = "free_usage_reset_at")
     private LocalDateTime freeUsageResetAt;  //초기화 날짜 (다음달 1일)
 
+    @Column(name = "last_usage_at")
+    private LocalDateTime lastUsageAt; // 마지막 AI 사용 시간
+
     //   사용횟수 확인
     public boolean canUseFree() {
         return getUsageCount() < MAX_FREE_USAGE;
@@ -130,5 +133,10 @@ public class Member extends BaseEntity {
         if (this.freeUsageResetAt == null || !this.freeUsageResetAt.isAfter(now)) {
             resetFreeUsage();  // freeUsageCount = 0 + resetAt 갱신 같이 처리
         }
+    }
+
+    // 마지막 사용 시간을 현재로 갱신하는 메서드
+    public void updateLastUsageAt() {
+        this.lastUsageAt = LocalDateTime.now();
     }
 }

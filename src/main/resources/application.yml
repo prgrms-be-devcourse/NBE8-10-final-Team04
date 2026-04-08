@@ -95,4 +95,4 @@ ai-model:
     - google
 
 toss:
-  secret-key: test_sk_4yKeq5bgrpyLD5Q0qmmA8GX0lzW6
+  secret-key: ${TOSS_SECRITE_KEY}

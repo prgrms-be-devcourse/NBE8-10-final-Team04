@@ -63,6 +63,7 @@ dependencies {
     testImplementation("org.springframework.restdocs:spring-restdocs-mockmvc")
     runtimeOnly("org.postgresql:postgresql")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+    implementation("org.springframework.boot:spring-boot-starter-aspectj")
 
     // oci object-storage
     implementation("com.oracle.oci.sdk:oci-java-sdk-objectstorage:3.54.0")
