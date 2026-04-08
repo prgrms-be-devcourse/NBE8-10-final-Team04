@@ -255,14 +255,18 @@ def start_auto_flow(
         agentType: str | None = None,
         keywords: str | None = None,
         userInputConfirmed: bool | None = None,
+        skillId: int | None = None,
+        cursor: int | None = None,
+        chunkSize: int | None = None,
         decision: str | None = None,
         customizationNotes: str | None = None,
         ctx: Context | None = None,
 ) -> dict[str, Any]:
     """
-    Runs single-tool auto flow in three steps:
+    Runs single-tool auto flow in four steps:
     - START: fetch start.agent template and return write action
-    - COLLECTED: fetch recommendations and return skills file write actions
+    - COLLECTED: fetch recommendations summary metadata
+    - FETCH_SKILL: fetch one skill content by chunk and return append/write action
     - FINALIZE: generate final agents.md write action
     Agent type resolution:
     - request agentType if provided
@@ -276,6 +280,9 @@ def start_auto_flow(
             agent_type=agentType,
             keywords=keywords,
             user_input_confirmed=userInputConfirmed,
+            skill_id=skillId,
+            cursor=cursor,
+            chunk_size=chunkSize,
             decision=decision,
             customization_notes=customizationNotes,
         )
