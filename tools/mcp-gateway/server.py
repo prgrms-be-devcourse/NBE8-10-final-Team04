@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import inspect
 from typing import Any
 
 from mcp.server.fastmcp import Context, FastMCP
@@ -82,6 +83,69 @@ def _resolve_mcp_personal_token(ctx: Context | None) -> str:
         "MCP personal token is required. Provide Authorization: Bearer <mcp_token> in MCP connection settings "
         "or set MCP_PERSONAL_TOKEN."
     )
+
+
+def _apply_streamable_http_settings() -> None:
+    if not hasattr(mcp, "settings"):
+        return
+
+    # Keep compatibility across MCP SDK versions:
+    # some versions read network/path from mcp.settings, while run()
+    # may not accept host/port/path kwargs directly.
+    if hasattr(mcp.settings, "host"):
+        mcp.settings.host = settings.host
+    if hasattr(mcp.settings, "port"):
+        mcp.settings.port = settings.port
+    if hasattr(mcp.settings, "streamable_http_path"):
+        mcp.settings.streamable_http_path = settings.path
+    elif hasattr(mcp.settings, "mount_path"):
+        mcp.settings.mount_path = settings.path
+
+
+def _resolve_streamable_http_run_kwargs() -> tuple[dict[str, Any], bool]:
+    desired_run_kwargs: dict[str, Any] = {
+        "transport": "streamable-http",
+        "host": settings.host,
+        "port": settings.port,
+        "path": settings.path,
+    }
+
+    try:
+        run_signature = inspect.signature(mcp.run)
+    except (TypeError, ValueError):
+        return dict(desired_run_kwargs), False
+
+    accepts_var_keyword = any(
+        parameter.kind == inspect.Parameter.VAR_KEYWORD
+        for parameter in run_signature.parameters.values()
+    )
+    if accepts_var_keyword:
+        return dict(desired_run_kwargs), True
+
+    filtered_kwargs = {
+        key: value
+        for key, value in desired_run_kwargs.items()
+        if key in run_signature.parameters
+    }
+    return filtered_kwargs, True
+
+
+def _run_streamable_http() -> None:
+    _apply_streamable_http_settings()
+    run_kwargs, signature_inspected = _resolve_streamable_http_run_kwargs()
+
+    try:
+        mcp.run(**run_kwargs)
+    except TypeError:
+        # If inspect failed, attempt a minimal fallback path instead of crashing
+        # due to kwargs mismatch across unknown SDK versions.
+        if signature_inspected:
+            raise
+
+        try:
+            mcp.run(transport="streamable-http")
+        except TypeError:
+            mcp.run()
 
 
 @mcp.tool(name="get_start_agent_template")
@@ -177,10 +241,4 @@ if __name__ == "__main__":
     if settings.transport == "stdio":
         mcp.run(transport="stdio")
     else:
-        if hasattr(mcp, "settings") and hasattr(mcp.settings, "streamable_http_path"):
-            mcp.settings.streamable_http_path = settings.path
-        mcp.run(
-            transport="streamable-http",
-            host=settings.host,
-            port=settings.port,
-        )
+        _run_streamable_http()
