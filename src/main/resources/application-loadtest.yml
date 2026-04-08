@@ -1,0 +1,57 @@
+ratelimit:
+  enabled: false
+
+spring:
+  config:
+    activate:
+      on-profile: loadtest
+
+  # JPA
+  jpa:
+    show-sql: false                    # 필수 - 로그 왜곡 방지
+    hibernate:
+      ddl-auto: validate               # create/update 절대 금지
+    properties:
+      hibernate:
+        format_sql: false
+        default_batch_fetch_size: 100
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+
+  # HikariCP 커넥션풀 고정
+  datasource:
+    hikari:
+      maximum-pool-size: 10            # AWS RDS t3.micro 기준
+      minimum-idle: 5
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+
+  # Cache 설정 (loadtest 프로파일에서는 Redis 미사용)
+  cache:
+    type: simple
+
+# 로그 레벨 최소화
+logging:
+  level:
+    root: WARN
+    com.back.global.initData: INFO              # INFO
+
+
+# Actuator - Prometheus 수집용
+management:
+  health:
+    redis:
+      enabled: false
+  endpoints:
+    web:
+      exposure:
+        include: health, prometheus, metrics
+  metrics:
+    export:
+      prometheus:
+        enabled: true
