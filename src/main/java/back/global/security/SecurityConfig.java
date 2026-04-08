@@ -21,9 +21,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import lombok.RequiredArgsConstructor;
 
 @Configuration
-@SuppressFBWarnings(
-        value = "EI_EXPOSE_REP2",
-        justification = "스프링 DI로 주입되는 빈 참조이며, 의도된 패턴입니다.")
+@SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "스프링 DI로 주입되는 빈 참조이며, 의도된 패턴입니다.")
 @RequiredArgsConstructor
 public class SecurityConfig {
     private final RestAuthenticationEntryPoint restAuthenticationEntryPoint;
@@ -44,8 +42,7 @@ public class SecurityConfig {
                 .exceptionHandling(exception -> exception
                         .authenticationEntryPoint(restAuthenticationEntryPoint)
                         .accessDeniedHandler(restAccessDeniedHandler))
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(
+                .authorizeHttpRequests(auth -> auth.requestMatchers(
                                 "/error",
                                 "/v3/api-docs/**",
                                 "/swagger-ui/**",
@@ -72,6 +69,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/v1/mcp/recommendations")
                         .permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/mcp/recommendations/skill-content")
+                        .permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/community/**")
                         .permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/auth/logout")
                         .authenticated()
