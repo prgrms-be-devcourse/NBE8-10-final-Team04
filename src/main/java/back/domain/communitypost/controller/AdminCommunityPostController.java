@@ -23,6 +23,7 @@ import back.domain.communitypost.dto.AdminGenerateCommunityPostRequest;
 import back.domain.communitypost.dto.AdminUpdateCommunityPostRequest;
 import back.domain.communitypost.dto.CommunityPostInfoResponse;
 import back.domain.communitypost.dto.PageCommunityPostResponse;
+import back.domain.communitypost.controller.docs.AdminCommunityPostControllerDocs;
 import back.domain.communitypost.entity.CommunityPostStatus;
 import back.domain.communitypost.service.CommunityPostService;
 import back.global.exception.CommonErrorCode;
@@ -38,10 +39,11 @@ import lombok.RequiredArgsConstructor;
 @Validated
 @RequestMapping("/api/v1/admin/community/posts")
 @SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "스프링 DI로 주입되는 빈 참조이며 의도된 패턴이다.")
-public class AdminCommunityPostController {
+public class AdminCommunityPostController implements AdminCommunityPostControllerDocs {
 
     private final CommunityPostService communityPostService;
 
+    @Override
     @GetMapping
     public ResponseEntity<RsData<PageCommunityPostResponse>> getAdminPosts(
             @RequestParam(required = false) CommunityPostStatus status,
@@ -50,6 +52,7 @@ public class AdminCommunityPostController {
         return ResponseEntity.ok(new RsData<>(response, "관리자 게시글 목록 조회 성공"));
     }
 
+    @Override
     @PostMapping("/generate")
     public ResponseEntity<RsData<CommunityPostInfoResponse>> generatePost(
             @AuthenticationPrincipal AuthenticatedMember authenticatedMember,
@@ -59,6 +62,7 @@ public class AdminCommunityPostController {
         return ResponseEntity.status(HttpStatus.CREATED).body(new RsData<>(response, "게시글 생성 성공"));
     }
 
+    @Override
     @PutMapping("/{postId}")
     public ResponseEntity<RsData<CommunityPostInfoResponse>> updatePost(
             @AuthenticationPrincipal AuthenticatedMember authenticatedMember,
@@ -68,6 +72,7 @@ public class AdminCommunityPostController {
         return ResponseEntity.ok(new RsData<>(communityPostService.updatePost(adminId, postId, request), "게시글 수정 성공"));
     }
 
+    @Override
     @PatchMapping("/{postId}/status")
     public ResponseEntity<RsData<CommunityPostInfoResponse>> changeStatus(
             @AuthenticationPrincipal AuthenticatedMember authenticatedMember,
@@ -78,6 +83,7 @@ public class AdminCommunityPostController {
         return ResponseEntity.ok(new RsData<>(response, "게시글 상태 변경 성공"));
     }
 
+    @Override
     @DeleteMapping("/{postId}")
     public ResponseEntity<RsData<Void>> deletePost(
             @AuthenticationPrincipal AuthenticatedMember authenticatedMember, @PathVariable Long postId) {

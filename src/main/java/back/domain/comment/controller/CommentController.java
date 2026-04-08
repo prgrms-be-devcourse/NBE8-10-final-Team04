@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 import back.domain.comment.dto.CommentInfoResponse;
 import back.domain.comment.dto.CreateCommentRequest;
 import back.domain.comment.dto.UpdateCommentRequest;
+import back.domain.comment.controller.docs.CommentControllerDocs;
 import back.domain.comment.service.CommentService;
 import back.global.exception.CommonErrorCode;
 import back.global.exception.ServiceException;
@@ -32,17 +33,19 @@ import lombok.RequiredArgsConstructor;
 @Validated
 @RequestMapping("/api/v1/community/posts/{postId}/comments")
 @SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "스프링 DI로 주입되는 빈 참조이며 의도된 패턴이다.")
-public class CommentController {
+public class CommentController implements CommentControllerDocs {
 
     private static final String ADMIN_ROLE = "ADMIN";
 
     private final CommentService commentService;
 
+    @Override
     @GetMapping
     public ResponseEntity<RsData<List<CommentInfoResponse>>> getComments(@PathVariable Long postId) {
         return ResponseEntity.ok(new RsData<>(commentService.getComments(postId), "댓글 목록 조회 성공"));
     }
 
+    @Override
     @PostMapping
     public ResponseEntity<RsData<CommentInfoResponse>> createComment(
             @AuthenticationPrincipal AuthenticatedMember authenticatedMember,
@@ -53,6 +56,7 @@ public class CommentController {
         return ResponseEntity.status(HttpStatus.CREATED).body(new RsData<>(response, "댓글 작성 성공"));
     }
 
+    @Override
     @PutMapping("/{commentId}")
     public ResponseEntity<RsData<CommentInfoResponse>> updateComment(
             @AuthenticationPrincipal AuthenticatedMember authenticatedMember,
@@ -65,6 +69,7 @@ public class CommentController {
         return ResponseEntity.ok(new RsData<>(response, "댓글 수정 성공"));
     }
 
+    @Override
     @DeleteMapping("/{commentId}")
     public ResponseEntity<RsData<Void>> deleteComment(
             @AuthenticationPrincipal AuthenticatedMember authenticatedMember,
