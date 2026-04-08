@@ -84,8 +84,8 @@ app:
 custom:
   jwt:
     secret-key: ${CUSTOM_JWT_SECRET_KEY:start-ai-hub-default-secret-key-start-ai-hub-default}
-    access-token-expiration-seconds: ${CUSTOM_JWT_ACCESS_EXPIRATION_SECONDS:1800}
-    refresh-token-expiration-seconds: ${CUSTOM_JWT_REFRESH_EXPIRATION_SECONDS:1209600}
+    access-token-expiration-seconds: ${CUSTOM_JWT_ACCESS_EXPIRATION_SECONDS:172800}
+    refresh-token-expiration-seconds: ${CUSTOM_JWT_REFRESH_EXPIRATION_SECONDS:604800}
   oauth:
     google:
       client-id: ${GOOGLE_OAUTH_CLIENT_ID:}
