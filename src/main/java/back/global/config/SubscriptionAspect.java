@@ -4,6 +4,7 @@ import back.domain.auth.service.McpTokenAuthenticationService;
 import back.domain.payment.entity.Subscription;
 import back.domain.payment.repository.SubscriptionRepository;
 import back.global.security.AuthenticatedMember;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import lombok.RequiredArgsConstructor;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Before;
@@ -17,7 +18,7 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 @Aspect
 @Component
 @RequiredArgsConstructor
-@SuppressWarnings("EI_EXPOSE_REP2")
+@SuppressFBWarnings("EI_EXPOSE_REP2")
 public class SubscriptionAspect {
     private final SubscriptionRepository subscriptionRepository;
     private final McpTokenAuthenticationService mcpTokenAuthenticationService;

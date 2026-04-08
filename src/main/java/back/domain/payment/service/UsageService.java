@@ -3,6 +3,7 @@ import back.domain.member.entity.Member;
 import back.domain.member.repository.MemberRepository;
 import back.domain.payment.entity.Subscription;
 import back.domain.payment.repository.SubscriptionRepository;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -11,7 +12,7 @@ import java.time.LocalDateTime;
 
 @Service
 @RequiredArgsConstructor
-@SuppressWarnings("EI_EXPOSE_REP2")
+@SuppressFBWarnings("EI_EXPOSE_REP2")
 public class UsageService {
 
     private final MemberRepository memberRepository;

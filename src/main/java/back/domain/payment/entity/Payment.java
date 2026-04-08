@@ -23,11 +23,11 @@ import java.util.Optional;
 public class Payment extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name="user_id", nullable=false, updatable=false)
+    @JoinColumn(name = "user_id", nullable = false, updatable = false)
     private Member member;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name="subscription_id")
+    @JoinColumn(name ="subscription_id")
     private Subscription subscription;
 
     @Column(name = "order_id", updatable = false)

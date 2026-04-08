@@ -10,6 +10,7 @@ import back.domain.payment.entity.Subscription;
 import back.domain.payment.entity.SubscriptionPlanType;
 import back.domain.payment.repository.PaymentRepository;
 import back.domain.payment.repository.SubscriptionRepository;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -19,7 +20,7 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
-@SuppressWarnings({"EI_EXPOSE_REP", "EI_EXPOSE_REP2"})
+@SuppressFBWarnings({"EI_EXPOSE_REP", "EI_EXPOSE_REP2"})
 public class PaymentService {
 
     private final MemberRepository memberRepository;

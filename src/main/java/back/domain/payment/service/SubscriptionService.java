@@ -8,6 +8,7 @@ import back.domain.payment.entity.Subscription;
 import back.domain.payment.entity.SubscriptionStatus;
 import back.domain.payment.repository.PaymentRepository;
 import back.domain.payment.repository.SubscriptionRepository;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.springframework.stereotype.Service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,7 +18,7 @@ import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
-@SuppressWarnings("EI_EXPOSE_REP2")
+@SuppressFBWarnings("EI_EXPOSE_REP2")
 public class SubscriptionService {
 
     private final SubscriptionRepository subscriptionRepository;
