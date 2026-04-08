@@ -62,7 +62,16 @@ def _build_ctx_with_query_token(token_value: str):
     request = SimpleNamespace(
         headers={},
         query_params={"token": token_value},
-        url=f"https://api.han-minhee.site/mcp?token={token_value}",
+        url=f"https://example.com/mcp?token={token_value}",
+    )
+    request_context = SimpleNamespace(request=request)
+    return SimpleNamespace(request_context=request_context)
+
+
+def _build_ctx_with_url_only_query_token(token_value: str):
+    request = SimpleNamespace(
+        headers={},
+        url=f"https://example.com/mcp?token={token_value}",
     )
     request_context = SimpleNamespace(request=request)
     return SimpleNamespace(request_context=request_context)
@@ -95,6 +104,13 @@ class ServerAuthTokenResolutionTest(unittest.TestCase):
             token = server._resolve_mcp_personal_token(ctx)
 
         self.assertEqual(token, "mcp_query_token_777")
+
+    def test_resolve_token_from_url_query_string_when_query_params_missing(self):
+        ctx = _build_ctx_with_url_only_query_token("mcp_url_token_555")
+        with mock.patch.object(server, "settings", _build_settings(None)):
+            token = server._resolve_mcp_personal_token(ctx)
+
+        self.assertEqual(token, "mcp_url_token_555")
 
     def test_resolve_token_prefers_authorization_header_over_query_parameter(self):
         ctx = _build_ctx_with_query_token("mcp_query_token_777")
