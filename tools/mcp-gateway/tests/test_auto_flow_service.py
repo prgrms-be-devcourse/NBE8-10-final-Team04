@@ -193,7 +193,7 @@ class AutoFlowServiceTest(unittest.TestCase):
         self.assertTrue(response["success"])
         self.assertEqual(self.stub_client.last_template_request["agent_type"], "CODEX")
 
-    def test_collected_step_returns_skill_file_actions(self):
+    def test_collected_step_returns_skill_summary_and_fetch_next_step(self):
         response = self.service.run(
             step="COLLECTED",
             mcp_personal_token="mcp_token_1",
@@ -206,15 +206,55 @@ class AutoFlowServiceTest(unittest.TestCase):
 
         self.assertTrue(response["success"])
         self.assertEqual(response["flowStep"], "COLLECTED")
-        self.assertEqual(response["actions"]["nextStep"], "FINALIZE")
-        self.assertEqual(len(response["actions"]["writeFiles"]), 2)
-        self.assertEqual(response["actions"]["writeFiles"][0]["path"], "skills/backend.md")
-        self.assertIn("기존 skills 파일을 기반으로", response["actions"]["askUser"][2])
-        self.assertIn("처음부터 새로 작성하지 말고", response["actions"]["askUser"][3])
+        self.assertEqual(response["actions"]["nextStep"], "FETCH_SKILL")
+        self.assertEqual(len(response["actions"]["writeFiles"]), 0)
+        self.assertEqual(response["actions"]["nextStepParamsExample"]["skillId"], 1)
         self.assertEqual(self.stub_client.last_recommend_request["keywords"], "SpringBoot infra")
-        self.assertEqual([1, 3], [req["skill_id"] for req in self.stub_client.last_skill_content_requests])
+        self.assertEqual([], self.stub_client.last_skill_content_requests)
         self.assertIsInstance(response["recommendation"]["selectedSkills"][0]["skillId"], int)
         self.assertEqual(response["recommendation"]["selectedSkills"][0]["skillId"], 1)
+
+    def test_fetch_skill_step_returns_first_chunk_with_write_mode(self):
+        response = self.service.run(
+            step="FETCH_SKILL",
+            mcp_personal_token="mcp_token_1",
+            agent_type=None,
+            keywords=None,
+            user_input_confirmed=None,
+            skill_id=1,
+            cursor=0,
+            chunk_size=6,
+            decision=None,
+            customization_notes=None,
+        )
+
+        self.assertTrue(response["success"])
+        self.assertEqual(response["flowStep"], "FETCH_SKILL")
+        self.assertEqual(response["skillChunk"]["skillId"], 1)
+        self.assertEqual(response["actions"]["writeFiles"][0]["mode"], "write")
+        self.assertEqual(response["actions"]["nextStep"], "FETCH_SKILL")
+        self.assertTrue(response["skillChunk"]["hasNext"])
+        self.assertEqual([1], [req["skill_id"] for req in self.stub_client.last_skill_content_requests])
+
+    def test_fetch_skill_step_returns_append_mode_after_first_chunk(self):
+        response = self.service.run(
+            step="FETCH_SKILL",
+            mcp_personal_token="mcp_token_1",
+            agent_type=None,
+            keywords=None,
+            user_input_confirmed=None,
+            skill_id=1,
+            cursor=6,
+            chunk_size=100,
+            decision=None,
+            customization_notes=None,
+        )
+
+        self.assertTrue(response["success"])
+        self.assertEqual(response["actions"]["writeFiles"][0]["mode"], "append")
+        self.assertEqual(response["actions"]["nextStep"], "FINALIZE")
+        self.assertFalse(response["skillChunk"]["hasNext"])
+        self.assertNotIn("# Skill:", response["actions"]["writeFiles"][0]["content"])
 
     def test_finalize_step_returns_agents_write_and_start_file_delete_actions(self):
         response = self.service.run(
@@ -223,6 +263,9 @@ class AutoFlowServiceTest(unittest.TestCase):
             agent_type=None,
             keywords="SpringBoot infra",
             user_input_confirmed=None,
+            skill_id=None,
+            cursor=None,
+            chunk_size=None,
             decision="customize",
             customization_notes="OCI 비용 제약 반영",
         )
@@ -253,6 +296,9 @@ class AutoFlowServiceTest(unittest.TestCase):
             agent_type=None,
             keywords="SpringBoot infra",
             user_input_confirmed=None,
+            skill_id=None,
+            cursor=None,
+            chunk_size=None,
             decision="accept",
             customization_notes=None,
         )
@@ -270,6 +316,9 @@ class AutoFlowServiceTest(unittest.TestCase):
                 agent_type=None,
                 keywords="SpringBoot infra",
                 user_input_confirmed=None,
+                skill_id=None,
+                cursor=None,
+                chunk_size=None,
                 decision=None,
                 customization_notes=None,
             )
@@ -284,6 +333,9 @@ class AutoFlowServiceTest(unittest.TestCase):
                 agent_type=None,
                 keywords="SpringBoot infra",
                 user_input_confirmed=True,
+                skill_id=None,
+                cursor=None,
+                chunk_size=None,
                 decision=None,
                 customization_notes=None,
             )
@@ -297,29 +349,15 @@ class AutoFlowServiceTest(unittest.TestCase):
             agent_type=None,
             keywords="SpringBoot infra",
             user_input_confirmed=True,
+            skill_id=None,
+            cursor=None,
+            chunk_size=None,
             decision=None,
             customization_notes=None,
         )
 
         self.assertEqual(response["recommendation"]["selectedSkills"][0]["skillId"], 7)
         self.assertIsInstance(response["recommendation"]["selectedSkills"][0]["skillId"], int)
-
-    def test_collected_step_falls_back_to_summary_meta_when_content_meta_missing(self):
-        service = AutoFlowService(_StubClientWithMissingSkillContentMeta())
-
-        response = service.run(
-            step="COLLECTED",
-            mcp_personal_token="mcp_token_1",
-            agent_type=None,
-            keywords="SpringBoot infra",
-            user_input_confirmed=True,
-            decision=None,
-            customization_notes=None,
-        )
-
-        selected_skill = response["recommendation"]["selectedSkills"][0]
-        self.assertEqual(selected_skill["category"], "backend")
-        self.assertEqual(selected_skill["sourceRepo"], "example/doc-agent")
 
     def test_collected_step_requires_user_input_confirmed_true(self):
         with self.assertRaises(GatewayValidationError):
@@ -329,6 +367,9 @@ class AutoFlowServiceTest(unittest.TestCase):
                 agent_type=None,
                 keywords="SpringBoot infra",
                 user_input_confirmed=False,
+                skill_id=None,
+                cursor=None,
+                chunk_size=None,
                 decision=None,
                 customization_notes=None,
             )
@@ -340,6 +381,24 @@ class AutoFlowServiceTest(unittest.TestCase):
                 agent_type=None,
                 keywords="SpringBoot infra",
                 user_input_confirmed=None,
+                skill_id=None,
+                cursor=None,
+                chunk_size=None,
+                decision=None,
+                customization_notes=None,
+            )
+
+    def test_fetch_skill_step_requires_skill_id(self):
+        with self.assertRaises(GatewayValidationError):
+            self.service.run(
+                step="FETCH_SKILL",
+                mcp_personal_token="mcp_token_1",
+                agent_type=None,
+                keywords=None,
+                user_input_confirmed=None,
+                skill_id=None,
+                cursor=0,
+                chunk_size=10,
                 decision=None,
                 customization_notes=None,
             )
