@@ -82,12 +82,119 @@ class ServerAuthTokenResolutionTest(unittest.TestCase):
                 server._resolve_mcp_personal_token(ctx)
 
 
-def _build_settings(token: str | None) -> GatewaySettings:
+class _FakeMcpVarKeywordRun:
+    def run(self, **_kwargs):
+        return None
+
+
+class _FakeMcpTransportOnlyRun:
+    def run(self, transport):
+        return transport
+
+
+class _FakeMcpInspectFallbackRun:
+    def __init__(self):
+        self.calls: list[dict[str, object]] = []
+
+    def run(self, **kwargs):
+        self.calls.append(dict(kwargs))
+        if "host" in kwargs or "port" in kwargs or "path" in kwargs:
+            raise TypeError("unexpected kwargs for this SDK")
+        return None
+
+
+class _FakeMcpWithSettings:
+    def __init__(self):
+        self.settings = SimpleNamespace(host=None, port=None, streamable_http_path=None)
+
+    def run(self, **_kwargs):
+        return None
+
+
+class ServerStreamableHttpRunCompatibilityTest(unittest.TestCase):
+    def test_resolve_streamable_http_run_kwargs_supports_var_keyword_signature(self):
+        with mock.patch.object(server, "mcp", _FakeMcpVarKeywordRun()), \
+                mock.patch.object(server, "settings", _build_settings(None, host="127.0.0.1", port=9100, path="/mcp")):
+            run_kwargs, signature_inspected = server._resolve_streamable_http_run_kwargs()
+
+        self.assertTrue(signature_inspected)
+        self.assertEqual(
+            run_kwargs,
+            {
+                "transport": "streamable-http",
+                "host": "127.0.0.1",
+                "port": 9100,
+                "path": "/mcp",
+            },
+        )
+
+    def test_resolve_streamable_http_run_kwargs_filters_for_explicit_signature(self):
+        with mock.patch.object(server, "mcp", _FakeMcpTransportOnlyRun()), \
+                mock.patch.object(server, "settings", _build_settings(None, host="127.0.0.1", port=9100, path="/mcp")):
+            run_kwargs, signature_inspected = server._resolve_streamable_http_run_kwargs()
+
+        self.assertTrue(signature_inspected)
+        self.assertEqual(run_kwargs, {"transport": "streamable-http"})
+
+    def test_resolve_streamable_http_run_kwargs_falls_back_when_signature_introspection_fails(self):
+        with mock.patch.object(server, "mcp", _FakeMcpVarKeywordRun()), \
+                mock.patch.object(server, "settings", _build_settings(None, host="127.0.0.1", port=9100, path="/mcp")), \
+                mock.patch.object(server.inspect, "signature", side_effect=ValueError("unsupported")):
+            run_kwargs, signature_inspected = server._resolve_streamable_http_run_kwargs()
+
+        self.assertFalse(signature_inspected)
+        self.assertEqual(
+            run_kwargs,
+            {
+                "transport": "streamable-http",
+                "host": "127.0.0.1",
+                "port": 9100,
+                "path": "/mcp",
+            },
+        )
+
+    def test_run_streamable_http_retries_with_transport_only_when_signature_unknown(self):
+        fake_mcp = _FakeMcpInspectFallbackRun()
+        with mock.patch.object(server, "mcp", fake_mcp), \
+                mock.patch.object(server, "settings", _build_settings(None, host="127.0.0.1", port=9100, path="/mcp")), \
+                mock.patch.object(server.inspect, "signature", side_effect=TypeError("cannot inspect")):
+            server._run_streamable_http()
+
+        self.assertEqual(len(fake_mcp.calls), 2)
+        self.assertEqual(
+            fake_mcp.calls[0],
+            {
+                "transport": "streamable-http",
+                "host": "127.0.0.1",
+                "port": 9100,
+                "path": "/mcp",
+            },
+        )
+        self.assertEqual(fake_mcp.calls[1], {"transport": "streamable-http"})
+
+    def test_apply_streamable_http_settings_updates_available_fields(self):
+        fake_mcp = _FakeMcpWithSettings()
+        with mock.patch.object(server, "mcp", fake_mcp), \
+                mock.patch.object(server, "settings", _build_settings(None, host="127.0.0.1", port=9100, path="/gateway")):
+            server._apply_streamable_http_settings()
+
+        self.assertEqual(fake_mcp.settings.host, "127.0.0.1")
+        self.assertEqual(fake_mcp.settings.port, 9100)
+        self.assertEqual(fake_mcp.settings.streamable_http_path, "/gateway")
+
+
+def _build_settings(
+        token: str | None,
+        *,
+        host: str = "0.0.0.0",
+        port: int = 9000,
+        path: str = "/mcp",
+) -> GatewaySettings:
     return GatewaySettings(
         transport="stdio",
-        host="0.0.0.0",
-        port=9000,
-        path="/mcp",
+        host=host,
+        port=port,
+        path=path,
         spring_base_url="http://localhost:8080",
         timeout_seconds=10.0,
         mcp_personal_token=token,
