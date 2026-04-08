@@ -23,5 +23,6 @@ jobs:
             git checkout develop
             git pull origin develop
             sudo cp infra/nginx/nginx.conf /etc/nginx/sites-available/nginx.conf
+            sudo ln -sfn /etc/nginx/sites-available/nginx.conf /etc/nginx/sites-enabled/nginx.conf
             sudo nginx -t || (echo "Nginx config error" && exit 1)
             sudo systemctl reload nginx
