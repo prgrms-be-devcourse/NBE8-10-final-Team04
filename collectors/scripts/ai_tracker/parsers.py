@@ -55,7 +55,6 @@ def parse_generic_changelog(html: str, source: dict[str, Any]) -> list[dict[str,
 
         if content_parts:
             summary: str = content_parts
-            # 🔥 동적으로 provider 이름을 주입하여 제목의 고유성 및 범용성 확보
             title: str = f"{provider} Update ({heading_text}): {summary[:20]}..."
             raw_content: str = "\n".join(f"- {part}" for part in content_parts)
 
@@ -105,7 +104,6 @@ def parse_openai_changelog(html: str, source: dict[str, Any]) -> list[dict[str, 
     items = _parse_openai_primary(html, source)
     if not items:
         log.warning("[openai_changelog] primary 파싱 결과 없음 — 범용 파서(fallback) 시도")
-        # 🔥 이제 공용 함수를 호출하도록 변경됨
         items = parse_generic_changelog(html, source)
     if not items:
         log.error("[openai_changelog] 범용 파서도 결과 없음 — 페이지 구조 변경 가능성 높음")

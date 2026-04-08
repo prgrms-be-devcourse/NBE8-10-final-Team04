@@ -1,10 +1,7 @@
+"""test_http_client.py"""
 import pytest
-import sys
 from unittest.mock import patch, MagicMock
-
-import httpx
 from tenacity import RetryError
-
 from collectors.scripts.ai_info.http_client import fetch_json, _ClientError
 
 
