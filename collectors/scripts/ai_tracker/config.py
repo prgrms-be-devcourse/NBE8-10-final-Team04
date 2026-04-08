@@ -32,9 +32,8 @@ _USER_AGENT: str = (
 # ── 수집 제한 ─────────────────────────────────────────────────────────────────
 
 # 소스별 최대 수집 항목 수 (테스트 시 3, 운영 시 10 등으로 조정)
-MAX_ITEMS_PER_SOURCE: int = 3
-# 중복 제거 후 상세 본문 수집 대상 최대 항목 수
-MAX_TOTAL_ITEMS: int = 15
+MAX_ITEMS_PER_SOURCE: int = 5
+
 # CF BR 호출 간 최소 대기 시간 (초) — 429 방지
 CF_BR_BASE_DELAY_SECONDS: float = 8.0
 # 상세 본문 수집 간 대기 시간 (초)
@@ -75,8 +74,6 @@ SOURCES: list[dict[str, Any]] = [
     {
         "provider": "Anthropic",
         "type": "scrape",
-        # docs.anthropic.com은 platform.claude.com으로 리디렉션되며
-        # Next.js SSR 페이지이므로 CF BR 필요
         "url": "https://docs.anthropic.com/en/release-notes/api",
         "label": "Anthropic API Changelog",
         "needs_js": True,
@@ -98,7 +95,7 @@ SOURCES: list[dict[str, Any]] = [
     },
 ]
 
-# ── OCI 설정 ───────────────────────────────────────────────────────────────────
+# ── 경로 및 스토리지 설정 ──────────────────────────────────────────────────────
 from collectors.scripts.shared.config import OCI_NAMESPACE, OCI_BUCKET  # noqa
 
 OBJECT_NAME: str = "data/ai-tracker/updates_raw.json"
