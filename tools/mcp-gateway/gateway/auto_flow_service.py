@@ -8,9 +8,12 @@ from typing import Any
 from gateway.input_normalizer import (
     GatewayValidationError,
     normalize_agent_type,
+    normalize_chunk_size,
+    normalize_cursor,
     normalize_finalize_decision,
     normalize_flow_step,
     normalize_keywords,
+    normalize_skill_id,
     normalize_user_input_confirmed,
 )
 from gateway.spring_proxy_client import SpringProxyClient
@@ -46,8 +49,11 @@ class AutoFlowService:
         agent_type: str | None,
         keywords: str | None,
         user_input_confirmed: bool | None,
-        decision: str | None,
-        customization_notes: str | None,
+        skill_id: int | None = None,
+        cursor: int | None = None,
+        chunk_size: int | None = None,
+        decision: str | None = None,
+        customization_notes: str | None = None,
     ) -> dict[str, Any]:
         normalized_step = normalize_flow_step(step)
 
@@ -62,6 +68,14 @@ class AutoFlowService:
                 mcp_personal_token=mcp_personal_token,
                 keywords=keywords,
                 user_input_confirmed=user_input_confirmed,
+            )
+
+        if normalized_step == "FETCH_SKILL":
+            return self._fetch_skill(
+                mcp_personal_token=mcp_personal_token,
+                skill_id=skill_id,
+                cursor=cursor,
+                chunk_size=chunk_size,
             )
 
         return self._finalize(
@@ -121,17 +135,12 @@ class AutoFlowService:
             keywords=normalized_keywords,
         )
 
-        selected_skills_summary = self._extract_selected_skills(recommendation_response)
-        selected_skills = self._resolve_selected_skill_contents(
-            mcp_personal_token=mcp_personal_token,
-            selected_skills_summary=selected_skills_summary,
-        )
-        write_files = [self._build_skill_file_action(skill) for skill in selected_skills]
+        selected_skills = self._extract_selected_skills(recommendation_response)
 
         return {
             "success": True,
             "flowStep": "COLLECTED",
-            "message": "추천 스킬 조회 및 skills 파일 생성 준비 완료",
+            "message": "추천 스킬 메타 조회 완료 (본문은 FETCH_SKILL 단계에서 분할 전달)",
             "recommendation": {
                 "keywords": normalized_keywords,
                 "selectedSkills": [
@@ -145,19 +154,18 @@ class AutoFlowService:
                 ],
             },
             "actions": {
-                "writeFiles": write_files,
+                "writeFiles": [],
                 "askUser": [
-                    "생성된 skills 파일로 진행할까요?",
-                    "아니면 사용자 맞춤형으로 더 보정할까요?",
-                    "맞춤 보정(CUSTOMIZE)을 선택하면 기존 skills 파일을 기반으로 필요한 부분만 수정합니다.",
-                    "처음부터 새로 작성하지 말고 기존 구조/코드/경로/식별자는 최대한 유지하세요.",
+                    "각 selectedSkills의 skillId에 대해 FETCH_SKILL(step=FETCH_SKILL)을 호출해 skills 파일을 생성하세요.",
+                    "FETCH_SKILL은 chunk 단위로 본문을 전달합니다. hasNext=true인 동안 같은 skillId로 반복 호출하세요.",
+                    "모든 skills 파일 생성이 끝난 뒤 사용자에게 진행/보정 여부를 물은 다음 FINALIZE를 호출하세요.",
                 ],
-                "nextStep": "FINALIZE",
+                "nextStep": "FETCH_SKILL",
                 "nextStepParamsExample": {
-                    "step": "FINALIZE",
-                    "keywords": normalized_keywords,
-                    "decision": "ACCEPT",
-                    "customizationNotes": "optional",
+                    "step": "FETCH_SKILL",
+                    "skillId": selected_skills[0].skill_id,
+                    "cursor": 0,
+                    "chunkSize": 3000,
                 },
             },
         }
@@ -202,6 +210,99 @@ class AutoFlowService:
                     },
                 ],
                 "deleteFiles": ["start.agent.md"],
+            },
+        }
+
+    def _fetch_skill(
+        self,
+        *,
+        mcp_personal_token: str | None,
+        skill_id: int | None,
+        cursor: int | None,
+        chunk_size: int | None,
+    ) -> dict[str, Any]:
+        normalized_skill_id = normalize_skill_id(skill_id)
+        normalized_cursor = normalize_cursor(cursor)
+        normalized_chunk_size = normalize_chunk_size(chunk_size)
+
+        content_response = self.spring_proxy_client.get_recommendation_skill_content(
+            mcp_personal_token=mcp_personal_token,
+            skill_id=normalized_skill_id,
+        )
+        skill_content = self._extract_skill_content(content_response)
+        safe_category = self._slug(skill_content.category or "unknown")
+        path = f"skills/{safe_category}.md"
+
+        chunk, next_cursor, has_next = self._slice_content(
+            content=skill_content.skill_md_raw,
+            cursor=normalized_cursor,
+            chunk_size=normalized_chunk_size,
+        )
+        if not chunk:
+            raise GatewayValidationError("No remaining content for the given cursor.")
+
+        write_mode = "write" if normalized_cursor == 0 else "append"
+        write_content = self._build_first_chunk_prefix(
+            skill_id=normalized_skill_id,
+            category=skill_content.category or "unknown",
+            source_repo=skill_content.source_repo or "unknown",
+            first_chunk=chunk,
+        ) if write_mode == "write" else chunk
+
+        ask_user = [
+            "같은 skillId로 hasNext=false가 될 때까지 FETCH_SKILL을 반복하세요.",
+        ]
+        if not has_next:
+            ask_user = [
+                "이 skill 파일 생성을 완료했습니다. 다음 selectedSkills의 skillId로 FETCH_SKILL을 진행하세요.",
+                "모든 skills 파일 생성 완료 후 사용자에게 진행/보정 여부를 확인하고 FINALIZE를 호출하세요.",
+            ]
+
+        return {
+            "success": True,
+            "flowStep": "FETCH_SKILL",
+            "message": "스킬 본문 chunk 전달 완료",
+            "skillChunk": {
+                "skillId": normalized_skill_id,
+                "category": skill_content.category,
+                "sourceRepo": skill_content.source_repo,
+                "path": path,
+                "cursor": normalized_cursor,
+                "nextCursor": next_cursor,
+                "chunkSize": normalized_chunk_size,
+                "hasNext": has_next,
+                "totalLength": len(skill_content.skill_md_raw),
+            },
+            "actions": {
+                "writeFiles": [
+                    {
+                        "path": path,
+                        "content": write_content,
+                        "mode": write_mode,
+                        "reason": "추천 스킬 원문 chunk 저장",
+                    }
+                ],
+                "askUser": ask_user,
+                "nextStep": "FETCH_SKILL",
+                "nextStepParamsExample": (
+                    {
+                        "step": "FETCH_SKILL",
+                        "skillId": normalized_skill_id,
+                        "cursor": next_cursor,
+                        "chunkSize": normalized_chunk_size,
+                    } if has_next else {
+                        "step": "FETCH_SKILL",
+                        "skillId": "다음 selectedSkills의 skillId",
+                        "cursor": 0,
+                        "chunkSize": normalized_chunk_size,
+                    }
+                ),
+                "finalizeParamsExample": {
+                    "step": "FINALIZE",
+                    "keywords": "기존 COLLECTED keywords 값 사용",
+                    "decision": "ACCEPT",
+                    "customizationNotes": "optional",
+                },
             },
         }
 
@@ -297,6 +398,26 @@ class AutoFlowService:
             category=category,
             source_repo=source_repo,
             skill_md_raw=skill_md_raw,
+        )
+
+    def _slice_content(self, *, content: str, cursor: int, chunk_size: int) -> tuple[str, int, bool]:
+        content_length = len(content)
+        if cursor >= content_length:
+            return "", cursor, False
+
+        chunk_end = min(cursor + chunk_size, content_length)
+        chunk = content[cursor:chunk_end]
+        has_next = chunk_end < content_length
+        return chunk, chunk_end, has_next
+
+    def _build_first_chunk_prefix(self, *, skill_id: int, category: str, source_repo: str, first_chunk: str) -> str:
+        return (
+            f"# Skill: {category} ({skill_id})\n\n"
+            f"- category: {category}\n"
+            f"- skillId: {skill_id}\n"
+            f"- sourceRepo: {source_repo}\n\n"
+            "## Skill Markdown\n"
+            f"{first_chunk}"
         )
 
     def _parse_skill_id(self, raw_skill_id: Any) -> int:

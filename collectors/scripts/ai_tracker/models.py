@@ -14,10 +14,15 @@ from dateutil import parser as dateparser
 log: logging.Logger = logging.getLogger(__name__)
 
 
-def make_id(provider: str, title: str, url: str) -> str:
-    """provider, title, url 기반 고유 ID 생성."""
-    # TODO: title, url이 바뀌면 다른 걸로 취급될 것 보완 필요 TM-135
-    raw: str = f"{provider}::{title}::{url}"
+def make_id(provider: str, stype: str, title: str, url: str) -> str:
+    """
+    수집 타입별 안정적인 고유 ID 생성.
+
+    - rss:    provider + url  (개별 게시글 URL이 안정적 식별자)
+    - scrape: provider + title (changelog 등 다수 항목이 source URL을 공유)
+    """
+    key: str = url if stype == "rss" else title
+    raw: str = f"{provider}::{key}"
     return hashlib.sha256(raw.encode()).hexdigest()[:16]
 
 
@@ -33,16 +38,16 @@ def parse_date(raw: Optional[str]) -> str:
 
 
 def make_item(
-    source: dict[str, Any],
-    title: str,
-    url: str,
-    summary: str,
-    stype: str,
-    pub_at: Optional[str] = None,
+        source: dict[str, Any],
+        title: str,
+        url: str,
+        summary: str,
+        stype: str,
+        pub_at: Optional[str] = None,
 ) -> dict[str, Any]:
     """수집 아이템 딕셔너리 생성."""
     return {
-        "id":           make_id(source["provider"], title, url),
+        "id":           make_id(source["provider"], stype, title, url),
         "provider":     source["provider"],
         "source_type":  stype,
         "label":        source["label"],

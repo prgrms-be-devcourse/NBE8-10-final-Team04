@@ -28,24 +28,25 @@ def extract_text_from_soup(soup: BeautifulSoup) -> str:
     for tag in soup(["script", "style", "nav", "footer", "header", "aside", "ins", "svg"]):
         tag.decompose()
     content = (
-        soup.find("article")
-        or soup.find("main")
-        or soup.find("div", id="main-content")
+            soup.find("article")
+            or soup.find("main")
+            or soup.find("div", id="main-content")
     )
     target = content if content else soup
     return target.get_text(separator="\n", strip=True)
 
 
-def fetch_with_cf_br(url: str, retries: int = 3) -> str:
+def fetch_with_cf_br(url: str, retries: int = 3, extract_text: bool = False) -> str:
     """
     Cloudflare Browser Rendering API로 JS 렌더링 페이지 수집.
     429 응답 시 Retry-After 헤더를 읽어 대기 후 재시도.
+    extract_text가 True일 경우 본문 텍스트만 추출하여 반환.
     """
     if not CF_API_TOKEN:
         log.warning("[CF] CF_API_TOKEN 미설정 — CF BR 스킵: %s", url)
         return ""
 
-    endpoint = CF_BR_ENDPOINT_TPL.format(account_id=CF_ACCOUNT_ID)
+    endpoint: str = CF_BR_ENDPOINT_TPL.format(account_id=CF_ACCOUNT_ID)
 
     for attempt in range(1, retries + 1):
         try:
@@ -62,10 +63,12 @@ def fetch_with_cf_br(url: str, retries: int = 3) -> str:
                 )
 
             if resp.status_code == 200:
-                return extract_text_from_soup(BeautifulSoup(resp.text, "html.parser"))
+                if extract_text:
+                    return extract_text_from_soup(BeautifulSoup(resp.text, "html.parser"))
+                return resp.text
 
             if resp.status_code == 429:
-                wait = int(resp.headers.get("Retry-After", 10))
+                wait: int = int(resp.headers.get("Retry-After", 10))
                 log.warning(
                     "[CF] 429 Too Many Requests — %d초 대기 후 재시도 (시도 %d/%d): %s",
                     wait, attempt, retries, url,
@@ -75,8 +78,10 @@ def fetch_with_cf_br(url: str, retries: int = 3) -> str:
 
             log.warning("[CF] HTTP %d 응답 (시도 %d/%d): %s", resp.status_code, attempt, retries, url)
 
-        except Exception as e:
+        except httpx.RequestError as e:
             log.warning("[CF] 요청 오류 (시도 %d/%d): %s — %s", attempt, retries, url, e)
+        except Exception as e:
+            log.warning("[CF] 알 수 없는 예외 발생 (시도 %d/%d): %s — %s", attempt, retries, url, e)
 
     log.error("[CF] %d회 재시도 후 최종 실패: %s", retries, url)
     return ""
@@ -85,6 +90,7 @@ def fetch_with_cf_br(url: str, retries: int = 3) -> str:
 def fetch_scrape_html(source: dict[str, Any]) -> str:
     """
     scrape 소스의 HTML 수집.
+    목록 파싱을 위해 원본 HTML이 필요하므로 CF BR 사용 시 extract_text=False(기본값) 적용.
     needs_js=False: httpx 우선, 실패 시 CF BR 폴백.
     needs_js=True:  CF BR 직접 사용.
     """
@@ -113,12 +119,12 @@ def fetch_scrape_html(source: dict[str, Any]) -> str:
 def fetch_detail_content(url: str, provider: str) -> str:
     """
     상세 페이지 본문 수집.
+    본문 요약 및 파싱 대상이므로 CF BR 사용 시 extract_text=True 적용.
     OpenAI openai.com/index 경로는 403 방지를 위해 CF BR로 직접 수집.
     그 외: httpx 시도 → 403/401 시 CF BR 폴백.
     """
-    # TODO: 요약으로 대신하고 있지만 없는 경우 고려 필요 TM-135
     if provider == "OpenAI" and "openai.com/index" in url:
-        return fetch_with_cf_br(url)
+        return fetch_with_cf_br(url, extract_text=True)
 
     try:
         with httpx.Client(timeout=15, follow_redirects=True) as client:
@@ -126,14 +132,14 @@ def fetch_detail_content(url: str, provider: str) -> str:
 
         if resp.status_code in (401, 403):
             log.debug("httpx 접근 차단 (HTTP %d) — CF BR 폴백: %s", resp.status_code, url)
-            return fetch_with_cf_br(url)
+            return fetch_with_cf_br(url, extract_text=True)
 
         resp.raise_for_status()
         return extract_text_from_soup(BeautifulSoup(resp.text, "html.parser"))
 
     except httpx.HTTPStatusError as e:
-        log.warning("httpx HTTP 오류 — CF BR 폴백: %s — %s", url, e)
-        return fetch_with_cf_br(url)
+        log.warning("httpx HTTP 오류 (status=%d) — CF BR 폴백: %s — %s", e.response.status_code, url, e)
+        return fetch_with_cf_br(url, extract_text=True)
     except httpx.RequestError as e:
-        log.warning("httpx 요청 오류 — CF BR 폴백: %s — %s", url, e)
-        return fetch_with_cf_br(url)
+        log.warning("httpx 요청 실패 — CF BR 폴백: %s — %s", url, e)
+        return fetch_with_cf_br(url, extract_text=True)

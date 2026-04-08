@@ -10,6 +10,10 @@ class GatewaySettingsTest(unittest.TestCase):
         with patch.dict(os.environ, {}, clear=True):
             settings = GatewaySettings.from_env()
 
+        self.assertEqual(settings.transport, "stdio")
+        self.assertEqual(settings.host, "0.0.0.0")
+        self.assertEqual(settings.port, 9000)
+        self.assertEqual(settings.path, "/mcp")
         self.assertEqual(settings.spring_base_url, "http://localhost:8080")
         self.assertEqual(settings.timeout_seconds, 10.0)
         self.assertIsNone(settings.mcp_personal_token)
@@ -21,6 +25,28 @@ class GatewaySettingsTest(unittest.TestCase):
                     "Invalid value for GATEWAY_HTTP_TIMEOUT_SECONDS"
             ):
                 GatewaySettings.from_env()
+
+    def test_from_env_normalizes_http_transport_alias(self):
+        with patch.dict(os.environ, {"MCP_GATEWAY_TRANSPORT": "http"}, clear=True):
+            settings = GatewaySettings.from_env()
+
+        self.assertEqual(settings.transport, "streamable-http")
+
+    def test_from_env_raises_when_transport_is_invalid(self):
+        with patch.dict(os.environ, {"MCP_GATEWAY_TRANSPORT": "websocket"}, clear=True):
+            with self.assertRaisesRegex(ValueError, "Invalid value for MCP_GATEWAY_TRANSPORT"):
+                GatewaySettings.from_env()
+
+    def test_from_env_raises_when_port_is_invalid(self):
+        with patch.dict(os.environ, {"MCP_GATEWAY_PORT": "abc"}, clear=True):
+            with self.assertRaisesRegex(ValueError, "Invalid value for MCP_GATEWAY_PORT"):
+                GatewaySettings.from_env()
+
+    def test_from_env_adds_leading_slash_to_path(self):
+        with patch.dict(os.environ, {"MCP_GATEWAY_PATH": "mcp"}, clear=True):
+            settings = GatewaySettings.from_env()
+
+        self.assertEqual(settings.path, "/mcp")
 
 
 if __name__ == "__main__":

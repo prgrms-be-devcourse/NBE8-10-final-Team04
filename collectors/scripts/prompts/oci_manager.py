@@ -23,7 +23,7 @@ from collectors.scripts.shared.utils import now_iso
 
 logger = logging.getLogger(__name__)
 
-
+# TODO: lock/index 관련 로직. 서버 이식 시 삭제 (TM-184)
 class OciManager(BaseOciClient):
 
     # ── 동시 실행 방지 ─────────────────────────────────────────────────────────

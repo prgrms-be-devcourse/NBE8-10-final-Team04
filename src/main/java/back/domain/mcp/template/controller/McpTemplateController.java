@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import back.domain.auth.service.McpTokenAuthenticationService;
+import back.domain.mcp.template.controller.docs.McpTemplateControllerDocs;
 import back.domain.mcp.template.dto.StartAgentTemplateRequest;
 import back.domain.mcp.template.dto.StartAgentTemplateResponse;
 import back.domain.mcp.template.service.StartAgentTemplateService;
@@ -21,10 +22,11 @@ import lombok.RequiredArgsConstructor;
 @RequestMapping("/api/v1/mcp/template")
 @Validated
 @RequiredArgsConstructor
-public class McpTemplateController {
+public class McpTemplateController implements McpTemplateControllerDocs {
     private final McpTokenAuthenticationService mcpTokenAuthenticationService;
     private final StartAgentTemplateService startAgentTemplateService;
 
+    @Override
     @PostMapping("/start-agent")
     public ResponseEntity<RsData<StartAgentTemplateResponse>> getStartAgentTemplate(
             @RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) String authorizationHeader,

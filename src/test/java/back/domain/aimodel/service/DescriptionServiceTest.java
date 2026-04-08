@@ -57,7 +57,7 @@ class DescriptionServiceTest {
     }
 
     @Test
-    @DisplayName("캐시 히트 시 Gemini를 호출하지 않는다")
+    @DisplayName("캐시 히트 시 Gemini를 호출하지 않으며, 기존 모달리티 정보를 유지한다")
     void generateAndApply_cacheHit_noGeminiCall() throws Exception {
         Map<String, String> cache = Map.of("Anthropic/CLAUDE-OPUS", "기존 description");
         when(ociStorageService.objectName(anyString())).thenAnswer(i -> "data/ai-info/" + i.getArgument(0));
@@ -72,8 +72,12 @@ class DescriptionServiceTest {
         List<IntegratedVendor> result = descriptionService.generateAndApply(integrated);
 
         verifyNoInteractions(geminiModels);
-        assertThat(result.get(0).families().get(0).commonDescription())
-                .isEqualTo("기존 description");
+        IntegratedFamily firstFamily = result.get(0).families().get(0);
+
+        assertThat(firstFamily.commonDescription()).isEqualTo("기존 description");
+        // 모달리티 유지 확인
+        assertThat(firstFamily.inputTypes()).containsExactly("text", "image");
+        assertThat(firstFamily.outputTypes()).containsExactly("text");
     }
 
     @Test
@@ -182,6 +186,7 @@ class DescriptionServiceTest {
     }
 
     private IntegratedFamily family(String name, String description) {
-        return new IntegratedFamily(name, description, "2026-01-01 00:00:00");
+        // 새로 추가된 inputTypes, outputTypes 파라미터 적용
+        return new IntegratedFamily(name, description, "2026-01-01 00:00:00", List.of("text", "image"), List.of("text"));
     }
 }

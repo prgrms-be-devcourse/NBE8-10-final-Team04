@@ -62,11 +62,30 @@ app:
     oci-prefix: ${AI_TRACKER_OCI_PREFIX:data/ai-tracker/}
     webhook-secret: ${SPRING_WEBHOOK_SECRET}
 
+  data:
+    collect:
+      artificial-analysis-key: ${ARTIFICIAL_ANALYSIS_API_KEY}
+      sourcegraph-token: ${SOURCEGRAPH_TOKEN}
+      github-tokens:
+        - ${GITHUB_TOKEN_1}
+        - ${GITHUB_TOKEN_2}
+
+  infrastructure:
+    cloudflare:
+      account-id: ${CF_ACCOUNT_ID}
+      api-token: ${CF_API_TOKEN}
+    webhooks:
+      spring-url: ${SPRING_WEBHOOK_URL}
+      discord-url: ${DISCORD_WEBHOOK_URL}
+
+  admin:
+    allowlist: ${ADMIN_ALLOWLIST_EMAILS}
+
 custom:
   jwt:
     secret-key: ${CUSTOM_JWT_SECRET_KEY:start-ai-hub-default-secret-key-start-ai-hub-default}
-    access-token-expiration-seconds: ${CUSTOM_JWT_ACCESS_EXPIRATION_SECONDS:1800}
-    refresh-token-expiration-seconds: ${CUSTOM_JWT_REFRESH_EXPIRATION_SECONDS:1209600}
+    access-token-expiration-seconds: ${CUSTOM_JWT_ACCESS_EXPIRATION_SECONDS:172800}
+    refresh-token-expiration-seconds: ${CUSTOM_JWT_REFRESH_EXPIRATION_SECONDS:604800}
   oauth:
     google:
       client-id: ${GOOGLE_OAUTH_CLIENT_ID:}
@@ -95,6 +114,10 @@ ai:
   service:
     url: ${AI_SERVICE_URL:http://localhost:8000}
 oci:
+  user: ${OCI_USER}
+  fingerprint: ${OCI_FINGERPRINT}
+  tenancy: ${OCI_TENANCY}
+  private-key: ${OCI_KEY}
   namespace: ${OCI_NAMESPACE}
   bucket: ${OCI_BUCKET}
   prefix: data/ai-info/
