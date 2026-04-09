@@ -12,6 +12,8 @@ import back.domain.prompt.search.enums.QueryType;
 import back.domain.prompt.search.provider.QueryTypeRuleProvider;
 import back.domain.prompt.search.repository.SkillChunkVectorSearchRepository;
 import back.domain.prompt.search.util.VectorUtils;
+import back.global.exception.CommonErrorCode;
+import back.global.exception.ServiceException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -57,7 +59,11 @@ public class SkillSearchServiceImpl implements SkillSearchService {
         List<SearchQueryDto> searchQueries = toSearchQueryDtos(queries);
 
         if (searchQueries.isEmpty()) {
-            throw new IllegalArgumentException("검색 질의는 최소 1개 이상이어야 합니다.");
+            throw new ServiceException(
+                    CommonErrorCode.BAD_REQUEST,
+                    "[SkillSearchServiceImpl#search] queries is null or empty",
+                    "검색 질의는 최소 1개 이상이어야 합니다."
+            );
         }
 
         List<QuerySearchHit> allHits = new ArrayList<>();

@@ -1,12 +1,13 @@
-package back.domain.prompt.chunking.service;
+package back.domain.prompt.demo.service;
 
 import back.domain.prompt.chunking.chunker.MarkdownChunker;
 import back.domain.prompt.chunking.dto.Section;
-import back.domain.prompt.chunking.entity.SkillChunk;
-import back.domain.prompt.chunking.repository.SkillChunkRepository;
-import back.domain.prompt.prompt.entity.Skill;
+import back.domain.prompt.chunking.service.EmbeddingService;
+import back.domain.prompt.demo.entity.DemoSkill;
+import back.domain.prompt.demo.entity.DemoSkillChunk;
+import back.domain.prompt.demo.repository.DemoSkillChunkRepository;
+import back.domain.prompt.demo.repository.DemoSkillRepository;
 import back.domain.prompt.prompt.parser.SkillNormalizeParser;
-import back.domain.prompt.prompt.repository.SkillRepository;
 import back.domain.prompt.search.util.VectorUtils;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import lombok.RequiredArgsConstructor;
@@ -22,39 +23,39 @@ import java.util.Set;
 @RequiredArgsConstructor
 @SuppressFBWarnings(
         value = "EI_EXPOSE_REP2",
-        justification = "스프링 DI로 주입되는 공유 의존성을 서비스 내부 필드로 보관한다."
+        justification = "스프링 DI로 주입되는 공유 의존성은 서비스 필드로 보관합니다."
 )
-public class ChunkingProcessor {
+public class DemoChunkingProcessor {
 
     private static final String CHUNK_VERSION = "v2";
     private static final String EMBEDDING_MODEL = "BAAI/bge-m3";
 
-    private final SkillChunkRepository skillChunkRepository;
-    private final SkillRepository skillRepository;
+    private final DemoSkillChunkRepository demoSkillChunkRepository;
+    private final DemoSkillRepository demoSkillRepository;
     private final EmbeddingService embeddingService;
     private final MarkdownChunker markdownChunker;
     private final SkillNormalizeParser skillNormalizeParser;
 
-    // skill 하나를 청킹·임베딩하고 결과를 저장한다.
+    // DemoSkill 하나를 청킹·임베딩하고 demo_skill_chunks에 저장한다.
     @Transactional
-    public void processOne(Skill skill) {
+    public void processOne(DemoSkill demoSkill) {
         // 1. 기존 청크 삭제 (재청킹 시 이전 데이터 정리)
-        skillChunkRepository.deleteBySkillId(skill.getId());
+        demoSkillChunkRepository.deleteByDemoSkillId(demoSkill.getId());
 
         // 2. 마크다운 청킹
-        List<Section> sections = markdownChunker.chunkMarkdown(skill.getContentMd());
+        List<Section> sections = markdownChunker.chunkMarkdown(demoSkill.getContentMd());
 
         // 3. 검색용 텍스트 구성 후 임베딩 일괄 요청
         List<String> searchTexts = sections.stream()
-                .map(s -> buildSearchText(skill.getName(), s.sectionTitle(), s.text()))
+                .map(s -> buildSearchText(demoSkill.getSkillName(), s.sectionTitle(), s.text()))
                 .toList();
         List<List<Float>> embeddings = embeddingService.embedBatch(searchTexts);
 
-        // 4. SkillChunk 엔티티 생성 및 저장
-        List<SkillChunk> skillChunks = new ArrayList<>();
+        // 4. DemoSkillChunk 엔티티 생성 및 저장
+        List<DemoSkillChunk> chunks = new ArrayList<>();
         for (int i = 0; i < sections.size(); i++) {
-            skillChunks.add(SkillChunk.builder()
-                    .skill(skill)
+            chunks.add(DemoSkillChunk.builder()
+                    .demoSkill(demoSkill)
                     .chunkIndex(i)
                     .sectionTitle(sections.get(i).sectionTitle())
                     .searchText(searchTexts.get(i))
@@ -65,22 +66,17 @@ public class ChunkingProcessor {
                     .embeddedAt(OffsetDateTime.now())
                     .build());
         }
-        skillChunkRepository.saveAll(skillChunks);
+        demoSkillChunkRepository.saveAll(chunks);
 
-        // 5. 청킹 완료 표시 (실패 시 false 유지 → 다음 실행 때 재시도)
-        skillRepository.markAsChunked(skill.getId());
-
+        // 5. 청킹 완료 표시
+        demoSkill.markChunked();
+        demoSkillRepository.save(demoSkill);
     }
 
-    // search_text에 skill명·섹션명 메타 정보를 접두사로 붙인다.
-    // SkillNormalizeParser를 통해 keyword(정규 태그명)와 alias(표기 변형 전체)를 확장하여
-    // 임베딩 품질을 높인다.
     private String buildSearchText(String name, String sectionTitle, String chunkText) {
         String meta = (name == null ? "" : name + " ") + (sectionTitle == null ? "" : sectionTitle);
 
-        // 1. keyword 확장: TAG_RULES 기반 정규 태그명
         Set<String> keywords = skillNormalizeParser.extractTags(meta, chunkText);
-        // 2. alias 확장: TAG_ALIAS_RULES 기반 변형 표기 전체
         List<String> aliases = skillNormalizeParser.extractAliases(meta, chunkText);
 
         StringBuilder sb = new StringBuilder();

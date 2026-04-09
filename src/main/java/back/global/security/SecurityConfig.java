@@ -26,8 +26,7 @@ public class SecurityConfig {
     private final RestAuthenticationEntryPoint restAuthenticationEntryPoint;
     private final RestAccessDeniedHandler restAccessDeniedHandler;
 
-
-    @Value("${custom.cors.allowed-origin-patterns:http://localhost:3000}")
+    @Value("${custom.cors.allowed-origin-patterns:http://localhost:5173}")
     private List<String> allowedOriginPatterns;
 
     @Bean
@@ -53,9 +52,7 @@ public class SecurityConfig {
                                 "/actuator/health/**",
                                 "/actuator/info",
                                 "/api/v1/prompts/run",
-                                "/api/v1/skills/**",
-                                "/api/payments/**",
-                                "/api/subscriptions/**")
+                                "/api/v1/skills/**")
                         .permitAll()
                         .requestMatchers(
                                 HttpMethod.GET,
