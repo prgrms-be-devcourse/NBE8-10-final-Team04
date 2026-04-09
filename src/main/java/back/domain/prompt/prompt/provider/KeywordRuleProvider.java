@@ -95,14 +95,14 @@ public class KeywordRuleProvider {
             Map.entry("spring boot", List.of("spring boot", "springboot", "spring_boot")),
             Map.entry("spring mvc", List.of("spring mvc", "springmvc", "spring_mvc")),
             Map.entry("spring data jpa", List.of("spring data jpa", "springdatajpa", "spring_data_jpa")),
-            Map.entry("jpa", List.of("jpa", "java persistence api")),
+            Map.entry("jpa", List.of("jpa", "java persistence api", "java_persistence_api")),
             Map.entry("hibernate", List.of("hibernate")),
-            Map.entry("mybatis", List.of("mybatis", "my-batis")),
+            Map.entry("mybatis", List.of("mybatis", "my-batis", "my_batid")),
 
             // Node / JS
-            Map.entry("node js", List.of("node js", "nodejs", "node.js")),
+            Map.entry("node js", List.of("node js", "nodejs", "node.js", "node_js")),
             Map.entry("express", List.of("express", "expressjs", "express.js")),
-            Map.entry("nestjs", List.of("nestjs", "nest js", "nest.js")),
+            Map.entry("nestjs", List.of("nestjs", "nest js", "nest.js", "nest_js")),
 
             // Frontend
             Map.entry("next js", List.of("next js", "nextjs", "next.js", "next_js")),
@@ -117,17 +117,17 @@ public class KeywordRuleProvider {
             Map.entry("redis", List.of("redis")),
 
             // DevOps
-            Map.entry("ci-cd", List.of("ci-cd", "cicd", "ci/cd", "ci cd")),
+            Map.entry("ci-cd", List.of("ci-cd", "cicd", "ci/cd", "ci cd", "ci_cd")),
             Map.entry("github actions", List.of("github actions", "github_actions")),
             Map.entry("docker", List.of("docker")),
             Map.entry("kubernetes", List.of("kubernetes", "k8s")),
-            Map.entry("amazon web services", List.of("aws", "amazon web services")),
-            Map.entry("google cloud platform", List.of("gcp", "google cloud")),
+            Map.entry("amazon web services", List.of("aws", "amazon web services", "amazon_web_service")),
+            Map.entry("google cloud platform", List.of("gcp", "google cloud", "google_cloud")),
 
             // API
-            Map.entry("openapi", List.of("openapi", "open api")),
+            Map.entry("openapi", List.of("openapi", "open api", "open_api")),
             Map.entry("swagger", List.of("swagger")),
-            Map.entry("rest api", List.of("rest api", "restful api")),
+            Map.entry("rest api", List.of("rest api", "restful api", "rest_api")),
             Map.entry("graphql", List.of("graphql")),
 
             // Auth
@@ -136,10 +136,10 @@ public class KeywordRuleProvider {
 
             // AI
             Map.entry("vector database", List.of("vector db", "vector database")),
-            Map.entry("vector search", List.of("vector search")),
+            Map.entry("vector search", List.of("vector search", "vector_search")),
             Map.entry("embedding", List.of("embedding")),
             Map.entry("retrieval augmented generation", List.of("rag", "retrieval augmented generation")),
-            Map.entry("large language model", List.of("llm", "large language model"))
+            Map.entry("large language model", List.of("llm", "large language model", "large_language_model"))
     );
 
 
