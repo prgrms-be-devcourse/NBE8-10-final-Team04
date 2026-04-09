@@ -28,7 +28,7 @@ import back.domain.communitypost.entity.CommunityPostStatus;
 import back.domain.communitypost.entity.CommunityPostType;
 import back.domain.communitypost.repository.CommunityPostRepository;
 import back.domain.info.dto.response.BenchmarkMetricView;
-import back.domain.info.dto.response.ModelInfoFamilyView;
+import back.domain.info.dto.response.UpdateRequestCommunityView;
 import back.domain.info.enums.MetricType;
 import back.domain.info.service.InfoCommunityReadService;
 import back.domain.member.entity.Member;
@@ -67,9 +67,15 @@ class CommunityPostServiceImplTest {
         when(communityPostRepository.existsByPostTypeAndTargetDateAndVendorId(
                         CommunityPostType.MODEL_INFO, targetDate, vendorId))
                 .thenReturn(false);
-        when(infoCommunityReadService.getModelInfoByDateAndVendor(targetDate, vendorId))
-                .thenReturn(List.of(new ModelInfoFamilyView(
-                        "OpenAI", "GPT-5.4", "최신 모델", new String[] {"text"}, new String[] {"text"})));
+        when(infoCommunityReadService.getApprovedUpdateRequestsByDateAndVendor(targetDate, vendorId))
+                .thenReturn(List.of(new UpdateRequestCommunityView(
+                        "OpenAI",
+                        "GPT-5.4",
+                        "https://news.example.com/openai",
+                        "RSS",
+                        "GPT-5.4 업데이트",
+                        "원문 본문",
+                        targetDate)));
         when(communityPostRepository.save(any(CommunityPost.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -83,7 +89,7 @@ class CommunityPostServiceImplTest {
 
         ArgumentCaptor<CommunityPost> postCaptor = ArgumentCaptor.forClass(CommunityPost.class);
         verify(communityPostRepository).save(postCaptor.capture());
-        assertThat(postCaptor.getValue().getBody()).contains("OpenAI");
+        assertThat(postCaptor.getValue().getBody()).contains("원문 본문");
     }
 
     @Test
@@ -200,9 +206,15 @@ class CommunityPostServiceImplTest {
         when(communityPostRepository.existsByPostTypeAndTargetDateAndVendorId(
                         CommunityPostType.MODEL_INFO, targetDate, vendorId))
                 .thenReturn(false);
-        when(infoCommunityReadService.getModelInfoByDateAndVendor(targetDate, vendorId))
-                .thenReturn(List.of(new ModelInfoFamilyView(
-                        "OpenAI", "GPT-5.4", "최신 모델", new String[] {"text"}, new String[] {"text"})));
+        when(infoCommunityReadService.getApprovedUpdateRequestsByDateAndVendor(targetDate, vendorId))
+                .thenReturn(List.of(new UpdateRequestCommunityView(
+                        "OpenAI",
+                        "GPT-5.4",
+                        "https://news.example.com/openai",
+                        "RSS",
+                        "GPT-5.4 업데이트",
+                        "원문 본문",
+                        targetDate)));
         when(communityPostRepository.save(any(CommunityPost.class)))
                 .thenThrow(new DataIntegrityViolationException("duplicate key value violates unique constraint"));
 

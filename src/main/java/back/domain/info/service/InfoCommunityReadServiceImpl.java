@@ -9,8 +9,11 @@ import org.springframework.transaction.annotation.Transactional;
 
 import back.domain.info.dto.response.BenchmarkMetricView;
 import back.domain.info.dto.response.ModelInfoFamilyView;
+import back.domain.info.dto.response.UpdateRequestCommunityView;
 import back.domain.info.repository.AiModelFamilyRepository;
 import back.domain.info.repository.ModelBenchmarkRepository;
+import back.domain.info.repository.UpdateRequestRepository;
+import back.domain.info.enums.Status;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import lombok.RequiredArgsConstructor;
 
@@ -22,6 +25,7 @@ public class InfoCommunityReadServiceImpl implements InfoCommunityReadService {
 
     private final AiModelFamilyRepository aiModelFamilyRepository;
     private final ModelBenchmarkRepository modelBenchmarkRepository;
+    private final UpdateRequestRepository updateRequestRepository;
 
     @Override
     public List<ModelInfoFamilyView> getModelInfoByDate(LocalDate targetDate) {
@@ -40,6 +44,14 @@ public class InfoCommunityReadServiceImpl implements InfoCommunityReadService {
 
         return aiModelFamilyRepository.findAllChangedBetweenAndVendorId(start, end, vendorId).stream()
                 .map(ModelInfoFamilyView::from)
+                .toList();
+    }
+
+    @Override
+    public List<UpdateRequestCommunityView> getApprovedUpdateRequestsByDateAndVendor(LocalDate targetDate, Long vendorId) {
+        return updateRequestRepository.findAllByStatusAndVendorIdAndNotifiedAtOrderByReviewedAtDescCreatedAtDesc(
+                        Status.APPROVED, vendorId, targetDate).stream()
+                .map(UpdateRequestCommunityView::from)
                 .toList();
     }
 
