@@ -50,7 +50,7 @@ public class SecurityConfig {
                                 "/oauth2/**",
                                 "/login/oauth2/**",
                                 "/h2-console/**",
-                                "/actuator/health/**",
+                                "/actuator/**",
                                 "/actuator/info",
                                 "/api/prompts/run",
                                 "/api/info/run",
