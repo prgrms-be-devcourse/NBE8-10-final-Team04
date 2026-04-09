@@ -18,11 +18,14 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 
-@Tag(name = "MCP Recommendation", description = "키워드 기반 추천/스킬 본문 조회 API")
+@Tag(name = "MCP Recommendation", description = "queries 배열 기반 추천/스킬 본문 조회 API")
 @SecurityRequirement(name = "mcpBearerAuth")
 public interface McpRecommendationControllerDocs {
 
-    @Operation(summary = "스킬 추천", description = "키워드로 후보를 검색하고 카테고리별 최종 추천 스킬 메타 정보를 반환합니다.")
+    @Operation(
+            summary = "스킬 추천",
+            description = "queries 배열로 후보를 검색하고 "
+                    + "카테고리별 최종 추천 스킬 메타 정보를 반환합니다.")
     @ApiResponses({
         @ApiResponse(
                 responseCode = "200",
@@ -70,7 +73,7 @@ public interface McpRecommendationControllerDocs {
                                                 """
                         {
                           "data": null,
-                          "message": "keywords-NotBlank-keywords는 공백일 수 없습니다."
+                          "message": "queries-NotEmpty-queries는 최소 1개 이상이어야 합니다."
                         }
                         """)))
     })
@@ -84,7 +87,7 @@ public interface McpRecommendationControllerDocs {
                     String authorizationHeader,
             @io.swagger.v3.oas.annotations.parameters.RequestBody(
                             required = true,
-                            description = "사용자 기획을 요약한 키워드 문자열",
+                            description = "사용자 기획을 요약한 query 배열",
                             content = @Content(
                                     mediaType = "application/json",
                                     examples =
@@ -92,12 +95,14 @@ public interface McpRecommendationControllerDocs {
                                                     value =
                                                             """
                                     {
-                                      "keywords": "SpringBoot infra DevOps"
+                                      "queries": ["SpringBoot", "infra", "DevOps"]
                                     }
                                     """)))
                     @Valid McpRecommendationRequest request);
 
-    @Operation(summary = "스킬 본문 조회", description = "추천 목록에서 선택한 skillId의 원문(md)을 조회합니다.")
+    @Operation(
+            summary = "스킬 본문 조회",
+            description = "추천 목록에서 선택한 skillId의 원문(md)을 조회합니다.")
     @ApiResponses({
         @ApiResponse(
                 responseCode = "200",
