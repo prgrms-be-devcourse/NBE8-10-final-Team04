@@ -3,6 +3,7 @@ package back.domain.chatbot.service;
 import back.domain.chatbot.dto.request.ChatbotRequest;
 import back.domain.chatbot.dto.response.ChatbotResponse;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
