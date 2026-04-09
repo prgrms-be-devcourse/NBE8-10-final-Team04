@@ -106,7 +106,6 @@ class DemoChunkingProcessorTest {
 
     private DemoSkill demoSkill(Long id, String skillName, String contentMd) {
         DemoSkill demoSkill = DemoSkill.builder()
-                .skillId(1000L)
                 .skillName(skillName)
                 .repositoryName("demo-repo")
                 .repositoryUrl("https://example.com/repo")

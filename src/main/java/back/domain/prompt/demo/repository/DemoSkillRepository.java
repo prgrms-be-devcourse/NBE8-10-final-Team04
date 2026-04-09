@@ -7,5 +7,4 @@ import java.util.Optional;
 
 public interface DemoSkillRepository extends JpaRepository<DemoSkill, Long> {
 
-    Optional<DemoSkill> findBySkillId(Long skillId);
 }

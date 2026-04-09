@@ -29,14 +29,13 @@ class DemoDtoTest {
                 2,
                 10,
                 updatedAt,
-                List.of("spring"),
-                List.of("springboot")
+                List.of("spring")
         );
 
         assertThat(dto.skillId()).isEqualTo(1L);
         assertThat(dto.skillName()).isEqualTo("springboot-patterns");
         assertThat(dto.updatedAt()).isEqualTo(updatedAt);
-        assertThat(dto.aliases()).containsExactly("springboot");
+        assertThat(dto.tags()).containsExactly("spring");
     }
 
     @Test
@@ -44,7 +43,7 @@ class DemoDtoTest {
     void demoSkillBatchRequestDto_storesFields() {
         DemoSkillRequestDto item = new DemoSkillRequestDto(
                 1L, "skill", "repo", "url", "summary", "content",
-                Category.BACKEND, false, 0, 0, null, List.of(), List.of()
+                Category.BACKEND, false, 0, 0, null, List.of()
         );
         DemoSkillBatchRequestDto dto = new DemoSkillBatchRequestDto(List.of(item));
 

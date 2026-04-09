@@ -41,7 +41,7 @@ class DemoSkillChunkVectorSearchRepositoryTest {
 
             ResultSet rs = mock(ResultSet.class);
             org.mockito.Mockito.when(rs.getLong("chunk_id")).thenReturn(1L);
-            org.mockito.Mockito.when(rs.getLong("demo_skill_id")).thenReturn(2L);
+            org.mockito.Mockito.when(rs.getLong("skill_id")).thenReturn(2L);
             org.mockito.Mockito.when(rs.getString("skill_name")).thenReturn("alpha");
             org.mockito.Mockito.when(rs.getString("repository_name")).thenReturn("demo-repo");
             org.mockito.Mockito.when(rs.getString("repository_url")).thenReturn("https://example.com/repo");
@@ -52,6 +52,7 @@ class DemoSkillChunkVectorSearchRepositoryTest {
             org.mockito.Mockito.when(rs.getObject("updated_at", OffsetDateTime.class))
                     .thenReturn(OffsetDateTime.parse("2026-04-09T00:00:00Z"));
             org.mockito.Mockito.when(rs.getFloat("similarity")).thenReturn(0.92f);
+            org.mockito.Mockito.when(rs.getFloat("boost_score")).thenReturn(1.1f);
 
             return List.of(rowMapper.mapRow(rs, 0));
         }).when(jdbcTemplate).query(anyString(), any(RowMapper.class), anyString(), anyString());
@@ -63,6 +64,7 @@ class DemoSkillChunkVectorSearchRepositoryTest {
             assertThat(row.demoSkillId()).isEqualTo(2L);
             assertThat(row.skillName()).isEqualTo("alpha");
             assertThat(row.similarity()).isEqualTo(0.92f);
+            assertThat(row.boostScore()).isEqualTo(1.1f);
         });
     }
 }

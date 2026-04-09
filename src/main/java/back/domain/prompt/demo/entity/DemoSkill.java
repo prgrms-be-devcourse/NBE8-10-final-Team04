@@ -32,9 +32,6 @@ public class DemoSkill extends BaseEntity {
      * JSON 원본의 skill_id.
      * 외부 mock 데이터 식별용.
      */
-    @Column(name = "skill_id")
-    private Long skillId;
-
     @Column(name = "skill_name", nullable = false, length = 255)
     private String skillName;
 
@@ -69,25 +66,12 @@ public class DemoSkill extends BaseEntity {
     // 검색 결과 순위 조작용 가중치 — 값이 클수록 상위 노출
     @Builder.Default
     @Column(name = "boost_score", nullable = false)
-    private float boostScore = 0.5f;
+    private float boostScore = 0.1f;
 
-    @ElementCollection
-    @CollectionTable(
-            name = "demo_skill_tags",
-            joinColumns = @JoinColumn(name = "demo_skill_id")
-    )
     @Column(name = "tag", nullable = false, length = 100)
     @Builder.Default
     private Set<String> tags = new HashSet<>();
 
-    @ElementCollection
-    @CollectionTable(
-            name = "demo_skill_aliases",
-            joinColumns = @JoinColumn(name = "demo_skill_id")
-    )
-    @Column(name = "alias", nullable = false, length = 255)
-    @Builder.Default
-    private List<String> aliases = new ArrayList<>();
 
     public void markChunked() {
         this.isChunked = true;

@@ -116,7 +116,6 @@ class McpRecommendationServiceImplTest {
         ReflectionTestUtils.setField(mcpRecommendationService, "candidateSource", "demo-skill-search");
         McpRecommendationSkillContentRequest request = new McpRecommendationSkillContentRequest(21L);
         DemoSkill demoSkill = DemoSkill.builder()
-                .skillId(1001L)
                 .skillName("demo-backend-skill")
                 .repositoryName("example/demo-repo")
                 .repositoryUrl("https://github.com/example/demo-repo")
