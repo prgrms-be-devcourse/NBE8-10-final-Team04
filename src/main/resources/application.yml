@@ -33,7 +33,7 @@ app:
     base-url: ${APP_EMBEDDING_BASE_URL:https://embedding-server-domain}
   mcp:
     recommendation:
-      candidate-source: ${APP_MCP_RECOMMENDATION_CANDIDATE_SOURCE:skill-search}
+      candidate-source: ${APP_MCP_RECOMMENDATION_CANDIDATE_SOURCE:demo-skill-search}
       ranking:
         weight:
           primary: ${APP_MCP_RECOMMENDATION_WEIGHT_PRIMARY:0.60}
