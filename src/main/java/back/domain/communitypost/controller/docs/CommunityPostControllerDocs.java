@@ -46,15 +46,15 @@ public interface CommunityPostControllerDocs {
                               {
                                 "id": 11,
                                 "type": "MODEL_INFO",
-                                "title": "2026-04-08 OpenAI 모델 정보 업데이트",
-                                "summary": "2026-04-08 기준 OpenAI 모델 패밀리 변경 3건",
-                                "body": "# 2026-04-08 OpenAI 모델 정보 업데이트\\n...",
+                                "title": "2026-04-09 OpenAI 모델 정보 업데이트",
+                                "summary": "GPT-5.4 변경사항 요약",
+                                "body": "# 2026-04-09 OpenAI 모델 정보 업데이트\\n\\n- 벤더: OpenAI\\n- 총 변경 요청 수: 2\\n\\n## 패밀리: GPT-5.4\\n- 요약: GPT-5.4 변경사항 요약\\n- 소스 타입: RSS\\n- 소스 URL: https://news.example.com/openai/gpt-5-4\\n\\n원문 본문 내용...",
                                 "status": "PUBLISHED",
-                                "targetDate": "2026-04-08",
+                                "targetDate": "2026-04-09",
                                 "vendorId": 10,
-                                "publishedAt": "2026-04-08T11:00:00",
-                                "createdAt": "2026-04-08T10:30:00",
-                                "updatedAt": "2026-04-08T11:00:00"
+                                "publishedAt": "2026-04-09T11:00:00",
+                                "createdAt": "2026-04-09T10:30:00",
+                                "updatedAt": "2026-04-09T11:00:00"
                               }
                             ],
                             "totalElements": 1,
@@ -82,7 +82,16 @@ public interface CommunityPostControllerDocs {
                         {
                           "data": {
                             "id": 11,
-                            "status": "PUBLISHED"
+                            "type": "MODEL_INFO",
+                            "title": "2026-04-09 OpenAI 모델 정보 업데이트",
+                            "summary": "GPT-5.4 변경사항 요약",
+                            "body": "# 2026-04-09 OpenAI 모델 정보 업데이트\\n\\n- 벤더: OpenAI\\n- 총 변경 요청 수: 2\\n\\n## 패밀리: GPT-5.4\\n- 요약: GPT-5.4 변경사항 요약\\n- 소스 타입: RSS\\n- 소스 URL: https://news.example.com/openai/gpt-5-4\\n\\n원문 본문 내용...",
+                            "status": "PUBLISHED",
+                            "targetDate": "2026-04-09",
+                            "vendorId": 10,
+                            "publishedAt": "2026-04-09T11:00:00",
+                            "createdAt": "2026-04-09T10:30:00",
+                            "updatedAt": "2026-04-09T11:00:00"
                           },
                           "message": "게시글 조회 성공"
                         }

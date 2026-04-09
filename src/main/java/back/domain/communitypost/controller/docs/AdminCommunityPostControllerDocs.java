@@ -60,15 +60,15 @@ public interface AdminCommunityPostControllerDocs {
                               {
                                 "id": 5,
                                 "type": "MODEL_INFO",
-                                "title": "2026-04-08 OpenAI 모델 정보 업데이트",
-                                "summary": "2026-04-08 기준 OpenAI 모델 패밀리 변경 3건",
-                                "body": "# 2026-04-08 OpenAI 모델 정보 업데이트\\n...",
+                                "title": "2026-04-09 OpenAI 모델 정보 업데이트",
+                                "summary": "GPT-5.4 변경사항 요약",
+                                "body": "# 2026-04-09 OpenAI 모델 정보 업데이트\\n\\n- 벤더: OpenAI\\n- 총 변경 요청 수: 2\\n\\n## 패밀리: GPT-5.4\\n- 요약: GPT-5.4 변경사항 요약\\n- 소스 타입: RSS\\n- 소스 URL: https://news.example.com/openai/gpt-5-4\\n\\n원문 본문 내용...",
                                 "status": "PENDING_REVIEW",
-                                "targetDate": "2026-04-08",
+                                "targetDate": "2026-04-09",
                                 "vendorId": 10,
                                 "publishedAt": null,
-                                "createdAt": "2026-04-08T10:00:00",
-                                "updatedAt": "2026-04-08T10:00:00"
+                                "createdAt": "2026-04-09T10:00:00",
+                                "updatedAt": "2026-04-09T10:00:00"
                               }
                             ],
                             "totalElements": 1,
@@ -89,7 +89,9 @@ public interface AdminCommunityPostControllerDocs {
     ResponseEntity<RsData<PageCommunityPostResponse>> getAdminPosts(
             @Parameter(hidden = true) CommunityPostStatus status, @Parameter(hidden = true) Pageable pageable);
 
-    @Operation(summary = "게시글 자동 생성", description = "타입과 날짜(필요 시 vendorId)로 PENDING_REVIEW 게시글을 생성합니다.")
+    @Operation(
+            summary = "게시글 자동 생성",
+            description = "타입과 날짜(필요 시 vendorId)로 PENDING_REVIEW 게시글을 생성합니다. MODEL_INFO는 update_requests(승인 상태) 기반으로 summary/body를 생성합니다.")
     @ApiResponses({
         @ApiResponse(
                 responseCode = "201",
@@ -104,15 +106,15 @@ public interface AdminCommunityPostControllerDocs {
                           "data": {
                             "id": 11,
                             "type": "MODEL_INFO",
-                            "title": "2026-04-08 OpenAI 모델 정보 업데이트",
-                            "summary": "2026-04-08 기준 OpenAI 모델 패밀리 변경 3건",
-                            "body": "# 2026-04-08 OpenAI 모델 정보 업데이트\\n...",
+                            "title": "2026-04-09 OpenAI 모델 정보 업데이트",
+                            "summary": "GPT-5.4 변경사항 요약",
+                            "body": "# 2026-04-09 OpenAI 모델 정보 업데이트\\n\\n- 벤더: OpenAI\\n- 총 변경 요청 수: 2\\n\\n## 패밀리: GPT-5.4\\n- 요약: GPT-5.4 변경사항 요약\\n- 소스 타입: RSS\\n- 소스 URL: https://news.example.com/openai/gpt-5-4\\n\\n원문 본문 내용...",
                             "status": "PENDING_REVIEW",
-                            "targetDate": "2026-04-08",
+                            "targetDate": "2026-04-09",
                             "vendorId": 10,
                             "publishedAt": null,
-                            "createdAt": "2026-04-08T10:30:00",
-                            "updatedAt": "2026-04-08T10:30:00"
+                            "createdAt": "2026-04-09T10:30:00",
+                            "updatedAt": "2026-04-09T10:30:00"
                           },
                           "message": "게시글 생성 성공"
                         }
@@ -129,6 +131,20 @@ public interface AdminCommunityPostControllerDocs {
                         {
                           "data": null,
                           "message": "MODEL_INFO 게시글 생성 시 vendorId는 필수입니다."
+                        }
+                        """))),
+        @ApiResponse(
+                responseCode = "404",
+                description = "원천 데이터 없음",
+                content = @Content(
+                        mediaType = "application/json",
+                        examples =
+                                @ExampleObject(
+                                        value =
+                                                """
+                        {
+                          "data": null,
+                          "message": "해당 벤더/날짜의 업데이트 원천 데이터가 없습니다."
                         }
                         """))),
         @ApiResponse(
