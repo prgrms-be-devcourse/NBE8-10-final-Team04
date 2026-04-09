@@ -37,3 +37,7 @@ logging:
     name: logs/application.log
     max-size: 10MB
     max-history: 30
+ai:
+  service:
+    url: ${FASTAPI_BASE_URL}
+    max-history: 30

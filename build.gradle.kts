@@ -81,7 +81,7 @@ dependencies {
     implementation("com.pgvector:pgvector:0.1.6")
 
     // webflux
-    // implementation("org.springframework.boot:spring-boot-starter-webflux")
+     implementation("org.springframework.boot:spring-boot-starter-webflux")
 
     // OCI Object Storage
     implementation("com.oracle.oci.sdk:oci-java-sdk-objectstorage:3.60.0")
@@ -90,6 +90,9 @@ dependencies {
 
     // Google Gemini SDK
     implementation("com.google.genai:google-genai:1.44.0")
+
+    // test
+    testImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")
 }
 
 tasks.withType<Test> {

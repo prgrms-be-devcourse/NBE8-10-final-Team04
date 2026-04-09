@@ -10,8 +10,24 @@ services:
       - ../.env
     environment:
       SPRING_PROFILES_ACTIVE: dev
+      FASTAPI_BASE_URL: ${FASTAPI_BASE_URL}
     ports:
       - "8080:8080"
+    restart: unless-stopped
+    depends_on:
+      - ai-service
+    networks:
+      - app-network
+
+  ai-service:
+    build:
+      context: ../ai-service
+      dockerfile: Dockerfile
+    container_name: ai-service
+    env_file:
+      - ../ai-service/.env
+    ports:
+      - "8000:8000"
     restart: unless-stopped
     networks:
       - app-network
