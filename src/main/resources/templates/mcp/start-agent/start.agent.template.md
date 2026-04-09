@@ -11,8 +11,8 @@
    - 기술 스택/언어(예: Java, SpringBoot)
    - 제약/환경(예: OCI, Docker, 기간, 비용)
 4. 사용자에게 기획 입력 완료 여부를 명시적으로 확인한다.
-5. 사용자가 완료를 명시적으로 확인한 뒤에만, 정리한 키워드로
-   `start_auto_flow(step=COLLECTED, flowId=..., keywords=..., userInputConfirmed=true)`를 호출한다.
+5. 사용자가 완료를 명시적으로 확인한 뒤에만, 정리한 질의 배열(queries)로
+   `start_auto_flow(step=COLLECTED, flowId=..., queries=[...], userInputConfirmed=true)`를 호출한다.
    - 사용자 확인 전에는 절대 `userInputConfirmed=true`로 호출하지 마라.
 6. COLLECTED 응답에서 받은 `selectedSkills.skillId`를 기준으로 각 스킬 본문을 분할 조회한다.
    - `start_auto_flow(step=FETCH_SKILL, flowId=..., skillId=..., cursor=0, chunkSize=3000)`를 호출한다.
