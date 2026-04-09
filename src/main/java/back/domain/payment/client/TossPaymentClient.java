@@ -38,8 +38,11 @@ public class TossPaymentClient {
             if (!response.getStatusCode().is2xxSuccessful()) {
                 throw new RuntimeException("토스 결제 승인 실패: " + response.getBody());
             }
+        } catch (org.springframework.web.client.HttpStatusCodeException e) {
+            log.error("#### 토스 API 에러 상세 정보: {}", e.getResponseBodyAsString());
+            throw new RuntimeException("토스 API 오류: " + e.getResponseBodyAsString());
         } catch (Exception e) {
-            log.error("Toss API 통신 중 오류 발생: {}", e.getMessage());
+            log.error("Toss API 통신 중 알 수 없는 오류 발생: {}", e.getMessage());
             throw new RuntimeException("결제 통신 중 오류 발생: " + e.getMessage());
         }
     }
