@@ -2,6 +2,7 @@ package back.domain.communitypost.service;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -56,12 +57,15 @@ public class CommunityPostServiceImpl implements CommunityPostService {
                 request.type(),
                 generatedContent.title(),
                 generatedContent.summary(),
-                generatedContent.body(),
+                generatedContent.sourceUrl(),
                 admin,
                 request.targetDate(),
                 resolvedVendorId);
-
-        return savePostWithDuplicateGuard(post);
+        CommunityPostInfoResponse response = savePostWithDuplicateGuard(post);
+        if (!generatedContent.approveUpdateRequestIds().isEmpty()) {
+            infoCommunityReadService.approveUpdateRequests(generatedContent.approveUpdateRequestIds());
+        }
+        return response;
     }
 
     @Override
@@ -69,7 +73,7 @@ public class CommunityPostServiceImpl implements CommunityPostService {
     public CommunityPostInfoResponse updatePost(long adminId, long postId, AdminUpdateCommunityPostRequest request) {
         validateAdminMember(adminId);
         CommunityPost post = getPostOrThrow(postId);
-        post.updateContent(request.title(), request.summary(), request.body());
+        post.updateContent(request.title(), request.summary(), request.sourceUrl());
         return CommunityPostInfoResponse.from(post);
     }
 
@@ -142,7 +146,7 @@ public class CommunityPostServiceImpl implements CommunityPostService {
 
     private GeneratedPostContent generateModelInfoContent(LocalDate targetDate, Long vendorId) {
         List<UpdateRequestCommunityView> updateRequests =
-                infoCommunityReadService.getApprovedUpdateRequestsByDateAndVendor(targetDate, vendorId);
+                infoCommunityReadService.getPendingUpdateRequestsByDateAndVendor(targetDate, vendorId);
         if (updateRequests.isEmpty()) {
             throw new ServiceException(
                     CommonErrorCode.NOT_FOUND,
@@ -154,33 +158,19 @@ public class CommunityPostServiceImpl implements CommunityPostService {
         String vendorName = updateRequests.getFirst().vendorName();
         String title = "%s %s 모델 정보 업데이트".formatted(formattedDate, vendorName);
         String summary = resolveModelInfoSummary(formattedDate, vendorName, updateRequests);
+        String sourceUrl = updateRequests.stream()
+                .map(UpdateRequestCommunityView::sourceUrl)
+                .filter(this::hasText)
+                .findFirst()
+                .orElse(null);
 
-        StringBuilder bodyBuilder = new StringBuilder();
-        bodyBuilder.append("# ").append(formattedDate).append(" ").append(vendorName).append(" 모델 정보 업데이트\n\n");
-        bodyBuilder.append("- 벤더: ").append(vendorName).append("\n");
-        bodyBuilder.append("- 총 변경 요청 수: ").append(updateRequests.size()).append("\n\n");
-
+        List<Long> requestIdsToApprove = new ArrayList<>();
         for (UpdateRequestCommunityView updateRequest : updateRequests) {
-            bodyBuilder
-                    .append("## 패밀리: ")
-                    .append(defaultText(updateRequest.familyName()))
-                    .append("\n");
-            bodyBuilder
-                    .append("- 요약: ")
-                    .append(defaultText(updateRequest.summary()))
-                    .append("\n");
-            bodyBuilder
-                    .append("- 소스 타입: ")
-                    .append(defaultText(updateRequest.sourceType()))
-                    .append("\n");
-            bodyBuilder
-                    .append("- 소스 URL: ")
-                    .append(defaultText(updateRequest.sourceUrl()))
-                    .append("\n\n");
-            bodyBuilder.append(defaultText(updateRequest.rawContent())).append("\n\n");
+            if (updateRequest.id() != null) {
+                requestIdsToApprove.add(updateRequest.id());
+            }
         }
-
-        return new GeneratedPostContent(title, summary, bodyBuilder.toString());
+        return new GeneratedPostContent(title, summary, sourceUrl, requestIdsToApprove);
     }
 
     private String resolveModelInfoSummary(
@@ -224,26 +214,8 @@ public class CommunityPostServiceImpl implements CommunityPostService {
         String title = "%s 성능 비교 리포트".formatted(formattedDate);
         String summary = "%s 기준 성능 지표 %d건".formatted(formattedDate, latestMetrics.size());
 
-        StringBuilder bodyBuilder = new StringBuilder();
-        bodyBuilder.append("# ").append(formattedDate).append(" 성능 비교 리포트\n\n");
-        bodyBuilder.append("| 모델 | 지표 | 값 | 단위 | 측정 시각 |\n");
-        bodyBuilder.append("| --- | --- | ---: | --- | --- |\n");
-        for (BenchmarkMetricView metric : latestMetrics) {
-            bodyBuilder
-                    .append("| ")
-                    .append(metric.modelApiId())
-                    .append(" | ")
-                    .append(metric.metricType().name())
-                    .append(" | ")
-                    .append(metric.metricValue())
-                    .append(" | ")
-                    .append(defaultText(metric.unit()))
-                    .append(" | ")
-                    .append(metric.measuredAt())
-                    .append(" |\n");
-        }
-
-        return new GeneratedPostContent(title, summary, bodyBuilder.toString());
+        String sourceUrl = "internal://benchmarks/%s".formatted(targetDate);
+        return new GeneratedPostContent(title, summary, sourceUrl, List.of());
     }
 
     private void validateDuplicateDailyPost(CommunityPostType type, LocalDate targetDate, Long vendorId) {
@@ -304,16 +276,13 @@ public class CommunityPostServiceImpl implements CommunityPostService {
         return member;
     }
 
-    private String defaultText(String value) {
-        if (value == null || value.isBlank()) {
-            return "-";
-        }
-        return value.trim();
-    }
-
     private boolean hasText(String value) {
         return value != null && !value.isBlank();
     }
 
-    private record GeneratedPostContent(String title, String summary, String body) {}
+    private record GeneratedPostContent(
+            String title,
+            String summary,
+            String sourceUrl,
+            List<Long> approveUpdateRequestIds) {}
 }

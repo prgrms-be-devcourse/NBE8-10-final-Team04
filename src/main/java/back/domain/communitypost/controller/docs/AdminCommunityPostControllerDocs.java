@@ -62,7 +62,7 @@ public interface AdminCommunityPostControllerDocs {
                                 "type": "MODEL_INFO",
                                 "title": "2026-04-09 OpenAI 모델 정보 업데이트",
                                 "summary": "GPT-5.4 변경사항 요약",
-                                "body": "# 2026-04-09 OpenAI 모델 정보 업데이트\\n\\n- 벤더: OpenAI\\n- 총 변경 요청 수: 2\\n\\n## 패밀리: GPT-5.4\\n- 요약: GPT-5.4 변경사항 요약\\n- 소스 타입: RSS\\n- 소스 URL: https://news.example.com/openai/gpt-5-4\\n\\n원문 본문 내용...",
+                                "sourceUrl": "https://news.example.com/openai/gpt-5-4",
                                 "status": "PENDING_REVIEW",
                                 "targetDate": "2026-04-09",
                                 "vendorId": 10,
@@ -91,7 +91,10 @@ public interface AdminCommunityPostControllerDocs {
 
     @Operation(
             summary = "게시글 자동 생성",
-            description = "타입과 날짜(필요 시 vendorId)로 PENDING_REVIEW 게시글을 생성합니다. MODEL_INFO는 update_requests(승인 상태) 기반으로 summary/body를 생성합니다.")
+            description =
+                    "타입과 날짜(필요 시 vendorId)로 PENDING_REVIEW 게시글을 생성합니다. "
+                            + "MODEL_INFO는 update_requests(PENDING) 기반으로 summary/sourceUrl을 생성하고, "
+                            + "사용된 요청을 APPROVED로 전환합니다.")
     @ApiResponses({
         @ApiResponse(
                 responseCode = "201",
@@ -108,7 +111,7 @@ public interface AdminCommunityPostControllerDocs {
                             "type": "MODEL_INFO",
                             "title": "2026-04-09 OpenAI 모델 정보 업데이트",
                             "summary": "GPT-5.4 변경사항 요약",
-                            "body": "# 2026-04-09 OpenAI 모델 정보 업데이트\\n\\n- 벤더: OpenAI\\n- 총 변경 요청 수: 2\\n\\n## 패밀리: GPT-5.4\\n- 요약: GPT-5.4 변경사항 요약\\n- 소스 타입: RSS\\n- 소스 URL: https://news.example.com/openai/gpt-5-4\\n\\n원문 본문 내용...",
+                            "sourceUrl": "https://news.example.com/openai/gpt-5-4",
                             "status": "PENDING_REVIEW",
                             "targetDate": "2026-04-09",
                             "vendorId": 10,
@@ -181,7 +184,7 @@ public interface AdminCommunityPostControllerDocs {
                                     """)))
                     @Valid AdminGenerateCommunityPostRequest request);
 
-    @Operation(summary = "게시글 수정", description = "관리자가 게시글 제목/요약/본문을 수정합니다.")
+    @Operation(summary = "게시글 수정", description = "관리자가 게시글 제목/요약/sourceUrl을 수정합니다.")
     @ApiResponses({
         @ApiResponse(
                 responseCode = "200",
@@ -222,7 +225,7 @@ public interface AdminCommunityPostControllerDocs {
                                     {
                                       "title": "수정 제목",
                                       "summary": "수정 요약",
-                                      "body": "# 수정 본문\\n내용..."
+                                      "sourceUrl": "https://news.example.com/openai/gpt-5-4"
                                     }
                                     """)))
                     @Valid AdminUpdateCommunityPostRequest request);

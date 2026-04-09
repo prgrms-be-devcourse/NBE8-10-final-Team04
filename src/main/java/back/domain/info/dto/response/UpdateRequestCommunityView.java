@@ -5,6 +5,7 @@ import java.time.LocalDate;
 import back.domain.info.entity.UpdateRequest;
 
 public record UpdateRequestCommunityView(
+        Long id,
         String vendorName,
         String familyName,
         String sourceUrl,
@@ -15,6 +16,7 @@ public record UpdateRequestCommunityView(
 
     public static UpdateRequestCommunityView from(UpdateRequest updateRequest) {
         return new UpdateRequestCommunityView(
+                updateRequest.getId(),
                 updateRequest.getVendor().getName(),
                 updateRequest.getFamily() == null ? null : updateRequest.getFamily().getFamilyName(),
                 updateRequest.getSourceUrl(),

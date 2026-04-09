@@ -3,6 +3,7 @@ package back.domain.communitypost.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -67,8 +68,9 @@ class CommunityPostServiceImplTest {
         when(communityPostRepository.existsByPostTypeAndTargetDateAndVendorId(
                         CommunityPostType.MODEL_INFO, targetDate, vendorId))
                 .thenReturn(false);
-        when(infoCommunityReadService.getApprovedUpdateRequestsByDateAndVendor(targetDate, vendorId))
+        when(infoCommunityReadService.getPendingUpdateRequestsByDateAndVendor(targetDate, vendorId))
                 .thenReturn(List.of(new UpdateRequestCommunityView(
+                        101L,
                         "OpenAI",
                         "GPT-5.4",
                         "https://news.example.com/openai",
@@ -89,7 +91,8 @@ class CommunityPostServiceImplTest {
 
         ArgumentCaptor<CommunityPost> postCaptor = ArgumentCaptor.forClass(CommunityPost.class);
         verify(communityPostRepository).save(postCaptor.capture());
-        assertThat(postCaptor.getValue().getBody()).contains("원문 본문");
+        assertThat(postCaptor.getValue().getSourceUrl()).isEqualTo("https://news.example.com/openai");
+        verify(infoCommunityReadService).approveUpdateRequests(eq(List.of(101L)));
     }
 
     @Test
@@ -152,7 +155,7 @@ class CommunityPostServiceImplTest {
                 CommunityPostType.MODEL_INFO,
                 "제목",
                 "요약",
-                "본문",
+                "https://example.com/post",
                 admin,
                 LocalDate.of(2026, 4, 8),
                 10L);
@@ -192,6 +195,8 @@ class CommunityPostServiceImplTest {
 
         assertThat(response.type()).isEqualTo(CommunityPostType.PERFORMANCE_COMPARISON);
         assertThat(response.vendorId()).isNull();
+        assertThat(response.sourceUrl()).isEqualTo("internal://benchmarks/2026-04-08");
+        verify(infoCommunityReadService, never()).approveUpdateRequests(any());
     }
 
     @Test
@@ -206,8 +211,9 @@ class CommunityPostServiceImplTest {
         when(communityPostRepository.existsByPostTypeAndTargetDateAndVendorId(
                         CommunityPostType.MODEL_INFO, targetDate, vendorId))
                 .thenReturn(false);
-        when(infoCommunityReadService.getApprovedUpdateRequestsByDateAndVendor(targetDate, vendorId))
+        when(infoCommunityReadService.getPendingUpdateRequestsByDateAndVendor(targetDate, vendorId))
                 .thenReturn(List.of(new UpdateRequestCommunityView(
+                        101L,
                         "OpenAI",
                         "GPT-5.4",
                         "https://news.example.com/openai",
@@ -222,5 +228,6 @@ class CommunityPostServiceImplTest {
                         adminId, new AdminGenerateCommunityPostRequest(CommunityPostType.MODEL_INFO, targetDate, vendorId)))
                 .isInstanceOf(ServiceException.class)
                 .hasMessageContaining("savePostWithDuplicateGuard");
+        verify(infoCommunityReadService, never()).approveUpdateRequests(any());
     }
 }
