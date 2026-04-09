@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import re
 import uuid
 from dataclasses import dataclass, field
@@ -67,7 +68,7 @@ class AutoFlowService:
             )
 
         raise GatewayValidationError(
-            "Only START and COLLECTED steps are supported in direct-runner mode."
+            "Only START and COLLECTED steps are supported in direct-write mode."
         )
 
     def _start(self, *, mcp_personal_token: str | None, agent_type: str | None) -> dict[str, Any]:
@@ -96,11 +97,11 @@ class AutoFlowService:
             },
             "actions": {
                 "writeFiles": [
-                    {
-                        "path": "start.agent.md",
-                        "content": template_markdown,
-                        "reason": "자동 플로우 시작 템플릿 생성",
-                    }
+                    self._build_write_file_action(
+                        path="start.agent.md",
+                        content=template_markdown,
+                        reason="자동 플로우 시작 템플릿 생성",
+                    )
                 ],
                 "askUser": [
                     "만들고 싶은 프로젝트 목표가 무엇인가요?",
@@ -141,13 +142,36 @@ class AutoFlowService:
         flow.selected_skills = selected_skills
         flow.current_step = "COLLECTED"
 
-        expected_files = self._build_expected_files(selected_skills)
+        write_files, generated_skills = self._build_skill_write_files(
+            mcp_personal_token=mcp_personal_token,
+            selected_skills=selected_skills,
+        )
+        agents_markdown = self._build_agents_markdown(
+            queries=normalized_queries,
+            generated_skills=generated_skills,
+        )
+        write_files.append(
+            self._build_write_file_action(
+                path="agents.md",
+                content=agents_markdown,
+                reason="자동 라우팅 문서 생성",
+            )
+        )
+
+        generated_files = [
+            {
+                "path": write_file["path"],
+                "length": write_file["length"],
+                "sha256": write_file["sha256"],
+            }
+            for write_file in write_files
+        ]
 
         return {
             "success": True,
             "flowId": flow.flow_id,
             "flowStep": "COLLECTED",
-            "message": "추천 스킬 메타 조회 완료. 다음은 로컬 러너로 파일을 직접 생성하세요.",
+            "message": "추천 스킬 본문 조회 완료. actions.writeFiles를 그대로 반영하세요.",
             "recommendation": {
                 "queries": normalized_queries,
                 "selectedSkills": [
@@ -160,22 +184,14 @@ class AutoFlowService:
                     for skill in selected_skills
                 ],
             },
-            "runner": {
-                "mode": "DIRECT_WRITE",
-                "entrypoint": "tools/mcp-gateway/runner/generate_skills.py",
-                "queries": normalized_queries,
-                "expectedFiles": expected_files,
-                "notes": [
-                    "러너가 API를 직접 호출해 skills/*.md 와 agents.md를 생성합니다.",
-                    "LLM이 skill 본문을 재작성하지 않습니다.",
-                ],
-            },
+            "generatedFiles": generated_files,
             "actions": {
-                "writeFiles": [],
+                "writeFiles": write_files,
+                "deleteFiles": [],
                 "askUser": [
-                    "로컬 러너를 실행해 skills/*.md와 agents.md를 자동 생성하세요.",
-                    "예시: python3 tools/mcp-gateway/runner/generate_skills.py --queries-json='[\"SpringBoot\",\"infra\",\"DevOps\"]'",
-                    "러너 실행 후 생성된 파일 목록만 사용자에게 보고하세요.",
+                    "actions.writeFiles의 path/content를 그대로 파일 시스템에 반영하세요.",
+                    "skill 파일은 본문 원문 그대로 저장되며, 재작성/요약하지 마세요.",
+                    "파일 반영 후 generatedFiles 목록(path/length/sha256)을 사용자에게 보고하세요.",
                 ],
                 "nextStep": "DONE",
             },
@@ -246,19 +262,110 @@ class AutoFlowService:
 
         return selected_skills
 
-    def _build_expected_files(self, selected_skills: list[SelectedSkill]) -> list[str]:
-        files: list[str] = []
-        seen: set[str] = set()
-        for selected_skill in selected_skills:
-            base_name = self._slug(selected_skill.category)
-            file_name = f"skills/{base_name}.md"
-            if file_name in seen:
-                file_name = f"skills/{base_name}-{selected_skill.skill_id}.md"
-            files.append(file_name)
-            seen.add(file_name)
+    def _build_skill_write_files(
+        self,
+        *,
+        mcp_personal_token: str | None,
+        selected_skills: list[SelectedSkill],
+    ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+        write_files: list[dict[str, Any]] = []
+        generated_skills: list[dict[str, Any]] = []
+        used_paths: set[str] = set()
 
-        files.append("agents.md")
-        return files
+        for selected_skill in selected_skills:
+            content_response = self.spring_proxy_client.get_recommendation_skill_content(
+                mcp_personal_token=mcp_personal_token,
+                skill_id=selected_skill.skill_id,
+            )
+            category, source_repo, raw_markdown = self._extract_skill_content(content_response)
+            skill_path = self._resolve_skill_relative_path(
+                category=category,
+                skill_id=selected_skill.skill_id,
+                used_paths=used_paths,
+            )
+            write_files.append(
+                self._build_write_file_action(
+                    path=skill_path,
+                    content=raw_markdown,
+                    reason=f"추천 스킬 원문 저장 (skillId={selected_skill.skill_id})",
+                )
+            )
+            generated_skills.append(
+                {
+                    "path": skill_path,
+                    "skillId": selected_skill.skill_id,
+                    "category": category,
+                    "sourceRepo": source_repo,
+                    "finalScore": selected_skill.final_score,
+                }
+            )
+
+        return write_files, generated_skills
+
+    def _extract_skill_content(self, response: dict[str, Any]) -> tuple[str, str, str]:
+        payload = response.get("data", response)
+        if not isinstance(payload, dict):
+            raise GatewayValidationError("skill-content response data must be a JSON object.")
+
+        category = str(payload.get("category", "unknown")).strip() or "unknown"
+        source_repo = str(payload.get("sourceRepo", "unknown")).strip() or "unknown"
+        raw_markdown = payload.get("skillMdRaw")
+        if not isinstance(raw_markdown, str) or not raw_markdown.strip():
+            raise GatewayValidationError("skillMdRaw is missing in skill content response.")
+
+        return category, source_repo, raw_markdown
+
+    def _resolve_skill_relative_path(self, *, category: str, skill_id: int, used_paths: set[str]) -> str:
+        base_name = self._slug(category)
+        candidate = f"skills/{base_name}.md"
+        if candidate in used_paths:
+            candidate = f"skills/{base_name}-{skill_id}.md"
+        used_paths.add(candidate)
+        return candidate
+
+    def _build_agents_markdown(self, *, queries: list[str], generated_skills: list[dict[str, Any]]) -> str:
+        lines = [
+            "# AGENTS Routing",
+            "",
+            "## Generation Context",
+            "- mode: DIRECT_WRITEFILES",
+            f"- queries: {', '.join(queries)}",
+            "",
+            "## Skill Inventory",
+        ]
+
+        for generated_skill in generated_skills:
+            lines.append(
+                "- {path} (skillId={skill_id}, category={category}, finalScore={final_score:.4f})".format(
+                    path=generated_skill["path"],
+                    skill_id=generated_skill["skillId"],
+                    category=generated_skill["category"],
+                    final_score=float(generated_skill["finalScore"]),
+                )
+            )
+
+        lines.extend(
+            [
+                "",
+                "## Routing Rule",
+                "- 사용자 요청을 목표/도메인/제약으로 분해한 뒤, 가장 관련도 높은 primary skill 1개를 먼저 선택한다.",
+                "- 복합 요청이면 secondary skill을 최대 2개까지 추가해 조합한다.",
+                "",
+                "## Response Rule",
+                "- 응답 시작 시 사용한 skills 파일 경로를 먼저 명시한다.",
+                "- skills 원문 기준으로 답변하고 임의 요약으로 대체하지 않는다.",
+            ]
+        )
+        return "\n".join(lines) + "\n"
+
+    def _build_write_file_action(self, *, path: str, content: str, reason: str) -> dict[str, Any]:
+        return {
+            "path": path,
+            "content": content,
+            "reason": reason,
+            "length": len(content),
+            "sha256": hashlib.sha256(content.encode("utf-8")).hexdigest(),
+        }
 
     def _parse_skill_id(self, raw_skill_id: Any) -> int:
         if isinstance(raw_skill_id, bool):

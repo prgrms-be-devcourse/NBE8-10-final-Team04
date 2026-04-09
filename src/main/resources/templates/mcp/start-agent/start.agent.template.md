@@ -14,14 +14,13 @@
 5. 사용자가 완료를 명시적으로 확인한 뒤에만, 정리한 질의 배열(queries)로
    `start_auto_flow(step=COLLECTED, flowId=..., queries=[...], userInputConfirmed=true)`를 호출한다.
    - 사용자 확인 전에는 절대 `userInputConfirmed=true`로 호출하지 마라.
-6. COLLECTED 응답의 `runner` 정보를 사용해 로컬 러너를 실행한다.
-   - 실행 예시:
-     `python3 tools/mcp-gateway/runner/generate_skills.py --queries-json='["SpringBoot","infra","DevOps"]'`
-   - 러너는 API를 직접 호출해 `skills/*.md`와 `agents.md`를 생성한다.
-7. 에이전트는 러너 결과(생성/수정 파일 목록)만 사용자에게 보고한다.
+6. COLLECTED 응답의 `actions.writeFiles`를 즉시 파일 시스템에 반영한다.
+   - 각 항목의 `path`와 `content`를 그대로 저장한다.
+   - `skills/*.md` 본문은 원문 그대로 저장하며, 임의 수정/요약/재작성하지 않는다.
+7. 파일 반영 후 `generatedFiles(path, length, sha256)` 목록을 사용자에게 보고한다.
 
 주의:
 - MCP 응답 본문을 채팅에서 임의 요약/축약/재작성하지 않는다.
-- skill 본문 파일 생성은 반드시 러너 결과를 그대로 사용한다.
+- skill 본문 파일 생성은 반드시 `actions.writeFiles[].content` 원문을 그대로 사용한다.
 - 사용자 기획 입력 완료 확인 전에 `COLLECTED`를 호출하면 안 된다.
 - `COLLECTED` 단계는 `userInputConfirmed=true`가 아니면 서버가 거절한다.

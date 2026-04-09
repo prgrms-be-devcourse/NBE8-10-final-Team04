@@ -1,3 +1,4 @@
+import hashlib
 import unittest
 
 from gateway.auto_flow_service import AutoFlowService
@@ -8,6 +9,7 @@ class _StubSpringProxyClient:
     def __init__(self):
         self.last_template_request = None
         self.last_recommend_request = None
+        self.skill_content_requests = []
 
     def get_start_agent_template(self, mcp_personal_token, agent_type):
         self.last_template_request = {
@@ -17,7 +19,7 @@ class _StubSpringProxyClient:
         return {
             "data": {
                 "templateName": "start.agent.md",
-                "version": "v6",
+                "version": "v7",
                 "templateMarkdown": "# START AGENT TEMPLATE (CODEX)\n",
             }
         }
@@ -46,13 +48,38 @@ class _StubSpringProxyClient:
             }
         }
 
+    def get_recommendation_skill_content(self, mcp_personal_token, skill_id):
+        self.skill_content_requests.append(
+            {
+                "mcp_personal_token": mcp_personal_token,
+                "skill_id": skill_id,
+            }
+        )
+        if skill_id == 1:
+            return {
+                "data": {
+                    "category": "backend",
+                    "sourceRepo": "example/doc-agent",
+                    "skillMdRaw": "# backend skill\nline-1\n",
+                }
+            }
+        if skill_id == 3:
+            return {
+                "data": {
+                    "category": "infra",
+                    "sourceRepo": "example/oci-infra-kit",
+                    "skillMdRaw": "# infra skill\nline-2\n",
+                }
+            }
+        raise AssertionError(f"unexpected skill_id: {skill_id}")
+
 
 class _StubClientWithEmptyRecommendation:
     def get_start_agent_template(self, mcp_personal_token, agent_type):
         return {
             "data": {
                 "templateName": "start.agent.md",
-                "version": "v6",
+                "version": "v7",
                 "templateMarkdown": "# template",
             }
         }
@@ -66,7 +93,7 @@ class _StubClientWithStringSkillId:
         return {
             "data": {
                 "templateName": "start.agent.md",
-                "version": "v6",
+                "version": "v7",
                 "templateMarkdown": "# template",
             }
         }
@@ -82,6 +109,15 @@ class _StubClientWithStringSkillId:
                         "sourceRepo": "example/doc-agent",
                     }
                 ]
+            }
+        }
+
+    def get_recommendation_skill_content(self, mcp_personal_token, skill_id):
+        return {
+            "data": {
+                "category": "backend",
+                "sourceRepo": "example/doc-agent",
+                "skillMdRaw": "# backend skill for 7\n",
             }
         }
 
@@ -142,18 +178,34 @@ class AutoFlowServiceTest(unittest.TestCase):
                 user_input_confirmed=True,
             )
 
-    def test_collected_step_returns_runner_plan(self):
+    def test_collected_step_returns_write_files_without_runner_dependency(self):
         flow_id = self._start_flow()
         response = self._collect(flow_id, queries=[" SpringBoot   ", "infra "])
 
         self.assertEqual(response["flowStep"], "COLLECTED")
         self.assertEqual(response["actions"]["nextStep"], "DONE")
-        self.assertEqual(response["runner"]["entrypoint"], "tools/mcp-gateway/runner/generate_skills.py")
+        self.assertNotIn("runner", response)
         self.assertEqual(self.stub_client.last_recommend_request["queries"], ["SpringBoot", "infra"])
+        self.assertEqual(
+            [request["skill_id"] for request in self.stub_client.skill_content_requests],
+            [1, 3],
+        )
         self.assertIsInstance(response["recommendation"]["selectedSkills"][0]["skillId"], int)
         self.assertEqual(response["recommendation"]["selectedSkills"][0]["skillId"], 1)
-        self.assertIn("skills/backend.md", response["runner"]["expectedFiles"])
-        self.assertIn("agents.md", response["runner"]["expectedFiles"])
+        write_files = response["actions"]["writeFiles"]
+        write_file_paths = [write_file["path"] for write_file in write_files]
+        self.assertIn("skills/backend.md", write_file_paths)
+        self.assertIn("skills/infra.md", write_file_paths)
+        self.assertIn("agents.md", write_file_paths)
+
+        backend_file = next(write_file for write_file in write_files if write_file["path"] == "skills/backend.md")
+        self.assertEqual(backend_file["content"], "# backend skill\nline-1\n")
+        self.assertEqual(backend_file["length"], len("# backend skill\nline-1\n"))
+        self.assertEqual(
+            backend_file["sha256"],
+            hashlib.sha256("# backend skill\nline-1\n".encode("utf-8")).hexdigest(),
+        )
+        self.assertEqual(len(response["generatedFiles"]), len(write_files))
 
     def test_collected_step_fails_when_called_twice(self):
         flow_id = self._start_flow()
@@ -206,7 +258,7 @@ class AutoFlowServiceTest(unittest.TestCase):
         self.assertEqual(response["recommendation"]["selectedSkills"][0]["skillId"], 7)
         self.assertIsInstance(response["recommendation"]["selectedSkills"][0]["skillId"], int)
 
-    def test_rejects_unsupported_step_in_direct_runner_mode(self):
+    def test_rejects_unsupported_step_in_direct_write_mode(self):
         flow_id = self._start_flow()
         with self.assertRaisesRegex(GatewayValidationError, "step must be one of: START, COLLECTED"):
             self.service.run(
