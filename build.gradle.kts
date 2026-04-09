@@ -69,6 +69,7 @@ dependencies {
     // actuator
     implementation ("org.springframework.boot:spring-boot-starter-actuator")
     testImplementation ("org.springframework.boot:spring-boot-starter-actuator-test")
+    runtimeOnly("io.micrometer:micrometer-registry-prometheus")
 
     // oci object-storage
     implementation("com.oracle.oci.sdk:oci-java-sdk-objectstorage:3.54.0")
