@@ -28,6 +28,7 @@ import back.domain.prompt.prompt.entity.Repository;
 import back.domain.prompt.prompt.entity.Skill;
 import back.domain.prompt.prompt.enums.Category;
 import back.domain.prompt.prompt.enums.OwnerType;
+import back.domain.prompt.prompt.parser.SkillNormalizeParser;
 import back.domain.prompt.prompt.repository.SkillRepository;
 
 @ExtendWith(MockitoExtension.class)
@@ -45,6 +46,9 @@ class ChunkingProcessorTest {
     @Mock
     private MarkdownChunker markdownChunker;
 
+    @Mock
+    private SkillNormalizeParser skillNormalizeParser;
+
     private ChunkingProcessor chunkingProcessor;
 
     @BeforeEach
@@ -53,7 +57,8 @@ class ChunkingProcessorTest {
                 skillChunkRepository,
                 skillRepository,
                 embeddingService,
-                markdownChunker
+                markdownChunker,
+                skillNormalizeParser
         );
     }
 
@@ -71,6 +76,10 @@ class ChunkingProcessorTest {
         );
 
         when(markdownChunker.chunkMarkdown(skill.getContentMd())).thenReturn(sections);
+        when(skillNormalizeParser.extractTags(org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.anyString()))
+                .thenReturn(Set.of());
+        when(skillNormalizeParser.extractAliases(org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.anyString()))
+                .thenReturn(List.of());
         when(embeddingService.embedBatch(searchTexts)).thenReturn(List.of(
                 List.of(0.1f, 0.2f),
                 List.of(0.3f, 0.4f)
@@ -95,7 +104,7 @@ class ChunkingProcessorTest {
         assertThat(savedChunks.get(0).getSectionTitle()).isEqualTo("Install");
         assertThat(savedChunks.get(0).getSearchText()).isEqualTo(searchTexts.get(0));
         assertThat(savedChunks.get(0).getCharCount()).isEqualTo("install steps".length());
-        assertThat(savedChunks.get(0).getChunkVersion()).isEqualTo("v1");
+        assertThat(savedChunks.get(0).getChunkVersion()).isEqualTo("v2");
         assertThat(savedChunks.get(0).getEmbeddingModel()).isEqualTo("BAAI/bge-m3");
         assertThat(savedChunks.get(0).getEmbedding()).containsExactly(0.1f, 0.2f);
         assertThat(savedChunks.get(0).getEmbeddedAt()).isNotNull();
