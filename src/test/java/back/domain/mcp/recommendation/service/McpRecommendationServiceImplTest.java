@@ -52,9 +52,10 @@ class McpRecommendationServiceImplTest {
     }
 
     @Test
-    @DisplayName("추천 요청 시 keywords를 정규화한 query 문자열로 후보 조회를 호출한다")
+    @DisplayName("추천 요청 시 queries를 정규화해 후보 조회를 호출한다")
     void recommend_normalizeQueryAndReturnRankedResult() {
-        McpRecommendationRequest request = new McpRecommendationRequest(" SpringBoot   infra  DevOps ");
+        McpRecommendationRequest request = new McpRecommendationRequest(
+                List.of(" SpringBoot  ", "  infra   DevOps ", " "));
         List<McpRecommendationCandidate> candidates = List.of(new McpRecommendationCandidate(
                 1L,
                 "spring-infra-skill",
@@ -79,7 +80,7 @@ class McpRecommendationServiceImplTest {
 
         ArgumentCaptor<McpRecommendationQuery> queryCaptor = ArgumentCaptor.forClass(McpRecommendationQuery.class);
         verify(mcpRecommendationCandidateProvider).findTopCandidates(queryCaptor.capture());
-        assertThat(queryCaptor.getValue().query()).isEqualTo("SpringBoot infra DevOps");
+        assertThat(queryCaptor.getValue().queries()).containsExactly("SpringBoot", "infra DevOps");
         assertThat(response.selectedSkills()).hasSize(1);
         assertThat(response.selectedSkills().getFirst().category()).isEqualTo("INFRA");
     }

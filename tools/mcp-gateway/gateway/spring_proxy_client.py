@@ -47,11 +47,12 @@ class SpringProxyClient:
     def recommend_skills(self, mcp_personal_token: str | None, keywords: str) -> dict[str, Any]:
         token = self._resolve_mcp_personal_token(mcp_personal_token)
         normalized_keywords = normalize_keywords(keywords)
+        normalized_queries = [query for query in normalized_keywords.split(" ") if query]
 
         return self._post_json(
             path="/api/v1/mcp/recommendations",
             bearer_token=token,
-            payload={"keywords": normalized_keywords},
+            payload={"queries": normalized_queries},
         )
 
     def get_recommendation_skill_content(self, mcp_personal_token: str | None, skill_id: int) -> dict[str, Any]:

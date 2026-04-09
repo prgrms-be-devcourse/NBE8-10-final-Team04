@@ -8,22 +8,22 @@ import org.springframework.stereotype.Component;
 import back.domain.mcp.candidate.dto.McpRecommendationCandidate;
 import back.domain.mcp.candidate.dto.McpRecommendationCandidateMetadata;
 import back.domain.mcp.candidate.dto.McpRecommendationQuery;
+import back.domain.prompt.demo.service.DemoSkillSearchService;
 import back.domain.prompt.search.dto.candidate.CandidateDto;
 import back.domain.prompt.search.dto.candidate.CandidateMetadataDto;
 import back.domain.prompt.search.dto.chunk.SkillChunkSearchResultDto;
-import back.domain.prompt.search.service.SkillSearchService;
 import lombok.RequiredArgsConstructor;
 
 @Component
-@ConditionalOnProperty(name = "app.mcp.recommendation.candidate-source", havingValue = "skill-search")
+@ConditionalOnProperty(name = "app.mcp.recommendation.candidate-source", havingValue = "demo-skill-search")
 @RequiredArgsConstructor
-public class SkillSearchMcpRecommendationCandidateProvider implements McpRecommendationCandidateProvider {
+public class DemoSkillSearchMcpRecommendationCandidateProvider implements McpRecommendationCandidateProvider {
 
-    private final SkillSearchService skillSearchService;
+    private final DemoSkillSearchService demoSkillSearchService;
 
     @Override
     public List<McpRecommendationCandidate> findTopCandidates(McpRecommendationQuery query) {
-        SkillChunkSearchResultDto response = skillSearchService.search(query.queries());
+        SkillChunkSearchResultDto response = demoSkillSearchService.search(query.queries());
         if (response == null || response.candidates() == null) {
             return List.of();
         }

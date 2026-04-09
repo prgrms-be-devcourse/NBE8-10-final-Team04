@@ -42,7 +42,7 @@ class SpringProxyClientTest(unittest.TestCase):
         self.assertEqual(request_arg.get_header("Authorization"), "Bearer mcp_token_1")
 
         body = json.loads(request_arg.data.decode("utf-8"))
-        self.assertEqual(body["keywords"], "SpringBoot infra")
+        self.assertEqual(body["queries"], ["SpringBoot", "infra"])
 
     @mock.patch("gateway.spring_proxy_client.request.urlopen")
     def test_get_template_sends_expected_payload(self, mock_urlopen):
