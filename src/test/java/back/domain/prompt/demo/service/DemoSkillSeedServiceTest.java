@@ -15,7 +15,6 @@ import java.util.Set;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -65,7 +64,6 @@ class DemoSkillSeedServiceTest {
         );
 
         when(skillNormalizeParser.extractTags("summary", "content")).thenReturn(Set.of("spring"));
-        when(skillNormalizeParser.extractAliases("summary", "content")).thenReturn(List.of("springboot"));
         when(demoSkillRepository.save(any(DemoSkill.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         DemoSkill saved = service.saveSkill(dto);
@@ -74,6 +72,43 @@ class DemoSkillSeedServiceTest {
         assertThat(saved.getForks()).isEqualTo(0);
         assertThat(saved.getStars()).isEqualTo(0);
         assertThat(saved.getTags()).containsExactly("spring");
+    }
+
+    @Test
+    @DisplayName("saveSkill은 전달된 forks/stars 값을 유지하고 파서 태그를 저장한다")
+    void saveSkill_keepsProvidedCountsAndTags() {
+        DemoSkillSeedService service = new DemoSkillSeedService(
+                demoSkillRepository,
+                demoChunkingProcessor,
+                skillNormalizeParser,
+                new ObjectMapper()
+        );
+
+        DemoSkillRequestDto dto = new DemoSkillRequestDto(
+                2L,
+                "kafka-streaming",
+                "demo-repo",
+                "https://example.com/repo2",
+                "kafka summary",
+                "kafka content",
+                Category.BACKEND,
+                false,
+                7,
+                21,
+                OffsetDateTime.parse("2026-04-09T00:00:00Z"),
+                List.of()
+        );
+
+        when(skillNormalizeParser.extractTags("kafka summary", "kafka content"))
+                .thenReturn(Set.of("kafka", "stream"));
+        when(demoSkillRepository.save(any(DemoSkill.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        DemoSkill saved = service.saveSkill(dto);
+
+        assertThat(saved.getForks()).isEqualTo(7);
+        assertThat(saved.getStars()).isEqualTo(21);
+        assertThat(saved.getTags()).containsExactlyInAnyOrder("kafka", "stream");
+        verify(skillNormalizeParser).extractTags("kafka summary", "kafka content");
     }
 
     @Test
@@ -105,7 +140,6 @@ class DemoSkillSeedServiceTest {
 
         when(demoSkillRepository.count()).thenReturn(0L);
         when(skillNormalizeParser.extractTags(any(), any())).thenReturn(Set.of("tag"));
-        when(skillNormalizeParser.extractAliases(any(), any())).thenReturn(List.of("alias"));
         when(demoSkillRepository.save(any(DemoSkill.class))).thenAnswer(invocation -> {
             DemoSkill skill = invocation.getArgument(0);
             ReflectionTestUtils.setField(skill, "id", 999L);
