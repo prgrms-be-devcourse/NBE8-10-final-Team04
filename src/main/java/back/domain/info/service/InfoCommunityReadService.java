@@ -13,7 +13,9 @@ public interface InfoCommunityReadService {
 
     List<ModelInfoFamilyView> getModelInfoByDateAndVendor(LocalDate targetDate, Long vendorId);
 
-    List<UpdateRequestCommunityView> getApprovedUpdateRequestsByDateAndVendor(LocalDate targetDate, Long vendorId);
+    List<UpdateRequestCommunityView> getPendingUpdateRequestsByDateAndVendor(LocalDate targetDate, Long vendorId);
+
+    void approveUpdateRequests(List<Long> updateRequestIds);
 
     List<BenchmarkMetricView> getPerformanceMetricsByDate(LocalDate targetDate);
 }

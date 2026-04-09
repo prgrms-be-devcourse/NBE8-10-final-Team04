@@ -3,9 +3,6 @@ package back.domain.communitypost.entity;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
-import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.type.SqlTypes;
-
 import back.domain.member.entity.Member;
 import back.global.jpa.entity.BaseEntity;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -45,9 +42,8 @@ public class CommunityPost extends BaseEntity {
     @Column(columnDefinition = "TEXT")
     private String summary;
 
-    @JdbcTypeCode(SqlTypes.LONGVARCHAR)
-    @Column(nullable = false)
-    private String body;
+    @Column(name = "source_url")
+    private String sourceUrl;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 50)
@@ -70,7 +66,7 @@ public class CommunityPost extends BaseEntity {
             CommunityPostType postType,
             String title,
             String summary,
-            String body,
+            String sourceUrl,
             CommunityPostStatus status,
             Member authorAdmin,
             LocalDate targetDate,
@@ -78,7 +74,7 @@ public class CommunityPost extends BaseEntity {
         this.postType = postType;
         this.title = requireNotBlank(title, "title");
         this.summary = summary == null ? null : summary.trim();
-        this.body = requireNotBlank(body, "body");
+        this.sourceUrl = normalizeNullable(sourceUrl);
         this.status = status;
         this.authorAdmin = authorAdmin;
         this.targetDate = targetDate;
@@ -89,18 +85,25 @@ public class CommunityPost extends BaseEntity {
             CommunityPostType postType,
             String title,
             String summary,
-            String body,
+            String sourceUrl,
             Member authorAdmin,
             LocalDate targetDate,
             Long vendorId) {
         return new CommunityPost(
-                postType, title, summary, body, CommunityPostStatus.PENDING_REVIEW, authorAdmin, targetDate, vendorId);
+                postType,
+                title,
+                summary,
+                sourceUrl,
+                CommunityPostStatus.PENDING_REVIEW,
+                authorAdmin,
+                targetDate,
+                vendorId);
     }
 
-    public void updateContent(String title, String summary, String body) {
+    public void updateContent(String title, String summary, String sourceUrl) {
         this.title = requireNotBlank(title, "title");
         this.summary = summary == null ? null : summary.trim();
-        this.body = requireNotBlank(body, "body");
+        this.sourceUrl = normalizeNullable(sourceUrl);
     }
 
     public void changeStatus(CommunityPostStatus status) {
@@ -120,5 +123,13 @@ public class CommunityPost extends BaseEntity {
             throw new IllegalArgumentException(fieldName + " must not be blank");
         }
         return value.trim();
+    }
+
+    private String normalizeNullable(String value) {
+        if (value == null) {
+            return null;
+        }
+        String normalized = value.trim();
+        return normalized.isEmpty() ? null : normalized;
     }
 }

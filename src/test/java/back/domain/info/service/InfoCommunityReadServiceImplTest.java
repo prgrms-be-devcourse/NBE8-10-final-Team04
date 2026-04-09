@@ -1,6 +1,8 @@
 package back.domain.info.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anySet;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -109,7 +111,7 @@ class InfoCommunityReadServiceImplTest {
     }
 
     @Test
-    void getApprovedUpdateRequestsByDateAndVendor_returnsMappedResult() {
+    void getPendingUpdateRequestsByDateAndVendor_returnsMappedResult() {
         LocalDate targetDate = LocalDate.of(2026, 4, 8);
         Long vendorId = 10L;
 
@@ -127,23 +129,39 @@ class InfoCommunityReadServiceImplTest {
                 .sourceType("RSS")
                 .summary("요약")
                 .rawContent("원문")
-                .status(Status.APPROVED)
+                .status(Status.PENDING)
                 .notifiedAt(targetDate)
                 .build();
+        org.springframework.test.util.ReflectionTestUtils.setField(updateRequest, "id", 101L);
 
         when(updateRequestRepository.findAllByStatusAndVendorIdAndNotifiedAtOrderByReviewedAtDescCreatedAtDesc(
-                        Status.APPROVED, vendorId, targetDate))
+                        Status.PENDING, vendorId, targetDate))
                 .thenReturn(List.of(updateRequest));
 
         List<UpdateRequestCommunityView> result =
-                infoCommunityReadService.getApprovedUpdateRequestsByDateAndVendor(targetDate, vendorId);
+                infoCommunityReadService.getPendingUpdateRequestsByDateAndVendor(targetDate, vendorId);
 
         verify(updateRequestRepository)
                 .findAllByStatusAndVendorIdAndNotifiedAtOrderByReviewedAtDescCreatedAtDesc(
-                        Status.APPROVED, vendorId, targetDate);
+                        Status.PENDING, vendorId, targetDate);
         assertThat(result).hasSize(1);
+        assertThat(result.getFirst().id()).isEqualTo(101L);
         assertThat(result.getFirst().vendorName()).isEqualTo("OpenAI");
         assertThat(result.getFirst().summary()).isEqualTo("요약");
         assertThat(result.getFirst().rawContent()).isEqualTo("원문");
+    }
+
+    @Test
+    void approveUpdateRequests_updatesStatusToApproved() {
+        UpdateRequest pendingOne = UpdateRequest.builder().sourceId("source-1").status(Status.PENDING).build();
+        UpdateRequest pendingTwo = UpdateRequest.builder().sourceId("source-2").status(Status.PENDING).build();
+
+        when(updateRequestRepository.findAllById(anySet())).thenReturn(List.of(pendingOne, pendingTwo));
+
+        infoCommunityReadService.approveUpdateRequests(List.of(101L, 102L, 101L));
+
+        verify(updateRequestRepository).findAllById(java.util.Set.of(101L, 102L));
+        assertThat(pendingOne.getStatus()).isEqualTo(Status.APPROVED);
+        assertThat(pendingTwo.getStatus()).isEqualTo(Status.APPROVED);
     }
 }

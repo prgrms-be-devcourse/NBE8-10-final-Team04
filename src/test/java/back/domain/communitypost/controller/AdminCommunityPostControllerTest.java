@@ -72,7 +72,8 @@ class AdminCommunityPostControllerTest {
     @Test
     void updatePost_returnsOk() {
         AuthenticatedMember admin = new AuthenticatedMember(1L, "ADMIN");
-        AdminUpdateCommunityPostRequest request = new AdminUpdateCommunityPostRequest("수정 제목", "수정 요약", "수정 본문");
+        AdminUpdateCommunityPostRequest request =
+                new AdminUpdateCommunityPostRequest("수정 제목", "수정 요약", "https://news.example.com/openai/gpt-5-4");
         CommunityPostInfoResponse post = samplePost();
         when(communityPostService.updatePost(1L, 5L, request)).thenReturn(post);
 
@@ -126,7 +127,7 @@ class AdminCommunityPostControllerTest {
                 CommunityPostType.MODEL_INFO,
                 "제목",
                 "요약",
-                "본문",
+                "https://news.example.com/openai/gpt-5-4",
                 CommunityPostStatus.PENDING_REVIEW,
                 LocalDate.of(2026, 4, 8),
                 10L,
@@ -135,4 +136,3 @@ class AdminCommunityPostControllerTest {
                 null);
     }
 }
-
