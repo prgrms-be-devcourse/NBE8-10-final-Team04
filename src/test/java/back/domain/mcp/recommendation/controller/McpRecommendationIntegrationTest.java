@@ -101,7 +101,7 @@ class McpRecommendationIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
-                                  "keywords": "SpringBoot infra DevOps"
+                                  "queries": ["SpringBoot", "infra", "DevOps"]
                                 }
                                 """))
                 .andExpect(status().isOk())
@@ -160,7 +160,7 @@ class McpRecommendationIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
-                                  "keywords": "SpringBoot"
+                                  "queries": ["SpringBoot"]
                                 }
                                 """))
                 .andExpect(status().isUnauthorized())
@@ -168,8 +168,8 @@ class McpRecommendationIntegrationTest {
     }
 
     @Test
-    @DisplayName("keywords가 공백이면 400을 반환한다")
-    void recommend_whenKeywordsIsBlank() throws Exception {
+    @DisplayName("queries가 공백 원소만 있으면 400을 반환한다")
+    void recommend_whenQueriesContainsBlankOnly() throws Exception {
         Member member = memberRepository.save(Member.createUser("google-sub-902", "u902@example.com", "User 902"));
         String rawMcpToken = "mcp_recommend_token_902";
 
@@ -186,7 +186,7 @@ class McpRecommendationIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
-                                  "keywords": "   "
+                                  "queries": ["   "]
                                 }
                                 """))
                 .andExpect(status().isBadRequest());
