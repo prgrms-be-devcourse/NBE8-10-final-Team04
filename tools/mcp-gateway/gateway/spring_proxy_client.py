@@ -7,7 +7,7 @@ from urllib import error, request
 from gateway.input_normalizer import (
     GatewayValidationError,
     normalize_agent_type,
-    normalize_keywords,
+    normalize_queries,
     normalize_mcp_personal_token,
 )
 
@@ -44,10 +44,9 @@ class SpringProxyClient:
             payload={"agentType": normalized_agent_type},
         )
 
-    def recommend_skills(self, mcp_personal_token: str | None, keywords: str) -> dict[str, Any]:
+    def recommend_skills(self, mcp_personal_token: str | None, queries: list[str] | tuple[str, ...]) -> dict[str, Any]:
         token = self._resolve_mcp_personal_token(mcp_personal_token)
-        normalized_keywords = normalize_keywords(keywords)
-        normalized_queries = [query for query in normalized_keywords.split(" ") if query]
+        normalized_queries = normalize_queries(queries)
 
         return self._post_json(
             path="/api/v1/mcp/recommendations",

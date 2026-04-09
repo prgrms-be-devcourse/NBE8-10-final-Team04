@@ -227,13 +227,13 @@ def get_start_agent_template(agentType: str, ctx: Context | None = None) -> dict
 
 
 @mcp.tool(name="recommend_skills")
-def recommend_skills(keywords: str, ctx: Context | None = None) -> dict[str, Any]:
+def recommend_skills(queries: list[str], ctx: Context | None = None) -> dict[str, Any]:
     """Fetches ranked skills recommendation. Token is resolved from Authorization header (or env fallback)."""
     try:
         mcp_personal_token = _resolve_mcp_personal_token(ctx)
         response = client.recommend_skills(
             mcp_personal_token=mcp_personal_token,
-            keywords=keywords,
+            queries=queries,
         )
         return _success(response)
     except GatewayValidationError as validation_error:
@@ -254,7 +254,7 @@ def start_auto_flow(
         step: str = "START",
         agentType: str | None = None,
         flowId: str | None = None,
-        keywords: str | None = None,
+        queries: list[str] | None = None,
         userInputConfirmed: bool | None = None,
         skillId: int | None = None,
         cursor: int | None = None,
@@ -286,7 +286,7 @@ def start_auto_flow(
             mcp_personal_token=mcp_personal_token,
             agent_type=agentType,
             flow_id=flowId,
-            keywords=keywords,
+            queries=queries,
             user_input_confirmed=userInputConfirmed,
             skill_id=skillId,
             cursor=cursor,
