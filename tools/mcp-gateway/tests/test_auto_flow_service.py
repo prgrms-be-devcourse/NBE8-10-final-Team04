@@ -24,10 +24,10 @@ class _StubSpringProxyClient:
             }
         }
 
-    def recommend_skills(self, mcp_personal_token, keywords):
+    def recommend_skills(self, mcp_personal_token, queries):
         self.last_recommend_request = {
             "mcp_personal_token": mcp_personal_token,
-            "keywords": keywords,
+            "queries": queries,
         }
         return {
             "data": {
@@ -83,7 +83,7 @@ class _StubClientWithEmptyRecommendation:
             }
         }
 
-    def recommend_skills(self, mcp_personal_token, keywords):
+    def recommend_skills(self, mcp_personal_token, queries):
         return {"data": {"selectedSkills": []}}
 
     def get_recommendation_skill_content(self, mcp_personal_token, skill_id):
@@ -100,7 +100,7 @@ class _StubClientWithStringSkillId:
             }
         }
 
-    def recommend_skills(self, mcp_personal_token, keywords):
+    def recommend_skills(self, mcp_personal_token, queries):
         return {
             "data": {
                 "selectedSkills": [
@@ -137,7 +137,7 @@ class AutoFlowServiceTest(unittest.TestCase):
             mcp_personal_token=self.mcp_token,
             agent_type="codex",
             flow_id=None,
-            keywords=None,
+            queries=None,
             user_input_confirmed=None,
             skill_id=None,
             cursor=None,
@@ -151,13 +151,14 @@ class AutoFlowServiceTest(unittest.TestCase):
         )
         return response["flowId"]
 
-    def _collect(self, flow_id: str, keywords: str = "SpringBoot infra") -> dict:
+    def _collect(self, flow_id: str, queries: list[str] | None = None) -> dict:
+        effective_queries = queries if queries is not None else ["SpringBoot", "infra"]
         return self.service.run(
             step="COLLECTED",
             mcp_personal_token=self.mcp_token,
             agent_type=None,
             flow_id=flow_id,
-            keywords=keywords,
+            queries=effective_queries,
             user_input_confirmed=True,
             skill_id=None,
             cursor=None,
@@ -179,7 +180,7 @@ class AutoFlowServiceTest(unittest.TestCase):
                 mcp_personal_token=self.mcp_token,
                 agent_type=None,
                 flow_id=flow_id,
-                keywords=None,
+                queries=None,
                 user_input_confirmed=None,
                 skill_id=skill_id,
                 cursor=cursor,
@@ -202,7 +203,7 @@ class AutoFlowServiceTest(unittest.TestCase):
             mcp_personal_token=self.mcp_token,
             agent_type=None,
             flow_id=flow_id,
-            keywords=None,
+            queries=None,
             user_input_confirmed=None,
             skill_id=skill_id,
             cursor=None,
@@ -221,7 +222,7 @@ class AutoFlowServiceTest(unittest.TestCase):
             mcp_personal_token=self.mcp_token,
             agent_type="codex",
             flow_id=None,
-            keywords=None,
+            queries=None,
             user_input_confirmed=None,
             skill_id=None,
             cursor=None,
@@ -248,7 +249,7 @@ class AutoFlowServiceTest(unittest.TestCase):
                 mcp_personal_token=self.mcp_token,
                 agent_type=None,
                 flow_id=None,
-                keywords="SpringBoot infra",
+                queries=["SpringBoot", "infra"],
                 user_input_confirmed=True,
                 skill_id=None,
                 cursor=None,
@@ -263,18 +264,18 @@ class AutoFlowServiceTest(unittest.TestCase):
 
     def test_collected_step_returns_selected_skill_metadata(self):
         flow_id = self._start_flow()
-        response = self._collect(flow_id, keywords=" SpringBoot   infra ")
+        response = self._collect(flow_id, queries=[" SpringBoot   ", "infra "])
 
         self.assertEqual(response["flowStep"], "COLLECTED")
         self.assertEqual(response["actions"]["nextStep"], "FETCH_SKILL")
         self.assertEqual(response["actions"]["nextStepParamsExample"]["flowId"], flow_id)
-        self.assertEqual(self.stub_client.last_recommend_request["keywords"], "SpringBoot infra")
+        self.assertEqual(self.stub_client.last_recommend_request["queries"], ["SpringBoot", "infra"])
         self.assertIsInstance(response["recommendation"]["selectedSkills"][0]["skillId"], int)
         self.assertEqual(response["recommendation"]["selectedSkills"][0]["skillId"], 1)
 
     def test_fetch_skill_returns_integrity_metadata(self):
         flow_id = self._start_flow()
-        self._collect(flow_id)
+        self._collect(flow_id, queries=["SpringBoot", "infra"])
         response = self._fetch_until_done(flow_id, skill_id=1, chunk_size=6)
 
         self.assertEqual(response["flowStep"], "FETCH_SKILL")
@@ -284,7 +285,7 @@ class AutoFlowServiceTest(unittest.TestCase):
 
     def test_verify_skill_rejects_mismatched_hash(self):
         flow_id = self._start_flow()
-        self._collect(flow_id)
+        self._collect(flow_id, queries=["SpringBoot", "infra"])
         self._fetch_until_done(flow_id, skill_id=1)
 
         with self.assertRaises(GatewayValidationError):
@@ -293,7 +294,7 @@ class AutoFlowServiceTest(unittest.TestCase):
                 mcp_personal_token=self.mcp_token,
                 agent_type=None,
                 flow_id=flow_id,
-                keywords=None,
+                queries=None,
                 user_input_confirmed=None,
                 skill_id=1,
                 cursor=None,
@@ -308,7 +309,7 @@ class AutoFlowServiceTest(unittest.TestCase):
 
     def test_finalize_requires_decide_step(self):
         flow_id = self._start_flow()
-        self._collect(flow_id)
+        self._collect(flow_id, queries=["SpringBoot", "infra"])
         self._fetch_until_done(flow_id, skill_id=1)
         self._fetch_until_done(flow_id, skill_id=3)
 
@@ -334,7 +335,7 @@ class AutoFlowServiceTest(unittest.TestCase):
                 mcp_personal_token=self.mcp_token,
                 agent_type=None,
                 flow_id=flow_id,
-                keywords=None,
+                queries=None,
                 user_input_confirmed=None,
                 skill_id=None,
                 cursor=None,
@@ -349,7 +350,7 @@ class AutoFlowServiceTest(unittest.TestCase):
 
     def test_decide_requires_user_decision_confirmed(self):
         flow_id = self._start_flow()
-        self._collect(flow_id)
+        self._collect(flow_id, queries=["SpringBoot", "infra"])
         self._fetch_until_done(flow_id, skill_id=1)
         self._fetch_until_done(flow_id, skill_id=3)
 
@@ -374,7 +375,7 @@ class AutoFlowServiceTest(unittest.TestCase):
                 mcp_personal_token=self.mcp_token,
                 agent_type=None,
                 flow_id=flow_id,
-                keywords=None,
+                queries=None,
                 user_input_confirmed=None,
                 skill_id=None,
                 cursor=None,
@@ -389,7 +390,7 @@ class AutoFlowServiceTest(unittest.TestCase):
 
     def test_customize_finalize_requires_customization_applied_true(self):
         flow_id = self._start_flow()
-        self._collect(flow_id)
+        self._collect(flow_id, queries=["SpringBoot", "infra"])
         self._fetch_until_done(flow_id, skill_id=1)
         self._fetch_until_done(flow_id, skill_id=3)
 
@@ -413,7 +414,7 @@ class AutoFlowServiceTest(unittest.TestCase):
             mcp_personal_token=self.mcp_token,
             agent_type=None,
             flow_id=flow_id,
-            keywords=None,
+            queries=None,
             user_input_confirmed=None,
             skill_id=None,
             cursor=None,
@@ -432,7 +433,7 @@ class AutoFlowServiceTest(unittest.TestCase):
                 mcp_personal_token=self.mcp_token,
                 agent_type=None,
                 flow_id=flow_id,
-                keywords=None,
+                queries=None,
                 user_input_confirmed=None,
                 skill_id=None,
                 cursor=None,
@@ -447,7 +448,7 @@ class AutoFlowServiceTest(unittest.TestCase):
 
     def test_happy_path_accept_finalize(self):
         flow_id = self._start_flow()
-        self._collect(flow_id)
+        self._collect(flow_id, queries=["SpringBoot", "infra"])
         self._fetch_until_done(flow_id, skill_id=1)
         self._fetch_until_done(flow_id, skill_id=3)
 
@@ -473,7 +474,7 @@ class AutoFlowServiceTest(unittest.TestCase):
             mcp_personal_token=self.mcp_token,
             agent_type=None,
             flow_id=flow_id,
-            keywords=None,
+            queries=None,
             user_input_confirmed=None,
             skill_id=None,
             cursor=None,
@@ -492,7 +493,7 @@ class AutoFlowServiceTest(unittest.TestCase):
             mcp_personal_token=self.mcp_token,
             agent_type=None,
             flow_id=flow_id,
-            keywords=None,
+            queries=None,
             user_input_confirmed=None,
             skill_id=None,
             cursor=None,
@@ -515,7 +516,7 @@ class AutoFlowServiceTest(unittest.TestCase):
             mcp_personal_token=self.mcp_token,
             agent_type="codex",
             flow_id=None,
-            keywords=None,
+            queries=None,
             user_input_confirmed=None,
             skill_id=None,
             cursor=None,
@@ -534,7 +535,7 @@ class AutoFlowServiceTest(unittest.TestCase):
                 mcp_personal_token=self.mcp_token,
                 agent_type=None,
                 flow_id=start_response["flowId"],
-                keywords="SpringBoot infra",
+                queries=["SpringBoot", "infra"],
                 user_input_confirmed=True,
                 skill_id=None,
                 cursor=None,
@@ -554,7 +555,7 @@ class AutoFlowServiceTest(unittest.TestCase):
             mcp_personal_token=self.mcp_token,
             agent_type="codex",
             flow_id=None,
-            keywords=None,
+            queries=None,
             user_input_confirmed=None,
             skill_id=None,
             cursor=None,
@@ -572,7 +573,7 @@ class AutoFlowServiceTest(unittest.TestCase):
             mcp_personal_token=self.mcp_token,
             agent_type=None,
             flow_id=start_response["flowId"],
-            keywords="SpringBoot infra",
+            queries=["SpringBoot", "infra"],
             user_input_confirmed=True,
             skill_id=None,
             cursor=None,
