@@ -2,7 +2,6 @@ package back.domain.mcp.template.controller;
 
 import back.domain.payment.service.UsageService;
 import back.global.annotation.RequiresSubscription;
-import back.global.util.SecurityUtils;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -36,9 +35,6 @@ public class McpTemplateController implements McpTemplateControllerDocs {
     public ResponseEntity<RsData<StartAgentTemplateResponse>> getStartAgentTemplate(
             @RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) String authorizationHeader,
             @Valid @RequestBody StartAgentTemplateRequest request) {
-
-        Long memberId = SecurityUtils.getCurrentMemberId();
-        usageService.validateAndConsume(memberId);
 
         mcpTokenAuthenticationService.authenticate(authorizationHeader);
         StartAgentTemplateResponse response = startAgentTemplateService.getTemplate(request.agentType());
