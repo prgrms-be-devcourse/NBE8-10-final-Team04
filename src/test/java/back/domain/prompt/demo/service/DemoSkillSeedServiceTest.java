@@ -61,7 +61,6 @@ class DemoSkillSeedServiceTest {
                 null,
                 null,
                 OffsetDateTime.parse("2026-04-09T00:00:00Z"),
-                List.of(),
                 List.of()
         );
 
@@ -71,11 +70,10 @@ class DemoSkillSeedServiceTest {
 
         DemoSkill saved = service.saveSkill(dto);
 
-        assertThat(saved.getSkillId()).isEqualTo(1L);
+        assertThat(saved.getSkillName()).isEqualTo("springboot-patterns");
         assertThat(saved.getForks()).isEqualTo(0);
         assertThat(saved.getStars()).isEqualTo(0);
         assertThat(saved.getTags()).containsExactly("spring");
-        assertThat(saved.getAliases()).containsExactly("springboot");
     }
 
     @Test
@@ -126,7 +124,7 @@ class DemoSkillSeedServiceTest {
     void skillMockWrapper_storesSkills() throws Exception {
         DemoSkillRequestDto dto = new DemoSkillRequestDto(
                 1L, "skill", "repo", "url", "summary", "content",
-                Category.BACKEND, false, 0, 0, null, List.of(), List.of()
+                Category.BACKEND, false, 0, 0, null, List.of()
         );
 
         Class<?> wrapperClass = null;
