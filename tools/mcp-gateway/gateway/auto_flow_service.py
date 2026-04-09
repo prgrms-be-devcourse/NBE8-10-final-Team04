@@ -16,7 +16,7 @@ from gateway.input_normalizer import (
     normalize_finalize_decision,
     normalize_flow_id,
     normalize_flow_step,
-    normalize_keywords,
+    normalize_queries,
     normalize_skill_id,
     normalize_user_decision_confirmed,
     normalize_user_input_confirmed,
@@ -46,7 +46,7 @@ class AutoFlowState:
     flow_id: str
     agent_type: str
     current_step: str = "START"
-    keywords: str = ""
+    queries: list[str] = field(default_factory=list)
     selected_skills: list[SelectedSkill] = field(default_factory=list)
     skill_contents: dict[int, SkillContent] = field(default_factory=dict)
     fetched_skill_ids: set[int] = field(default_factory=set)
@@ -81,7 +81,7 @@ class AutoFlowService:
         mcp_personal_token: str | None,
         agent_type: str | None,
         flow_id: str | None,
-        keywords: str | None,
+        queries: list[str] | tuple[str, ...] | None,
         user_input_confirmed: bool | None,
         skill_id: int | float | str | None = None,
         cursor: int | float | str | None = None,
@@ -105,7 +105,7 @@ class AutoFlowService:
             return self._collected(
                 flow_id=flow_id,
                 mcp_personal_token=mcp_personal_token,
-                keywords=keywords,
+                queries=queries,
                 user_input_confirmed=user_input_confirmed,
             )
 
@@ -181,7 +181,7 @@ class AutoFlowService:
                 "nextStepParamsExample": {
                     "step": "COLLECTED",
                     "flowId": flow_id,
-                    "keywords": "SpringBoot infra DevOps",
+                    "queries": ["SpringBoot", "infra", "DevOps"],
                     "userInputConfirmed": True,
                 },
             },
@@ -192,21 +192,21 @@ class AutoFlowService:
         *,
         flow_id: str | None,
         mcp_personal_token: str | None,
-        keywords: str | None,
+        queries: list[str] | tuple[str, ...] | None,
         user_input_confirmed: bool | None,
     ) -> dict[str, Any]:
         flow = self._require_flow(flow_id)
         self._assert_step_allowed(flow, {"START"})
         normalize_user_input_confirmed(user_input_confirmed)
-        normalized_keywords = normalize_keywords(keywords)
+        normalized_queries = normalize_queries(queries)
 
         recommendation_response = self.spring_proxy_client.recommend_skills(
             mcp_personal_token=mcp_personal_token,
-            keywords=normalized_keywords,
+            queries=normalized_queries,
         )
         selected_skills = self._extract_selected_skills(recommendation_response)
 
-        flow.keywords = normalized_keywords
+        flow.queries = normalized_queries
         flow.selected_skills = selected_skills
         flow.skill_contents.clear()
         flow.fetched_skill_ids.clear()
@@ -222,7 +222,7 @@ class AutoFlowService:
             "flowStep": "COLLECTED",
             "message": "추천 스킬 메타 조회 완료 (본문은 FETCH_SKILL 단계에서 분할 전달)",
             "recommendation": {
-                "keywords": normalized_keywords,
+                "queries": normalized_queries,
                 "selectedSkills": [
                     {
                         "category": skill.category,
@@ -546,7 +546,7 @@ class AutoFlowService:
 
         agents_markdown = self._build_agents_markdown(
             selected_skills=flow.selected_skills,
-            keywords=flow.keywords,
+            queries=flow.queries,
             decision=flow.decision,
             customization_notes=flow.customization_notes,
         )
@@ -558,7 +558,7 @@ class AutoFlowService:
             "message": "최종 agents.md 생성 준비 완료",
             "finalize": {
                 "decision": flow.decision,
-                "keywords": flow.keywords,
+                "queries": flow.queries,
                 "customizationNotes": flow.customization_notes,
                 "customizationApplied": flow.customization_applied,
                 "customizationPolicy": (
@@ -712,7 +712,7 @@ class AutoFlowService:
         self,
         *,
         selected_skills: list[SelectedSkill],
-        keywords: str,
+        queries: list[str],
         decision: str,
         customization_notes: str,
     ) -> str:
@@ -721,7 +721,7 @@ class AutoFlowService:
             "",
             "## Generation Context",
             f"- decision: {decision}",
-            f"- keywords: {keywords}",
+            f"- queries: {', '.join(queries)}",
             f"- customizationNotes: {customization_notes}",
             "",
             "## Skill Inventory",

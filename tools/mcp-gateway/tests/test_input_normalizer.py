@@ -9,7 +9,7 @@ from gateway.input_normalizer import (
     normalize_finalize_decision,
     normalize_flow_step,
     normalize_flow_id,
-    normalize_keywords,
+    normalize_queries,
     normalize_mcp_personal_token,
     normalize_skill_id,
     normalize_user_decision_confirmed,
@@ -20,12 +20,21 @@ from gateway.input_normalizer import (
 
 
 class InputNormalizerTest(unittest.TestCase):
-    def test_normalize_keywords_collapses_whitespace(self):
-        self.assertEqual(normalize_keywords(" SpringBoot   infra  DevOps "), "SpringBoot infra DevOps")
+    def test_normalize_queries_collapses_whitespace(self):
+        self.assertEqual(
+            normalize_queries([" SpringBoot   ", " infra  DevOps "]),
+            ["SpringBoot", "infra DevOps"],
+        )
 
-    def test_normalize_keywords_raises_when_blank(self):
+    def test_normalize_queries_raises_when_invalid(self):
         with self.assertRaises(GatewayValidationError):
-            normalize_keywords("   ")
+            normalize_queries([])
+
+        with self.assertRaises(GatewayValidationError):
+            normalize_queries(["   "])
+
+        with self.assertRaises(GatewayValidationError):
+            normalize_queries("SpringBoot")  # type: ignore[arg-type]
 
     def test_normalize_agent_type_uppercases_and_validates(self):
         self.assertEqual(normalize_agent_type("claude"), "CLAUDE")
