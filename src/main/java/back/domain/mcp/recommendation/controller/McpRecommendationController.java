@@ -1,5 +1,6 @@
 package back.domain.mcp.recommendation.controller;
 
+import back.global.annotation.RequiresSubscription;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -28,6 +29,7 @@ public class McpRecommendationController implements McpRecommendationControllerD
     private final McpTokenAuthenticationService mcpTokenAuthenticationService;
     private final McpRecommendationService mcpRecommendationService;
 
+    @RequiresSubscription
     @Override
     @PostMapping("/recommendations")
     public ResponseEntity<RsData<McpRecommendationResponse>> recommend(

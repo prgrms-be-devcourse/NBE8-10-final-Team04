@@ -10,6 +10,8 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
+
 @Entity
 @Table(name = "users")
 @Getter
@@ -37,11 +39,14 @@ public class Member extends BaseEntity {
     }
 
     public static Member createUser(String googleSub, String email, String name) {
-        return new Member(
+        Member member = new Member(
                 requireNotBlank(googleSub, "googleSub"),
                 requireNotBlank(email, "email"),
                 requireNotBlank(name, "name"),
                 MemberRole.USER);
+        member.freeUsageCount = 0;
+        member.freeUsageResetAt = calculateNextResetAt();
+        return member;
     }
 
     public static Member createAdmin(String googleSub, String email, String name) {
@@ -75,4 +80,62 @@ public class Member extends BaseEntity {
         return value.trim();
     }
 
+//    무료사용량 컬럼 추가
+    private static final int MAX_FREE_USAGE = 3;
+
+    @Column(name = "free_usage_count")
+    private Integer freeUsageCount = 0;  //이번 달 사용 횟수
+
+    @Column(name = "free_usage_reset_at")
+    private LocalDateTime freeUsageResetAt;  //초기화 날짜 (다음달 1일)
+
+    @Column(name = "last_usage_at")
+    private LocalDateTime lastUsageAt; // 마지막 AI 사용 시간
+
+    //   사용횟수 확인
+    public boolean canUseFree() {
+        return getUsageCount() < MAX_FREE_USAGE;
+    }
+
+    public int getRemainingUsage() {
+        return MAX_FREE_USAGE - getUsageCount();
+    }
+
+    private int getUsageCount() {
+        return this.freeUsageCount != null ? this.freeUsageCount : 0;
+    }
+
+    public void increaseFreeUsageCount() {
+        if (!canUseFree()) {
+            throw new IllegalStateException("무료 사용 횟수를 초과하였습니다.");
+        }
+        this.freeUsageCount = getUsageCount() + 1;
+    }
+
+//    사용량 리셋
+    public void resetFreeUsage() {
+        this.freeUsageCount = 0;
+        this.freeUsageResetAt = calculateNextResetAt();
+    }
+
+    private static LocalDateTime calculateNextResetAt() {
+        LocalDateTime now = LocalDateTime.now();
+        return now.plusMonths(1)
+                .withDayOfMonth(1)
+                .toLocalDate()
+                .atStartOfDay();
+    }
+
+    public void resetFreeUsageIfNeeded() {
+        LocalDateTime now = LocalDateTime.now();
+
+        if (this.freeUsageResetAt == null || !this.freeUsageResetAt.isAfter(now)) {
+            resetFreeUsage();  // freeUsageCount = 0 + resetAt 갱신 같이 처리
+        }
+    }
+
+    // 마지막 사용 시간을 현재로 갱신하는 메서드
+    public void updateLastUsageAt() {
+        this.lastUsageAt = LocalDateTime.now();
+    }
 }

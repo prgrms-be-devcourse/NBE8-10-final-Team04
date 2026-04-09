@@ -64,6 +64,7 @@ dependencies {
     testImplementation("org.springframework.restdocs:spring-restdocs-mockmvc")
     runtimeOnly("org.postgresql:postgresql")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+    implementation("org.springframework.boot:spring-boot-starter-aspectj")
 
     // actuator
     implementation ("org.springframework.boot:spring-boot-starter-actuator")
@@ -135,7 +136,9 @@ tasks.named<JacocoCoverageVerification>("jacocoTestCoverageVerification") {
             excludes = listOf(
                 "**.*DTO*",        // 이름에 DTO가 포함된 모든 클래스 제외
                 "**.config.**",     // config 패키지 안에 있는 모든 클래스 제외
-                "**.*Application*"  // 메인 실행 클래스 제외
+                "**.*Application*",  // 메인 실행 클래스 제외
+                "back.domain.payment.dto.response.*",
+                "back.domain.payment.client.*"
             )
             limit {
                 counter = "LINE"

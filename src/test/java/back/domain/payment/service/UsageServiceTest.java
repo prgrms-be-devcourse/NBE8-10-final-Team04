@@ -1,0 +1,67 @@
+package back.domain.payment.service;
+
+import back.domain.member.entity.Member;
+import back.domain.member.repository.MemberRepository;
+import back.domain.payment.repository.SubscriptionRepository;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.util.Optional;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.when;
+
+@ExtendWith(MockitoExtension.class)
+class UsageServiceTest {
+
+    private UsageService usageService;
+
+    @Mock
+    private MemberRepository memberRepository;
+
+    @Mock
+    private SubscriptionRepository subscriptionRepository;
+
+    private Member member;
+
+    @BeforeEach
+    void setUp() {
+        usageService = new UsageService(memberRepository, subscriptionRepository);
+
+        member = Member.createUser("google-sub-123", "test@test.com", "슬기");
+
+        when(memberRepository.findById(1L)).thenReturn(Optional.of(member));
+    }
+
+    @Test
+    @DisplayName("무료 사용 남은 횟수를 반환한다")
+    void getRemainingUsage() {
+        int remaining = usageService.getRemainingUsage(1L);
+        assertEquals(3, remaining);
+    }
+
+    @Test
+    @DisplayName("무료 사용 1회를 차감하면 freeUsageCount가 1 증가한다")
+    void useOnce() {
+        usageService.useOnce(1L);
+        assertEquals(1, member.getFreeUsageCount());
+    }
+
+    @Test
+    @DisplayName("무료 사용 3회를 초과하면 예외가 발생한다")
+    void useOnce_fail_whenExceeded() {
+        usageService.useOnce(1L);
+        usageService.useOnce(1L);
+        usageService.useOnce(1L);
+
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
+            usageService.useOnce(1L);
+        });
+
+        assertEquals("무료 사용 횟수를 초과하였습니다.", exception.getMessage());
+    }
+}
