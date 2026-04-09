@@ -30,9 +30,9 @@ public class McpRecommendationServiceImpl implements McpRecommendationService {
 
     @Override
     public McpRecommendationResponse recommend(McpRecommendationRequest request) {
-        log.debug("[McpRecommendationService] recommend start. keywords={}", request.keywords());
+        log.debug("[McpRecommendationService] recommend start. queries={}", request.queries());
 
-        McpRecommendationQuery query = new McpRecommendationQuery(request.keywords());
+        McpRecommendationQuery query = new McpRecommendationQuery(request.queries());
 
         List<McpRecommendationCandidate> candidates = mcpRecommendationCandidateProvider.findTopCandidates(query);
         log.debug("[McpRecommendationService] candidate fetch done. candidateCount={}", candidates.size());
