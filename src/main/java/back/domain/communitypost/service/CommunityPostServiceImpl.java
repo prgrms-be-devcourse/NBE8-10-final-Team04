@@ -2,7 +2,6 @@ package back.domain.communitypost.service;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -23,7 +22,7 @@ import back.domain.communitypost.entity.CommunityPostStatus;
 import back.domain.communitypost.entity.CommunityPostType;
 import back.domain.communitypost.repository.CommunityPostRepository;
 import back.domain.info.dto.response.BenchmarkMetricView;
-import back.domain.info.dto.response.ModelInfoFamilyView;
+import back.domain.info.dto.response.UpdateRequestCommunityView;
 import back.domain.info.service.InfoCommunityReadService;
 import back.domain.member.entity.Member;
 import back.domain.member.repository.MemberRepository;
@@ -142,41 +141,55 @@ public class CommunityPostServiceImpl implements CommunityPostService {
     }
 
     private GeneratedPostContent generateModelInfoContent(LocalDate targetDate, Long vendorId) {
-        List<ModelInfoFamilyView> families = infoCommunityReadService.getModelInfoByDateAndVendor(targetDate, vendorId);
-        if (families.isEmpty()) {
+        List<UpdateRequestCommunityView> updateRequests =
+                infoCommunityReadService.getApprovedUpdateRequestsByDateAndVendor(targetDate, vendorId);
+        if (updateRequests.isEmpty()) {
             throw new ServiceException(
                     CommonErrorCode.NOT_FOUND,
-                    "[CommunityPostServiceImpl#generateModelInfoContent] no model info source data",
-                    "해당 벤더/날짜의 모델 정보 원천 데이터가 없습니다.");
+                    "[CommunityPostServiceImpl#generateModelInfoContent] no update request source data",
+                    "해당 벤더/날짜의 업데이트 원천 데이터가 없습니다.");
         }
 
         String formattedDate = DATE_FORMATTER.format(targetDate);
-        String vendorName = families.getFirst().vendorName();
+        String vendorName = updateRequests.getFirst().vendorName();
         String title = "%s %s 모델 정보 업데이트".formatted(formattedDate, vendorName);
-        String summary = "%s 기준 %s 모델 패밀리 변경 %d건".formatted(formattedDate, vendorName, families.size());
+        String summary = resolveModelInfoSummary(formattedDate, vendorName, updateRequests);
 
         StringBuilder bodyBuilder = new StringBuilder();
         bodyBuilder.append("# ").append(formattedDate).append(" ").append(vendorName).append(" 모델 정보 업데이트\n\n");
         bodyBuilder.append("- 벤더: ").append(vendorName).append("\n");
-        bodyBuilder.append("- 총 변경 패밀리 수: ").append(families.size()).append("\n\n");
+        bodyBuilder.append("- 총 변경 요청 수: ").append(updateRequests.size()).append("\n\n");
 
-        for (ModelInfoFamilyView family : families) {
-            bodyBuilder.append("- 패밀리: ").append(family.familyName()).append("\n");
+        for (UpdateRequestCommunityView updateRequest : updateRequests) {
             bodyBuilder
-                    .append("  - 설명: ")
-                    .append(defaultText(family.commonDescription()))
+                    .append("## 패밀리: ")
+                    .append(defaultText(updateRequest.familyName()))
                     .append("\n");
             bodyBuilder
-                    .append("  - 입력 타입: ")
-                    .append(joinArray(family.inputTypes()))
+                    .append("- 요약: ")
+                    .append(defaultText(updateRequest.summary()))
                     .append("\n");
             bodyBuilder
-                    .append("  - 출력 타입: ")
-                    .append(joinArray(family.outputTypes()))
+                    .append("- 소스 타입: ")
+                    .append(defaultText(updateRequest.sourceType()))
+                    .append("\n");
+            bodyBuilder
+                    .append("- 소스 URL: ")
+                    .append(defaultText(updateRequest.sourceUrl()))
                     .append("\n\n");
+            bodyBuilder.append(defaultText(updateRequest.rawContent())).append("\n\n");
         }
 
         return new GeneratedPostContent(title, summary, bodyBuilder.toString());
+    }
+
+    private String resolveModelInfoSummary(
+            String formattedDate, String vendorName, List<UpdateRequestCommunityView> updateRequests) {
+        return updateRequests.stream()
+                .map(UpdateRequestCommunityView::summary)
+                .filter(this::hasText)
+                .findFirst()
+                .orElse("%s 기준 %s 업데이트 요청 %d건".formatted(formattedDate, vendorName, updateRequests.size()));
     }
 
     private GeneratedPostContent generatePerformanceComparisonContent(LocalDate targetDate) {
@@ -298,23 +311,8 @@ public class CommunityPostServiceImpl implements CommunityPostService {
         return value.trim();
     }
 
-    private String joinArray(String[] values) {
-        if (values == null || values.length == 0) {
-            return "-";
-        }
-
-        List<String> normalized = new ArrayList<>();
-        for (String value : values) {
-            if (value != null && !value.isBlank()) {
-                normalized.add(value.trim());
-            }
-        }
-
-        if (normalized.isEmpty()) {
-            return "-";
-        }
-
-        return String.join(", ", normalized);
+    private boolean hasText(String value) {
+        return value != null && !value.isBlank();
     }
 
     private record GeneratedPostContent(String title, String summary, String body) {}
