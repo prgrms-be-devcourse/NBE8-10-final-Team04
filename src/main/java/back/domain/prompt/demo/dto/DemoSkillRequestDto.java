@@ -50,15 +50,11 @@ public record DemoSkillRequestDto(
         OffsetDateTime updatedAt,
 
         @JsonProperty("tags")
-        List<String> tags,
-
-        @JsonProperty("aliases")
-        List<String> aliases
+        List<String> tags
 
 ) {
     public DemoSkillRequestDto {
         tags = tags == null ? List.of() : List.copyOf(tags);
-        aliases = aliases == null ? List.of() : List.copyOf(aliases);
     }
 
     @Override
@@ -66,8 +62,4 @@ public record DemoSkillRequestDto(
         return List.copyOf(tags);
     }
 
-    @Override
-    public List<String> aliases() {
-        return List.copyOf(aliases);
-    }
 }

@@ -63,10 +63,8 @@ public class DemoSkillSeedService {
     @Transactional
     public DemoSkill saveSkill(DemoSkillRequestDto dto) {
         Set<String> tags = skillNormalizeParser.extractTags(dto.summary(), dto.contentMd());
-        List<String> aliases = skillNormalizeParser.extractAliases(dto.summary(), dto.contentMd());
 
         DemoSkill skill = DemoSkill.builder()
-                .skillId(dto.skillId())
                 .skillName(dto.skillName())
                 .repositoryName(dto.repositoryName())
                 .repositoryUrl(dto.repositoryUrl())
@@ -78,7 +76,6 @@ public class DemoSkillSeedService {
                 .stars(dto.stars() != null ? dto.stars() : 0)
                 .sourceUpdatedAt(dto.updatedAt())
                 .tags(tags)
-                .aliases(aliases)
                 .build();
 
         return demoSkillRepository.save(skill);

@@ -24,7 +24,7 @@ public class DemoSkillChunkVectorSearchRepository {
         String sql = """
                 SELECT
                     dc.id          AS chunk_id,
-                    ds.id          AS demo_skill_id,
+                    ds.id          AS skill_id,
                     ds.skill_name,
                     ds.repository_name,
                     ds.repository_url,
@@ -45,7 +45,7 @@ public class DemoSkillChunkVectorSearchRepository {
                 sql,
                 (rs, rowNum) -> new DemoChunkVectorSearchRowDto(
                         rs.getLong("chunk_id"),
-                        rs.getLong("demo_skill_id"),
+                        rs.getLong("skill_id"),
                         rs.getString("skill_name"),
                         rs.getString("repository_name"),
                         rs.getString("repository_url"),
