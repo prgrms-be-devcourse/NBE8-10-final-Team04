@@ -259,9 +259,9 @@ def start_auto_flow(
         ctx: Context | None = None,
 ) -> dict[str, Any]:
     """
-    Runs single-tool auto flow in runner mode:
+    Runs single-tool auto flow in direct-write mode:
     - START: fetch start.agent template and return write action
-    - COLLECTED: fetch recommendation metadata and return runner plan
+    - COLLECTED: fetch recommendation + skill contents and return write actions
     Agent type resolution:
     - request agentType if provided
     - otherwise CODEX fallback

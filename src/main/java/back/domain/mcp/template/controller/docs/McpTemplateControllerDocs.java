@@ -34,7 +34,7 @@ public interface McpTemplateControllerDocs {
                         {
                           "data": {
                             "templateName": "start.agent.md",
-                            "version": "v4",
+                            "version": "v7",
                             "templateMarkdown": "# START AGENT TEMPLATE (CODEX)\\n..."
                           },
                           "message": "템플릿 조회 성공"
