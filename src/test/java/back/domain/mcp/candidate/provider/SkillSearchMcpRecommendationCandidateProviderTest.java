@@ -46,11 +46,11 @@ class SkillSearchMcpRecommendationCandidateProviderTest {
                 "summary",
                 0.83f,
                 new CandidateMetadataDto(210, 45, "2026-02-10T09:10:00Z"));
-        when(skillSearchService.search(List.of("SpringBoot infra DevOps")))
+        when(skillSearchService.search(List.of("SpringBoot", "infra", "DevOps")))
                 .thenReturn(new SkillChunkSearchResultDto(List.of(candidate)));
 
         List<McpRecommendationCandidate> result =
-                provider.findTopCandidates(new McpRecommendationQuery("SpringBoot infra DevOps"));
+                provider.findTopCandidates(new McpRecommendationQuery(List.of("SpringBoot", "infra", "DevOps")));
 
         assertThat(result).hasSize(1);
         McpRecommendationCandidate mapped = result.getFirst();
@@ -77,7 +77,7 @@ class SkillSearchMcpRecommendationCandidateProviderTest {
                 .thenReturn(new SkillChunkSearchResultDto(List.of(candidate)));
 
         List<McpRecommendationCandidate> result =
-                provider.findTopCandidates(new McpRecommendationQuery("infra"));
+                provider.findTopCandidates(new McpRecommendationQuery(List.of("infra")));
 
         assertThat(result).hasSize(1);
         assertThat(result.getFirst().metadata()).isNull();
@@ -90,7 +90,7 @@ class SkillSearchMcpRecommendationCandidateProviderTest {
                 .thenReturn(new SkillChunkSearchResultDto(null));
 
         List<McpRecommendationCandidate> result =
-                provider.findTopCandidates(new McpRecommendationQuery("backend"));
+                provider.findTopCandidates(new McpRecommendationQuery(List.of("backend")));
 
         assertThat(result).isEmpty();
     }
