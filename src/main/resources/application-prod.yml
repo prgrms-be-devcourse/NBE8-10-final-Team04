@@ -39,4 +39,5 @@ logging:
     max-history: 30
 ai:
   service:
-    url: ${AI_SERVICE_URL}
+    url: ${FASTAPI_BASE_URL}
+    max-history: 30
