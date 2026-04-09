@@ -11,6 +11,7 @@ import org.springframework.context.annotation.Configuration;
         AiModelProperties.class,
         AiInfoProperties.class,
         AiTrackerProperties.class,
-        GithubProperties.class
+        GithubProperties.class,
+        CorsProperties.class
 })
 public class PropertiesConfig {}
