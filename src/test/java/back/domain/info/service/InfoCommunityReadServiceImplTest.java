@@ -15,24 +15,31 @@ import org.junit.jupiter.api.Test;
 
 import back.domain.info.dto.response.BenchmarkMetricView;
 import back.domain.info.dto.response.ModelInfoFamilyView;
+import back.domain.info.dto.response.UpdateRequestCommunityView;
 import back.domain.info.entity.AiModelFamily;
 import back.domain.info.entity.AiVendor;
 import back.domain.info.entity.ModelBenchmark;
+import back.domain.info.entity.UpdateRequest;
 import back.domain.info.enums.MetricType;
+import back.domain.info.enums.Status;
 import back.domain.info.repository.AiModelFamilyRepository;
 import back.domain.info.repository.ModelBenchmarkRepository;
+import back.domain.info.repository.UpdateRequestRepository;
 
 class InfoCommunityReadServiceImplTest {
 
     private AiModelFamilyRepository aiModelFamilyRepository;
     private ModelBenchmarkRepository modelBenchmarkRepository;
+    private UpdateRequestRepository updateRequestRepository;
     private InfoCommunityReadService infoCommunityReadService;
 
     @BeforeEach
     void setUp() {
         aiModelFamilyRepository = mock(AiModelFamilyRepository.class);
         modelBenchmarkRepository = mock(ModelBenchmarkRepository.class);
-        infoCommunityReadService = new InfoCommunityReadServiceImpl(aiModelFamilyRepository, modelBenchmarkRepository);
+        updateRequestRepository = mock(UpdateRequestRepository.class);
+        infoCommunityReadService =
+                new InfoCommunityReadServiceImpl(aiModelFamilyRepository, modelBenchmarkRepository, updateRequestRepository);
     }
 
     @Test
@@ -99,5 +106,44 @@ class InfoCommunityReadServiceImplTest {
         assertThat(result).hasSize(1);
         assertThat(result.getFirst().modelApiId()).isEqualTo("gpt-5.4");
         assertThat(result.getFirst().metricType()).isEqualTo(MetricType.INTELLIGENCE);
+    }
+
+    @Test
+    void getApprovedUpdateRequestsByDateAndVendor_returnsMappedResult() {
+        LocalDate targetDate = LocalDate.of(2026, 4, 8);
+        Long vendorId = 10L;
+
+        AiVendor vendor = AiVendor.builder().name("OpenAI").isActive(true).isDeprecated(false).build();
+        AiModelFamily family = AiModelFamily.builder()
+                .vendor(vendor)
+                .familyName("GPT-5.4")
+                .commonDescription("desc")
+                .build();
+        UpdateRequest updateRequest = UpdateRequest.builder()
+                .sourceId("source-1")
+                .vendor(vendor)
+                .family(family)
+                .sourceUrl("https://news.example.com/openai")
+                .sourceType("RSS")
+                .summary("요약")
+                .rawContent("원문")
+                .status(Status.APPROVED)
+                .notifiedAt(targetDate)
+                .build();
+
+        when(updateRequestRepository.findAllByStatusAndVendorIdAndNotifiedAtOrderByReviewedAtDescCreatedAtDesc(
+                        Status.APPROVED, vendorId, targetDate))
+                .thenReturn(List.of(updateRequest));
+
+        List<UpdateRequestCommunityView> result =
+                infoCommunityReadService.getApprovedUpdateRequestsByDateAndVendor(targetDate, vendorId);
+
+        verify(updateRequestRepository)
+                .findAllByStatusAndVendorIdAndNotifiedAtOrderByReviewedAtDescCreatedAtDesc(
+                        Status.APPROVED, vendorId, targetDate);
+        assertThat(result).hasSize(1);
+        assertThat(result.getFirst().vendorName()).isEqualTo("OpenAI");
+        assertThat(result.getFirst().summary()).isEqualTo("요약");
+        assertThat(result.getFirst().rawContent()).isEqualTo("원문");
     }
 }
