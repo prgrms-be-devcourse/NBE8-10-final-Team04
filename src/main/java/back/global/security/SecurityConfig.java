@@ -56,7 +56,7 @@ public class SecurityConfig {
                                 "/dev/skill-chunks/**",
                                 "/api/skills/search",
                                         "/api/chatbot",
-                                "/api/v1/prompts/run",
+                                "/api/v1/prompts/**",
                                 "/api/v1/skills/**")
                         .permitAll()
                         .requestMatchers(
