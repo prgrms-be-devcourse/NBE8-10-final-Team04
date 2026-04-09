@@ -112,7 +112,7 @@ management:
 
 ai:
   service:
-    url: ${AI_SERVICE_URL:http://localhost:8000}
+    url: ${FASTAPI_BASE_URL:http://localhost:8000}
 oci:
   user: ${OCI_USER}
   fingerprint: ${OCI_FINGERPRINT}
