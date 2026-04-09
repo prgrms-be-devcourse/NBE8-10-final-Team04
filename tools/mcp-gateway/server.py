@@ -256,25 +256,12 @@ def start_auto_flow(
         flowId: str | None = None,
         queries: list[str] | None = None,
         userInputConfirmed: bool | None = None,
-        skillId: int | None = None,
-        cursor: int | None = None,
-        chunkSize: int | None = None,
-        writtenLength: int | None = None,
-        writtenSha256: str | None = None,
-        userDecisionConfirmed: bool | None = None,
-        decision: str | None = None,
-        customizationNotes: str | None = None,
-        customizationApplied: bool | None = None,
         ctx: Context | None = None,
 ) -> dict[str, Any]:
     """
-    Runs single-tool auto flow in six steps:
+    Runs single-tool auto flow in runner mode:
     - START: fetch start.agent template and return write action
-    - COLLECTED: fetch recommendation metadata
-    - FETCH_SKILL: fetch one skill content by chunk and return append/write action
-    - VERIFY_SKILL: verify exact file integrity (length/hash)
-    - DECIDE: persist explicit user decision
-    - FINALIZE: generate final agents.md write action with hard gate
+    - COLLECTED: fetch recommendation metadata and return runner plan
     Agent type resolution:
     - request agentType if provided
     - otherwise CODEX fallback
@@ -288,15 +275,6 @@ def start_auto_flow(
             flow_id=flowId,
             queries=queries,
             user_input_confirmed=userInputConfirmed,
-            skill_id=skillId,
-            cursor=cursor,
-            chunk_size=chunkSize,
-            written_length=writtenLength,
-            written_sha256=writtenSha256,
-            user_decision_confirmed=userDecisionConfirmed,
-            decision=decision,
-            customization_notes=customizationNotes,
-            customization_applied=customizationApplied,
         )
     except GatewayValidationError as validation_error:
         return _error("validation_error", str(validation_error))

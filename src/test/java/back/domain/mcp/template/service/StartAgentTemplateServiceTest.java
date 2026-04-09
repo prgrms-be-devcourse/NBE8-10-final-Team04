@@ -20,7 +20,7 @@ class StartAgentTemplateServiceTest {
         StartAgentTemplateResponse response = startAgentTemplateService.getTemplate(AgentType.CLAUDE);
 
         assertThat(response.templateName()).isEqualTo("start.agent.md");
-        assertThat(response.version()).isEqualTo("v4");
+        assertThat(response.version()).isEqualTo("v6");
         assertThat(response.templateMarkdown()).contains("CLAUDE");
         assertTemplateContainsCoreFlowRules(response.templateMarkdown());
     }
@@ -31,7 +31,7 @@ class StartAgentTemplateServiceTest {
         StartAgentTemplateResponse response = startAgentTemplateService.getTemplate(AgentType.CODEX);
 
         assertThat(response.templateName()).isEqualTo("start.agent.md");
-        assertThat(response.version()).isEqualTo("v4");
+        assertThat(response.version()).isEqualTo("v6");
         assertThat(response.templateMarkdown()).contains("CODEX");
         assertTemplateContainsCoreFlowRules(response.templateMarkdown());
     }
@@ -42,7 +42,7 @@ class StartAgentTemplateServiceTest {
         StartAgentTemplateResponse response = startAgentTemplateService.getTemplate(AgentType.GEMINI);
 
         assertThat(response.templateName()).isEqualTo("start.agent.md");
-        assertThat(response.version()).isEqualTo("v4");
+        assertThat(response.version()).isEqualTo("v6");
         assertThat(response.templateMarkdown()).contains("GEMINI");
         assertTemplateContainsCoreFlowRules(response.templateMarkdown());
     }
@@ -51,10 +51,9 @@ class StartAgentTemplateServiceTest {
         assertThat(templateMarkdown).contains("start_auto_flow");
         assertThat(templateMarkdown).contains("자동화 워크 플로우 진행해줘");
         assertThat(templateMarkdown).contains("actions.writeFiles");
-        assertThat(templateMarkdown).contains("부분 보정");
-        assertThat(templateMarkdown).contains("새 문서를 처음부터 다시 작성하지 말고");
-        assertThat(templateMarkdown).contains("VERIFY_SKILL");
-        assertThat(templateMarkdown).contains("DECIDE");
-        assertThat(templateMarkdown).contains("customizationApplied=true");
+        assertThat(templateMarkdown).contains("start_auto_flow(step=COLLECTED");
+        assertThat(templateMarkdown).contains("runner");
+        assertThat(templateMarkdown).contains("generate_skills.py");
+        assertThat(templateMarkdown).contains("요약/축약/재작성");
     }
 }
