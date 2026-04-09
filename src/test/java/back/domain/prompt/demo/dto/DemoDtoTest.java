@@ -67,12 +67,14 @@ class DemoDtoTest {
                 100,
                 10,
                 updatedAt,
-                0.91f
+                0.91f,
+                0.15f
         );
         DemoQuerySearchHit hit = new DemoQuerySearchHit("spring boot", QueryType.TECH, row);
 
         assertThat(row.demoSkillId()).isEqualTo(22L);
         assertThat(row.similarity()).isEqualTo(0.91f);
+        assertThat(row.boostScore()).isEqualTo(0.15f);
         assertThat(hit.query()).isEqualTo("spring boot");
         assertThat(hit.queryType()).isEqualTo(QueryType.TECH);
         assertThat(hit.row()).isSameAs(row);

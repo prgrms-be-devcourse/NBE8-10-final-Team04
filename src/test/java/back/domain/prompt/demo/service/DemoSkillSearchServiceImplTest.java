@@ -102,7 +102,8 @@ class DemoSkillSearchServiceImplTest {
                 10,
                 2,
                 OffsetDateTime.parse("2026-04-09T00:00:00Z"),
-                similarity
+                similarity,
+                0.1f
         );
     }
 }
