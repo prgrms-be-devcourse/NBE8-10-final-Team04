@@ -45,27 +45,6 @@ services:
     networks:
       - app-network
 
-  ai-service:
-    build:
-      context: ../ai-service
-      dockerfile: Dockerfile
-    container_name: ai-service
-    env_file:
-      - ../ai-service/.env
-    ports:
-      - "8000:8000"
-    restart: unless-stopped
-
-  nginx:
-    image: nginx:latest
-    container_name: nginx
-    depends_on:
-      - app-dev
-    ports:
-      - "80:80"
-    volumes:
-      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
-    restart: unless-stopped
 networks:
   app-network:
     driver: bridge
