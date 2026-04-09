@@ -93,6 +93,11 @@ custom:
   cors:
     allowed-origin-patterns:
       - http://localhost:3000
+      - http://localhost:5173
+      - https://han-minhee.site
+      - https://www.han-minhee.site
+      - https://nbe-8-10-final-team04-front.vercel.app
+      - https://www.nbe-8-10-final-team04-front.vercel.app
   swagger:
     enabled: false
 
