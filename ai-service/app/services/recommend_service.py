@@ -15,8 +15,8 @@ from app.services.gemini_service import (
 def get_welcome_message():
     return {
         "question": "INIT",
-        "questionType": "INFO",
-        "targetType": "NONE",
+        "questionType": "information",
+        "targetType": "none",
         "message": "안녕하세요! AI 툴 추천, 스킬 추천을 도와드립니다!",
         "nextActions": ["AI 툴 추천해줘", "내게 맞는 스킬은?"],
         "outOfScope": False,
