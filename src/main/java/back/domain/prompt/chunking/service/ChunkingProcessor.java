@@ -5,6 +5,7 @@ import back.domain.prompt.chunking.dto.Section;
 import back.domain.prompt.chunking.entity.SkillChunk;
 import back.domain.prompt.chunking.repository.SkillChunkRepository;
 import back.domain.prompt.prompt.entity.Skill;
+import back.domain.prompt.prompt.parser.SkillNormalizeParser;
 import back.domain.prompt.prompt.repository.SkillRepository;
 import back.domain.prompt.search.util.VectorUtils;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -15,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 @Component
 @RequiredArgsConstructor
@@ -24,13 +26,14 @@ import java.util.List;
 )
 public class ChunkingProcessor {
 
-    private static final String CHUNK_VERSION = "v1";
+    private static final String CHUNK_VERSION = "v2";
     private static final String EMBEDDING_MODEL = "BAAI/bge-m3";
 
     private final SkillChunkRepository skillChunkRepository;
     private final SkillRepository skillRepository;
     private final EmbeddingService embeddingService;
     private final MarkdownChunker markdownChunker;
+    private final SkillNormalizeParser skillNormalizeParser;
 
     // skill 하나를 청킹·임베딩하고 결과를 저장한다.
     @Transactional
@@ -70,15 +73,36 @@ public class ChunkingProcessor {
     }
 
     // search_text에 skill명·섹션명 메타 정보를 접두사로 붙인다.
+    // SkillNormalizeParser를 통해 keyword(정규 태그명)와 alias(표기 변형 전체)를 확장하여
+    // 임베딩 품질을 높인다.
     private String buildSearchText(String name, String sectionTitle, String chunkText) {
+        String meta = (name == null ? "" : name + " ") + (sectionTitle == null ? "" : sectionTitle);
+
+        // 1. keyword 확장: TAG_RULES 기반 정규 태그명
+        Set<String> keywords = skillNormalizeParser.extractTags(meta, chunkText);
+        // 2. alias 확장: TAG_ALIAS_RULES 기반 변형 표기 전체
+        List<String> aliases = skillNormalizeParser.extractAliases(meta, chunkText);
+
         StringBuilder sb = new StringBuilder();
+
         if (name != null) {
             sb.append("[skill: ").append(name).append("] ");
         }
+
         if (sectionTitle != null) {
             sb.append("[section: ").append(sectionTitle).append("] ");
         }
-        sb.append("\n").append(chunkText);
+
+        if (!keywords.isEmpty()) {
+            sb.append("[keywords: ").append(String.join(" ", keywords)).append("] ");
+        }
+
+        if (!aliases.isEmpty()) {
+            sb.append("[aliases: ").append(String.join(" ", aliases)).append("] ");
+        }
+
+        sb.append("\n").append(chunkText == null ? "" : chunkText);
+
         return sb.toString().strip();
     }
 }

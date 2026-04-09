@@ -70,6 +70,23 @@ public class SkillNormalizeParser {
                 .orElse(Category.OTHER);
     }
 
+    // tagAliasRules() 기반 alias 추출 — 텍스트에 변형 표기가 있으면 해당 그룹 전체를 반환
+    public List<String> extractAliases(String summary, String content) {
+        String normalized = normalize(summary, content);
+        List<String> result = new ArrayList<>();
+
+        for (var entry : provider.getTagAliasRules().entrySet()) {
+            for (String alias : entry.getValue()) {
+                if (containsToken(normalized, alias)) {
+                    result.addAll(entry.getValue());
+                    break;
+                }
+            }
+        }
+
+        return result;
+    }
+
     private String normalize(String summary, String content) {
         return ((summary == null ? "" : summary) + " " + (content == null ? "" : content))
                 .toLowerCase()

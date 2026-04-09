@@ -19,6 +19,9 @@ public interface SkillRepository extends JpaRepository<Skill, Long> {
 
     List<Skill> findByIsChunkedFalse();
 
+    @Query("SELECT s.id FROM Skill s WHERE s.isChunked = false ORDER BY s.id ASC")
+    List<Long> findIdsByIsChunkedFalse();
+
     @Query("SELECT s FROM Skill s JOIN FETCH s.repository WHERE s.id = :id")
     Optional<Skill> findByIdWithRepository(@Param("id") Long id);
 

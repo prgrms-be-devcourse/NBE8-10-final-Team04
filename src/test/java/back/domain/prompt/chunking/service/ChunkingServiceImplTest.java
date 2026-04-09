@@ -3,6 +3,7 @@ package back.domain.prompt.chunking.service;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
@@ -44,11 +45,13 @@ class ChunkingServiceImplTest {
     @Test
     @DisplayName("청킹 대상 skill이 없으면 processor를 호출하지 않는다")
     void chunk_doesNothingWhenNoPendingSkillExists() {
-        when(skillRepository.findByIsChunkedFalse()).thenReturn(List.of());
+        when(skillRepository.findIdsByIsChunkedFalse()).thenReturn(List.of());
 
         chunkingService.chunk();
 
         verifyNoInteractions(chunkingProcessor);
+        verify(skillRepository).findIdsByIsChunkedFalse();
+        verifyNoMoreInteractions(skillRepository);
     }
 
     @Test
@@ -56,7 +59,9 @@ class ChunkingServiceImplTest {
     void chunk_delegatesEachPendingSkillToProcessor() {
         Skill first = skill(10L, "alpha", "# Intro\ncontent");
         Skill second = skill(11L, "beta", "# Install\nsteps");
-        when(skillRepository.findByIsChunkedFalse()).thenReturn(List.of(first, second));
+        when(skillRepository.findIdsByIsChunkedFalse()).thenReturn(List.of(10L, 11L));
+        when(skillRepository.findById(10L)).thenReturn(java.util.Optional.of(first));
+        when(skillRepository.findById(11L)).thenReturn(java.util.Optional.of(second));
 
         chunkingService.chunk();
 
@@ -69,7 +74,9 @@ class ChunkingServiceImplTest {
     void chunk_continuesWhenProcessingOneSkillFails() {
         Skill first = skill(10L, "alpha", "# Intro\ncontent");
         Skill second = skill(11L, "beta", "# Install\nsteps");
-        when(skillRepository.findByIsChunkedFalse()).thenReturn(List.of(first, second));
+        when(skillRepository.findIdsByIsChunkedFalse()).thenReturn(List.of(10L, 11L));
+        when(skillRepository.findById(10L)).thenReturn(java.util.Optional.of(first));
+        when(skillRepository.findById(11L)).thenReturn(java.util.Optional.of(second));
         doThrow(new IllegalStateException("boom"))
                 .when(chunkingProcessor)
                 .processOne(first);
