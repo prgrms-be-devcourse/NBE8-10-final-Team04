@@ -1,8 +1,8 @@
 package back.global.security;
 
+import back.global.config.properties.CorsProperties;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -25,9 +25,7 @@ import java.util.List;
 public class SecurityConfig {
     private final RestAuthenticationEntryPoint restAuthenticationEntryPoint;
     private final RestAccessDeniedHandler restAccessDeniedHandler;
-
-    @Value("${custom.cors.allowed-origin-patterns:http://localhost:5173}")
-    private List<String> allowedOriginPatterns;
+    private final CorsProperties corsProperties;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http, JwtAuthenticationFilter jwtAuthenticationFilter)
@@ -117,8 +115,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOriginPatterns(allowedOriginPatterns);
-        config.setAllowedOrigins(List.of("http://localhost:5173", "http://localhost:3000"));   // 임시로 토스페이 결제를 위해 추가함
+        config.setAllowedOriginPatterns(corsProperties.allowedOriginPatterns());
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);
