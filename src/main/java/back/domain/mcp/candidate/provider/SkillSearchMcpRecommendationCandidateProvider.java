@@ -23,7 +23,7 @@ public class SkillSearchMcpRecommendationCandidateProvider implements McpRecomme
 
     @Override
     public List<McpRecommendationCandidate> findTopCandidates(McpRecommendationQuery query) {
-        SkillChunkSearchResultDto response = skillSearchService.search(query.query());
+        SkillChunkSearchResultDto response = skillSearchService.search(query.queries());
         if (response == null || response.candidates() == null) {
             return List.of();
         }
@@ -39,7 +39,6 @@ public class SkillSearchMcpRecommendationCandidateProvider implements McpRecomme
                 candidate.skillName(),
                 candidate.repositoryName(),
                 candidate.repositoryUrl(),
-                candidate.contentMd(),
                 candidate.category() != null ? candidate.category().name() : null,
                 candidate.summary(),
                 (double) candidate.primaryScore(),

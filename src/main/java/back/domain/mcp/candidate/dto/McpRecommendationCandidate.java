@@ -16,10 +16,6 @@ public record McpRecommendationCandidate(
         @JsonProperty("repository_url")
         String repositoryUrl,
 
-        @JsonProperty("content_md")
-        @JsonAlias("skill_md_raw")
-        String contentMd,
-
         String category,
 
         String summary,

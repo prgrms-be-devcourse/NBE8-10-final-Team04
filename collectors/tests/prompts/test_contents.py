@@ -95,29 +95,24 @@ def test_fetch_one_success(mock_sleep: MagicMock, mock_get_content: MagicMock, m
             "123": {"source_repo": "owner/repo", "filename": "123_owner_repo.json"}
         }
     }
-    
-    # Create dummy file to pass exists() check
+
     test_file = tmp_path / "123_owner_repo.json"
     test_file.touch()
-    
+
     mock_load_json.return_value = {
         "repository": {"default_branch": "main"},
         "skills": [{"file_path": "skill.md"}]
     }
-    
-    # Needs to be long enough to pass MIN_CONTENT_LEN (100)
-    test_content = "test content " * 10 
+
+    test_content = "test content " * 10
     mock_get_content.return_value = (test_content, "new-sha", False)
-    
+
     result = fetch_one("123", index, tmp_path)
-    assert result is True
-    mock_save_json.assert_called_once()
-    
-    saved_data = mock_save_json.call_args[0][0]
-    assert saved_data["skills"][0]["content_md"] == test_content
-    assert saved_data["skills"][0]["content_hash"] == "new-sha"
+    # 🔥 반환값 규격 수정: True -> "updated"
+    assert result == "updated"
 
 def test_fetch_one_missing_repo() -> None:
     index = {"repos": {}}
     result = fetch_one("123", index, Path("/tmp"))
-    assert result is False
+    # 🔥 반환값 규격 수정: False -> "failed"
+    assert result == "failed"

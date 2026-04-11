@@ -42,16 +42,15 @@ class SkillSearchMcpRecommendationCandidateProviderTest {
                 "spring-backend-skill",
                 "spring-repo",
                 "https://github.com/example/spring-repo",
-                "# content",
                 Category.BACKEND,
                 "summary",
                 0.83f,
                 new CandidateMetadataDto(210, 45, "2026-02-10T09:10:00Z"));
-        when(skillSearchService.search("SpringBoot infra DevOps"))
+        when(skillSearchService.search(List.of("SpringBoot", "infra", "DevOps")))
                 .thenReturn(new SkillChunkSearchResultDto(List.of(candidate)));
 
         List<McpRecommendationCandidate> result =
-                provider.findTopCandidates(new McpRecommendationQuery("SpringBoot infra DevOps"));
+                provider.findTopCandidates(new McpRecommendationQuery(List.of("SpringBoot", "infra", "DevOps")));
 
         assertThat(result).hasSize(1);
         McpRecommendationCandidate mapped = result.getFirst();
@@ -70,16 +69,15 @@ class SkillSearchMcpRecommendationCandidateProviderTest {
                 "infra-skill",
                 "infra-repo",
                 "https://github.com/example/infra-repo",
-                "# infra",
                 Category.INFRA,
                 null,
                 0.7f,
                 null);
-        when(skillSearchService.search("infra"))
+        when(skillSearchService.search(List.of("infra")))
                 .thenReturn(new SkillChunkSearchResultDto(List.of(candidate)));
 
         List<McpRecommendationCandidate> result =
-                provider.findTopCandidates(new McpRecommendationQuery("infra"));
+                provider.findTopCandidates(new McpRecommendationQuery(List.of("infra")));
 
         assertThat(result).hasSize(1);
         assertThat(result.getFirst().metadata()).isNull();
@@ -88,11 +86,11 @@ class SkillSearchMcpRecommendationCandidateProviderTest {
     @Test
     @DisplayName("검색 결과 candidates가 null이면 빈 리스트를 반환한다")
     void findTopCandidates_whenCandidatesIsNull_returnsEmptyList() {
-        when(skillSearchService.search("backend"))
+        when(skillSearchService.search(List.of("backend")))
                 .thenReturn(new SkillChunkSearchResultDto(null));
 
         List<McpRecommendationCandidate> result =
-                provider.findTopCandidates(new McpRecommendationQuery("backend"));
+                provider.findTopCandidates(new McpRecommendationQuery(List.of("backend")));
 
         assertThat(result).isEmpty();
     }

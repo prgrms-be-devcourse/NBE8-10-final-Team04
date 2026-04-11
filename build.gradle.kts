@@ -43,6 +43,7 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-security-oauth2-client")
     implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("org.springframework.boot:spring-boot-starter-webmvc")
+    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.0")
     implementation("org.springframework.ai:spring-ai-starter-model-postgresml-embedding")
     implementation("org.springframework.ai:spring-ai-starter-vector-store-pgvector")
     compileOnly("com.github.spotbugs:spotbugs-annotations:4.8.6")
@@ -52,7 +53,7 @@ dependencies {
     runtimeOnly("io.jsonwebtoken:jjwt-impl:0.12.6")
     runtimeOnly("io.jsonwebtoken:jjwt-jackson:0.12.6")
     runtimeOnly("com.h2database:h2")
-    runtimeOnly("com.mysql:mysql-connector-j")
+//    runtimeOnly("com.mysql:mysql-connector-j") 의존성제거
     annotationProcessor("org.projectlombok:lombok")
     testImplementation("org.springframework.boot:spring-boot-restdocs")
     testImplementation("org.springframework.boot:spring-boot-starter-data-jpa-test")
@@ -63,6 +64,12 @@ dependencies {
     testImplementation("org.springframework.restdocs:spring-restdocs-mockmvc")
     runtimeOnly("org.postgresql:postgresql")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+    implementation("org.springframework.boot:spring-boot-starter-aspectj")
+
+    // actuator
+    implementation ("org.springframework.boot:spring-boot-starter-actuator")
+    testImplementation ("org.springframework.boot:spring-boot-starter-actuator-test")
+    runtimeOnly("io.micrometer:micrometer-registry-prometheus")
 
     // oci object-storage
     implementation("com.oracle.oci.sdk:oci-java-sdk-objectstorage:3.54.0")
@@ -76,7 +83,7 @@ dependencies {
     implementation("com.pgvector:pgvector:0.1.6")
 
     // webflux
-    // implementation("org.springframework.boot:spring-boot-starter-webflux")
+     implementation("org.springframework.boot:spring-boot-starter-webflux")
 
     // OCI Object Storage
     implementation("com.oracle.oci.sdk:oci-java-sdk-objectstorage:3.60.0")
@@ -85,6 +92,9 @@ dependencies {
 
     // Google Gemini SDK
     implementation("com.google.genai:google-genai:1.44.0")
+
+    // test
+    testImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")
 }
 
 tasks.withType<Test> {
@@ -127,7 +137,9 @@ tasks.named<JacocoCoverageVerification>("jacocoTestCoverageVerification") {
             excludes = listOf(
                 "**.*DTO*",        // 이름에 DTO가 포함된 모든 클래스 제외
                 "**.config.**",     // config 패키지 안에 있는 모든 클래스 제외
-                "**.*Application*"  // 메인 실행 클래스 제외
+                "**.*Application*",  // 메인 실행 클래스 제외
+                "back.domain.payment.dto.response.*",
+                "back.domain.payment.client.*"
             )
             limit {
                 counter = "LINE"

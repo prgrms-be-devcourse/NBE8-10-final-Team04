@@ -18,7 +18,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class StartAgentTemplateServiceImpl implements StartAgentTemplateService {
     private static final String TEMPLATE_NAME = "start.agent.md";
-    private static final String TEMPLATE_VERSION = "v4";
+    private static final String TEMPLATE_VERSION = "v7";
     private static final String TEMPLATE_READ_FAILED_MESSAGE = "템플릿 조회 중 오류가 발생했습니다.";
     private static final String TEMPLATE_PATH = "templates/mcp/start-agent/start.agent.template.md";
     private static final String AGENT_TYPE_PLACEHOLDER = "{AGENT_TYPE}";

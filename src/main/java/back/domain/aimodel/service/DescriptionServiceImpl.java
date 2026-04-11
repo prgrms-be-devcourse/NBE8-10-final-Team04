@@ -23,7 +23,7 @@ import java.util.Map;
 @Service
 public class DescriptionServiceImpl implements DescriptionService {
 
-    private static final String CACHE_FILE             = "description_cache.json";
+    private static final String CACHE_FILE             = "ai-info/description_cache.json";
     // RPM 15 기준 최소 호출 간격: 60_000ms / 15 = 4_000ms (넉넉하게 5_000ms 사용)
     private static final long   RATE_LIMIT_DELAY_MS    = 5_000L;
     // 429 발생 시 retry 대기 시간 기본값 (응답에서 파싱 실패 시 사용)
@@ -106,7 +106,9 @@ public class DescriptionServiceImpl implements DescriptionService {
                 newFamilies.add(new IntegratedFamily(
                         family.familyName(),
                         description,
-                        family.createdAt()
+                        family.createdAt(),
+                        family.inputTypes(),
+                        family.outputTypes()
                 ));
             }
 
@@ -117,7 +119,8 @@ public class DescriptionServiceImpl implements DescriptionService {
             ));
         }
 
-        log.info("description 결과: 캐시 히트 {}개 / Gemini 생성 {}개", cacheHit, geminiUsed);
+        log.info("description 결과: 총 {}개 패밀리 중 {}개 신규 생성 (나머지 {}개는 캐시 적중으로 API 호출 생략)",
+                totalFamilies, geminiUsed, cacheHit);
 
         if (geminiUsed > 0) {
             saveCache(cache);

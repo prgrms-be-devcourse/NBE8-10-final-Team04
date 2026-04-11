@@ -34,7 +34,7 @@ class SpringProxyClientTest(unittest.TestCase):
     def test_recommend_skills_sends_authorized_request(self, mock_urlopen):
         mock_urlopen.return_value = _FakeResponse({"message": "추천 성공"})
 
-        response = self.client.recommend_skills("mcp_token_1", " SpringBoot   infra ")
+        response = self.client.recommend_skills("mcp_token_1", [" SpringBoot   ", "infra "])
 
         self.assertEqual(response["message"], "추천 성공")
         request_arg = mock_urlopen.call_args[0][0]
@@ -42,7 +42,7 @@ class SpringProxyClientTest(unittest.TestCase):
         self.assertEqual(request_arg.get_header("Authorization"), "Bearer mcp_token_1")
 
         body = json.loads(request_arg.data.decode("utf-8"))
-        self.assertEqual(body["keywords"], "SpringBoot infra")
+        self.assertEqual(body["queries"], ["SpringBoot", "infra"])
 
     @mock.patch("gateway.spring_proxy_client.request.urlopen")
     def test_get_template_sends_expected_payload(self, mock_urlopen):
@@ -83,7 +83,7 @@ class SpringProxyClientTest(unittest.TestCase):
         mock_urlopen.side_effect = http_error
 
         with self.assertRaises(GatewayHttpError) as ctx:
-            self.client.recommend_skills("invalid", "SpringBoot")
+            self.client.recommend_skills("invalid", ["SpringBoot"])
 
         self.assertEqual(ctx.exception.status_code, 401)
         self.assertIn("MCP 토큰 인증 실패", ctx.exception.response_body)
@@ -93,7 +93,7 @@ class SpringProxyClientTest(unittest.TestCase):
         mock_urlopen.side_effect = error.URLError("connection refused")
 
         with self.assertRaises(GatewayConnectionError):
-            self.client.recommend_skills("mcp_token_3", "SpringBoot")
+            self.client.recommend_skills("mcp_token_3", ["SpringBoot"])
 
     @mock.patch("gateway.spring_proxy_client.request.urlopen")
     def test_uses_default_token_when_request_token_missing(self, mock_urlopen):
@@ -104,7 +104,7 @@ class SpringProxyClientTest(unittest.TestCase):
             default_mcp_personal_token="env_token_1",
         )
 
-        client.recommend_skills(None, "SpringBoot infra")
+        client.recommend_skills(None, ["SpringBoot", "infra"])
 
         request_arg = mock_urlopen.call_args[0][0]
         self.assertEqual(request_arg.get_header("Authorization"), "Bearer env_token_1")
@@ -118,14 +118,14 @@ class SpringProxyClientTest(unittest.TestCase):
             default_mcp_personal_token="env_token_2",
         )
 
-        client.recommend_skills("request_token_1", "SpringBoot infra")
+        client.recommend_skills("request_token_1", ["SpringBoot", "infra"])
 
         request_arg = mock_urlopen.call_args[0][0]
         self.assertEqual(request_arg.get_header("Authorization"), "Bearer request_token_1")
 
     def test_raises_validation_error_when_both_tokens_missing(self):
         with self.assertRaises(GatewayValidationError):
-            self.client.recommend_skills(None, "SpringBoot infra")
+            self.client.recommend_skills(None, ["SpringBoot", "infra"])
 
 
 if __name__ == "__main__":

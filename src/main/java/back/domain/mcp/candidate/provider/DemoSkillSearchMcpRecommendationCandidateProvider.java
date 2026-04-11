@@ -1,0 +1,58 @@
+package back.domain.mcp.candidate.provider;
+
+import java.util.List;
+
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.stereotype.Component;
+
+import back.domain.mcp.candidate.dto.McpRecommendationCandidate;
+import back.domain.mcp.candidate.dto.McpRecommendationCandidateMetadata;
+import back.domain.mcp.candidate.dto.McpRecommendationQuery;
+import back.domain.prompt.demo.service.DemoSkillSearchService;
+import back.domain.prompt.search.dto.candidate.CandidateDto;
+import back.domain.prompt.search.dto.candidate.CandidateMetadataDto;
+import back.domain.prompt.search.dto.chunk.SkillChunkSearchResultDto;
+import lombok.RequiredArgsConstructor;
+
+@Component
+@ConditionalOnProperty(name = "app.mcp.recommendation.candidate-source", havingValue = "demo-skill-search")
+@RequiredArgsConstructor
+public class DemoSkillSearchMcpRecommendationCandidateProvider implements McpRecommendationCandidateProvider {
+
+    private final DemoSkillSearchService demoSkillSearchService;
+
+    @Override
+    public List<McpRecommendationCandidate> findTopCandidates(McpRecommendationQuery query) {
+        SkillChunkSearchResultDto response = demoSkillSearchService.search(query.queries());
+        if (response == null || response.candidates() == null) {
+            return List.of();
+        }
+
+        return response.candidates().stream()
+                .map(this::toMcpRecommendationCandidate)
+                .toList();
+    }
+
+    private McpRecommendationCandidate toMcpRecommendationCandidate(CandidateDto candidate) {
+        return new McpRecommendationCandidate(
+                candidate.skillId(),
+                candidate.skillName(),
+                candidate.repositoryName(),
+                candidate.repositoryUrl(),
+                candidate.category() != null ? candidate.category().name() : null,
+                candidate.summary(),
+                (double) candidate.primaryScore(),
+                toMetadata(candidate.metadata()));
+    }
+
+    private McpRecommendationCandidateMetadata toMetadata(CandidateMetadataDto metadata) {
+        if (metadata == null) {
+            return null;
+        }
+
+        return new McpRecommendationCandidateMetadata(
+                metadata.stars(),
+                metadata.forks(),
+                metadata.updatedAt());
+    }
+}

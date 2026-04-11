@@ -33,7 +33,7 @@ app:
     base-url: ${APP_EMBEDDING_BASE_URL:https://embedding-server-domain}
   mcp:
     recommendation:
-      candidate-source: ${APP_MCP_RECOMMENDATION_CANDIDATE_SOURCE:skill-search}
+      candidate-source: demo-skill-search
       ranking:
         weight:
           primary: ${APP_MCP_RECOMMENDATION_WEIGHT_PRIMARY:0.60}
@@ -62,11 +62,30 @@ app:
     oci-prefix: ${AI_TRACKER_OCI_PREFIX:data/ai-tracker/}
     webhook-secret: ${SPRING_WEBHOOK_SECRET}
 
+  data:
+    collect:
+      artificial-analysis-key: ${ARTIFICIAL_ANALYSIS_API_KEY}
+      sourcegraph-token: ${SOURCEGRAPH_TOKEN}
+      github-tokens:
+        - ${GITHUB_TOKEN_1}
+        - ${GITHUB_TOKEN_2}
+
+  infrastructure:
+    cloudflare:
+      account-id: ${CF_ACCOUNT_ID}
+      api-token: ${CF_API_TOKEN}
+    webhooks:
+      spring-url: ${SPRING_WEBHOOK_URL}
+      discord-url: ${DISCORD_WEBHOOK_URL}
+
+  admin:
+    allowlist: ${ADMIN_ALLOWLIST_EMAILS}
+
 custom:
   jwt:
     secret-key: ${CUSTOM_JWT_SECRET_KEY:start-ai-hub-default-secret-key-start-ai-hub-default}
-    access-token-expiration-seconds: ${CUSTOM_JWT_ACCESS_EXPIRATION_SECONDS:1800}
-    refresh-token-expiration-seconds: ${CUSTOM_JWT_REFRESH_EXPIRATION_SECONDS:1209600}
+    access-token-expiration-seconds: ${CUSTOM_JWT_ACCESS_EXPIRATION_SECONDS:172800}
+    refresh-token-expiration-seconds: ${CUSTOM_JWT_REFRESH_EXPIRATION_SECONDS:604800}
   oauth:
     google:
       client-id: ${GOOGLE_OAUTH_CLIENT_ID:}
@@ -74,6 +93,11 @@ custom:
   cors:
     allowed-origin-patterns:
       - http://localhost:3000
+      - http://localhost:5173
+      - https://han-minhee.site
+      - https://www.han-minhee.site
+      - https://nbe-8-10-final-team04-front.vercel.app
+      - https://www.nbe-8-10-final-team04-front.vercel.app
   swagger:
     enabled: false
 
@@ -91,7 +115,14 @@ management:
       probes:
         enabled: true
 
+ai:
+  service:
+    url: ${FASTAPI_BASE_URL:http://localhost:8000}
 oci:
+  user: ${OCI_USER}
+  fingerprint: ${OCI_FINGERPRINT}
+  tenancy: ${OCI_TENANCY}
+  private-key: ${OCI_KEY}
   namespace: ${OCI_NAMESPACE}
   bucket: ${OCI_BUCKET}
   prefix: data/ai-info/
@@ -112,6 +143,8 @@ ai-model:
     - anthropic
     - google
 
+toss:
+  secret-key: ${TOSS_SECRET_KEY}
 github:
   owner-repo: ${GH_OWNER_REPO:prgrms-be-devcourse/NBE8-10-final-Team04}
   workflows:

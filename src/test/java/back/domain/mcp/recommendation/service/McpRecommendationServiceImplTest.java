@@ -5,7 +5,9 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -14,6 +16,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import back.domain.mcp.candidate.dto.McpRecommendationCandidate;
 import back.domain.mcp.candidate.dto.McpRecommendationQuery;
@@ -25,7 +28,10 @@ import back.domain.mcp.recommendation.dto.McpRecommendationSkillContentRequest;
 import back.domain.mcp.recommendation.dto.McpRecommendationSkillContentResponse;
 import back.domain.mcp.recommendation.dto.McpRecommendedSkillResponse;
 import back.domain.mcp.recommendation.ranker.McpRecommendationRanker;
+import back.domain.prompt.demo.entity.DemoSkill;
+import back.domain.prompt.demo.repository.DemoSkillRepository;
 import back.domain.prompt.prompt.dto.SkillContentDetail;
+import back.domain.prompt.prompt.enums.Category;
 import back.domain.prompt.prompt.service.SkillReadService;
 
 @ExtendWith(MockitoExtension.class)
@@ -40,6 +46,9 @@ class McpRecommendationServiceImplTest {
     @Mock
     private SkillReadService skillReadService;
 
+    @Mock
+    private DemoSkillRepository demoSkillRepository;
+
     private McpRecommendationService mcpRecommendationService;
 
     @BeforeEach
@@ -48,19 +57,20 @@ class McpRecommendationServiceImplTest {
                 new McpRecommendationServiceImpl(
                         mcpRecommendationCandidateProvider,
                         mcpRecommendationRanker,
-                        skillReadService);
+                        skillReadService,
+                        demoSkillRepository);
     }
 
     @Test
-    @DisplayName("추천 요청 시 keywords를 정규화한 query 문자열로 후보 조회를 호출한다")
+    @DisplayName("추천 요청 시 queries를 정규화해 후보 조회를 호출한다")
     void recommend_normalizeQueryAndReturnRankedResult() {
-        McpRecommendationRequest request = new McpRecommendationRequest(" SpringBoot   infra  DevOps ");
+        McpRecommendationRequest request = new McpRecommendationRequest(
+                List.of(" SpringBoot  ", "  infra   DevOps ", " "));
         List<McpRecommendationCandidate> candidates = List.of(new McpRecommendationCandidate(
                 1L,
                 "spring-infra-skill",
                 "repo-name",
                 "https://github.com/example/repo-name",
-                "# skill content",
                 "INFRA",
                 "summary",
                 0.91,
@@ -80,7 +90,7 @@ class McpRecommendationServiceImplTest {
 
         ArgumentCaptor<McpRecommendationQuery> queryCaptor = ArgumentCaptor.forClass(McpRecommendationQuery.class);
         verify(mcpRecommendationCandidateProvider).findTopCandidates(queryCaptor.capture());
-        assertThat(queryCaptor.getValue().query()).isEqualTo("SpringBoot infra DevOps");
+        assertThat(queryCaptor.getValue().queries()).containsExactly("SpringBoot", "infra DevOps");
         assertThat(response.selectedSkills()).hasSize(1);
         assertThat(response.selectedSkills().getFirst().category()).isEqualTo("INFRA");
     }
@@ -98,5 +108,33 @@ class McpRecommendationServiceImplTest {
         assertThat(response.category()).isEqualTo("backend");
         assertThat(response.sourceRepo()).isEqualTo("example/repo");
         assertThat(response.skillMdRaw()).isEqualTo("# backend skill");
+    }
+
+    @Test
+    @DisplayName("candidate-source가 demo-skill-search면 demo 스킬 본문을 반환한다")
+    void getSkillContent_whenDemoSource_returnsDemoSkillContent() {
+        ReflectionTestUtils.setField(mcpRecommendationService, "candidateSource", "demo-skill-search");
+        McpRecommendationSkillContentRequest request = new McpRecommendationSkillContentRequest(21L);
+        DemoSkill demoSkill = DemoSkill.builder()
+                .skillName("demo-backend-skill")
+                .repositoryName("example/demo-repo")
+                .repositoryUrl("https://github.com/example/demo-repo")
+                .summary("demo summary")
+                .contentMd("# demo backend skill")
+                .category(Category.BACKEND)
+                .isChunked(true)
+                .forks(10)
+                .stars(100)
+                .sourceUpdatedAt(OffsetDateTime.parse("2026-03-10T10:00:00Z"))
+                .build();
+        ReflectionTestUtils.setField(demoSkill, "id", 21L);
+        when(demoSkillRepository.findById(21L)).thenReturn(Optional.of(demoSkill));
+
+        McpRecommendationSkillContentResponse response = mcpRecommendationService.getSkillContent(request);
+
+        assertThat(response.skillId()).isEqualTo(21L);
+        assertThat(response.category()).isEqualTo("backend");
+        assertThat(response.sourceRepo()).isEqualTo("example/demo-repo");
+        assertThat(response.skillMdRaw()).isEqualTo("# demo backend skill");
     }
 }

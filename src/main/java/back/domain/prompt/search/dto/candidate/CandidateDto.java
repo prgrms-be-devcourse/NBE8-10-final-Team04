@@ -17,9 +17,6 @@ public record CandidateDto(
         @JsonProperty("repository_url")
         String repositoryUrl,
 
-        @JsonProperty("content_md")
-        String contentMd,
-
         Category category,
 
         String summary,

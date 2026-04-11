@@ -1,11 +1,12 @@
 package back.domain.info.controller;
 
-import back.domain.info.dto.response.PageUpdateRequestResponse;
-import back.domain.info.dto.response.UpdateRequestResponse;
-import back.domain.info.service.AiInfoService;
-import back.domain.info.service.ModelBenchmarkService;
-import back.domain.info.service.UpdateRequestService;
-import back.global.response.RsData;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.util.List;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.data.domain.PageImpl;
@@ -13,18 +14,20 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
-import java.util.List;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import back.domain.info.dto.response.PageUpdateRequestResponse;
+import back.domain.info.dto.response.UpdateRequestResponse;
+import back.domain.info.service.AiInfoService;
+import back.domain.info.service.InfoCatalogQueryService;
+import back.domain.info.service.ModelBenchmarkService;
+import back.domain.info.service.UpdateRequestService;
+import back.global.response.RsData;
 
 class AiInfoControllerTest {
 
     private AiInfoService aiInfoService;
     private ModelBenchmarkService benchmarkService;
     private UpdateRequestService updateRequestService;
+    private InfoCatalogQueryService infoCatalogQueryService;
     private AiInfoController controller;
 
     @BeforeEach
@@ -32,7 +35,9 @@ class AiInfoControllerTest {
         aiInfoService = mock(AiInfoService.class);
         benchmarkService = mock(ModelBenchmarkService.class);
         updateRequestService = mock(UpdateRequestService.class);
-        controller = new AiInfoController(aiInfoService, benchmarkService, updateRequestService);
+        infoCatalogQueryService = mock(InfoCatalogQueryService.class);
+        controller =
+                new AiInfoController(aiInfoService, benchmarkService, updateRequestService, infoCatalogQueryService);
     }
 
     @Test
@@ -75,8 +80,7 @@ class AiInfoControllerTest {
     @Test
     void getUpdateApproved_returnsServiceResult() {
         PageUpdateRequestResponse serviceResponse = new PageUpdateRequestResponse(
-                new PageImpl<>(List.<UpdateRequestResponse>of(), PageRequest.of(0, 10), 0)
-        );
+                new PageImpl<>(List.<UpdateRequestResponse>of(), PageRequest.of(0, 10), 0));
         when(updateRequestService.getUpdatesApproved(PageRequest.of(0, 10))).thenReturn(serviceResponse);
 
         PageUpdateRequestResponse response = controller.getUpdateApproved(PageRequest.of(0, 10));
@@ -87,8 +91,7 @@ class AiInfoControllerTest {
     @Test
     void getUpdate_returnsServiceResult() {
         PageUpdateRequestResponse serviceResponse = new PageUpdateRequestResponse(
-                new PageImpl<>(List.<UpdateRequestResponse>of(), PageRequest.of(1, 5), 0)
-        );
+                new PageImpl<>(List.<UpdateRequestResponse>of(), PageRequest.of(1, 5), 0));
         when(updateRequestService.getUpdates(PageRequest.of(1, 5))).thenReturn(serviceResponse);
 
         PageUpdateRequestResponse response = controller.getUpdate(PageRequest.of(1, 5));

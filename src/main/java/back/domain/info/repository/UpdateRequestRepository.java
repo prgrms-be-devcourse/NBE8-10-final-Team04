@@ -11,5 +11,8 @@ import java.time.LocalDate;
 public interface UpdateRequestRepository extends JpaRepository<UpdateRequest, Long> {
     Page<UpdateRequest> findAllByStatus(Status status, Pageable pageable);
 
+    java.util.List<UpdateRequest> findAllByStatusAndVendorIdAndNotifiedAtOrderByReviewedAtDescCreatedAtDesc(
+            Status status, Long vendorId, LocalDate notifiedAt);
+
     boolean existsBySourceIdAndNotifiedAt(String sourceId, LocalDate notifiedAt);
 }

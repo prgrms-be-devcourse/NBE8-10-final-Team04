@@ -63,7 +63,7 @@ def github_get(
     rate limit / 429 자동 대기, 재시도 포함.
     """
     for attempt in range(retries):
-        try: # TODO: 중복 로직 리펙토링 필요 TM-135
+        try:
             resp      = requests.get(url, headers=rotator.headers(extra_headers), timeout=30)
             remaining = int(resp.headers.get("X-RateLimit-Remaining", 9999))
             reset_at  = int(resp.headers.get("X-RateLimit-Reset", 0))
@@ -86,7 +86,11 @@ def github_get(
             elif remaining < 500:
                 time.sleep(1.5)
 
-            body = resp.json() if resp.status_code not in (304, 404, 403) else None # TODO: 상태 코드 200? 오류 날 가능성은 없는지 확인 TM-135
+            if resp.status_code not in (200, 304, 404, 403):
+                logger.warning("예상치 못한 상태 코드: status=%d, url=%s", resp.status_code, url)
+
+            body = resp.json() if resp.status_code == 200 else None
+            return resp.status_code, body, dict(resp.headers)
             return resp.status_code, body, dict(resp.headers)
 
         except requests.exceptions.RequestException as e:

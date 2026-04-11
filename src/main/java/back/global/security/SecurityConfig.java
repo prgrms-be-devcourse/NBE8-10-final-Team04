@@ -1,8 +1,8 @@
 package back.global.security;
 
-import java.util.List;
-
-import org.springframework.beans.factory.annotation.Value;
+import back.global.config.properties.CorsProperties;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -17,20 +17,15 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import lombok.RequiredArgsConstructor;
+import java.util.List;
 
 @Configuration
-@SuppressFBWarnings(
-        value = "EI_EXPOSE_REP2",
-        justification = "스프링 DI로 주입되는 빈 참조이며, 의도된 패턴입니다.")
+@SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "스프링 DI로 주입되는 빈 참조이며, 의도된 패턴입니다.")
 @RequiredArgsConstructor
 public class SecurityConfig {
     private final RestAuthenticationEntryPoint restAuthenticationEntryPoint;
     private final RestAccessDeniedHandler restAccessDeniedHandler;
-
-    @Value("${custom.cors.allowed-origin-patterns:http://localhost:3000}")
-    private List<String> allowedOriginPatterns;
+    private final CorsProperties corsProperties;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http, JwtAuthenticationFilter jwtAuthenticationFilter)
@@ -45,7 +40,7 @@ public class SecurityConfig {
                         .authenticationEntryPoint(restAuthenticationEntryPoint)
                         .accessDeniedHandler(restAccessDeniedHandler))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll().requestMatchers(
                                 "/error",
                                 "/v3/api-docs/**",
                                 "/swagger-ui/**",
@@ -53,19 +48,33 @@ public class SecurityConfig {
                                 "/oauth2/**",
                                 "/login/oauth2/**",
                                 "/h2-console/**",
-                                "/actuator/health/**",
+                                "/actuator/**",
                                 "/actuator/info",
-                                "/api/v1/prompts/run",
-                                "/api/v1/info/**",
+                                "/api/prompts/run",
+                                "/api/info/run",
+                                "/dev/skills/**",
+                                "/dev/skill-chunks/**",
+                                "/api/skills/search",
+                                        "/api/chatbot",
+                                "/api/v1/prompts/**",
                                 "/api/v1/skills/**")
                         .permitAll()
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/api/v1/info/vendors",
+                                "/api/v1/info/vendors/*/families",
+                                "/api/v1/info/families/*",
+                                "/api/v1/info/update/approved")
+                        .permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/info/model", "/api/v1/info/benchmark", "/api/v1/info/update")
+                        .hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/v1/info/update")
+                        .hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/v1/info/update")
+                        .hasRole("ADMIN")
                         .requestMatchers(HttpMethod.POST, "/api/v1/auth/google/login")
                         .permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/auth/token/refresh")
-                        .permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/v1/ai-model/pipeline/*")
-                        .permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/v1/ai-tracker/pipeline/*")
                         .permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/mcp/template/start-agent")
                         .permitAll()
@@ -73,10 +82,21 @@ public class SecurityConfig {
                         .permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/mcp/recommendations/skill-content")
                         .permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/community/**")
+                        .permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/auth/logout")
                         .authenticated()
                         .requestMatchers("/api/v1/admin/**")
                         .hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST,
+                                "/api/v1/ai-model/pipeline/trigger",
+                                "/api/v1/ai-tracker/pipeline/trigger"
+                        ).permitAll()
+
+                        .requestMatchers(HttpMethod.POST,
+                                "/api/v1/ai-tracker/pipeline/**",
+                                "/api/v1/ai-model/pipeline/**"
+                        ).hasRole("ADMIN")
                         .anyRequest()
                         .authenticated())
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
@@ -95,7 +115,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOriginPatterns(allowedOriginPatterns);
+        config.setAllowedOriginPatterns(corsProperties.allowedOriginPatterns());
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);

@@ -1,15 +1,28 @@
 package back.domain.mcp.candidate.dto;
 
-public record McpRecommendationQuery(String query) {
+import java.util.List;
+import java.util.Objects;
+
+public record McpRecommendationQuery(List<String> queries) {
     public McpRecommendationQuery {
-        query = normalize(query);
+        queries = normalize(queries);
     }
 
-    private static String normalize(String rawQuery) {
-        if (rawQuery == null || rawQuery.isBlank()) {
-            return "";
+    @Override
+    public List<String> queries() {
+        return List.copyOf(queries);
+    }
+
+    private static List<String> normalize(List<String> rawQueries) {
+        if (rawQueries == null) {
+            return List.of();
         }
 
-        return rawQuery.trim().replaceAll("\\s+", " ");
+        return rawQueries.stream()
+                .filter(Objects::nonNull)
+                .map(rawQuery -> rawQuery.trim().replaceAll("\\s+", " "))
+                .filter(query -> !query.isBlank())
+                .distinct()
+                .toList();
     }
 }

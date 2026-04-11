@@ -11,20 +11,16 @@
    - 기술 스택/언어(예: Java, SpringBoot)
    - 제약/환경(예: OCI, Docker, 기간, 비용)
 4. 사용자에게 기획 입력 완료 여부를 명시적으로 확인한다.
-5. 사용자가 완료를 명시적으로 확인한 뒤에만, 정리한 키워드로
-   `start_auto_flow(step=COLLECTED, keywords=..., userInputConfirmed=true)`를 호출한다.
+5. 사용자가 완료를 명시적으로 확인한 뒤에만, 정리한 질의 배열(queries)로
+   `start_auto_flow(step=COLLECTED, flowId=..., queries=[...], userInputConfirmed=true)`를 호출한다.
    - 사용자 확인 전에는 절대 `userInputConfirmed=true`로 호출하지 마라.
-6. COLLECTED 응답의 `actions.writeFiles`를 즉시 반영해 `skills/{category}.md` 파일들을 생성한다.
-7. 사용자에게 "이대로 진행" 또는 "사용자 맞춤 보정" 중 하나를 확인한다.
-   - 사용자가 맞춤 보정을 선택하면, 반드시 방금 생성된 `skills/{category}.md`를 기준으로 부분 보정한다.
-   - 새 문서를 처음부터 다시 작성하지 말고 기존 구조/코드 블록/경로/식별자를 최대한 유지한다.
-   - 변경이 필요한 섹션만 수정하고, 변경 전후 차이를 사용자에게 짧게 보고한다.
-8. 사용자 결정에 따라 `start_auto_flow(step=FINALIZE, keywords=..., decision=ACCEPT|CUSTOMIZE, customizationNotes=...)`를 호출한다.
-   - FINALIZE 단계에서는 추천 API를 다시 호출하지 않고, 이미 생성된 skills 파일 기준으로 최종화한다.
-9. FINALIZE 응답의 `actions.writeFiles`와 `actions.deleteFiles`를 즉시 반영한다.
-10. 최종 상태(생성/수정/삭제 파일 목록)를 사용자에게 보고하고 종료한다.
+6. COLLECTED 응답의 `actions.writeFiles`를 즉시 파일 시스템에 반영한다.
+   - 각 항목의 `path`와 `content`를 그대로 저장한다.
+   - `skills/*.md` 본문은 원문 그대로 저장하며, 임의 수정/요약/재작성하지 않는다.
+7. 파일 반영 후 `generatedFiles(path, length, sha256)` 목록을 사용자에게 보고한다.
 
 주의:
-- MCP 응답을 채팅으로 요약만 하지 말고 `actions.writeFiles/deleteFiles`를 반드시 파일 시스템에 반영한다.
-- 사용자 기획 입력 완료 확인 전에 `COLLECTED` 또는 `FINALIZE`를 호출하면 안 된다.
+- MCP 응답 본문을 채팅에서 임의 요약/축약/재작성하지 않는다.
+- skill 본문 파일 생성은 반드시 `actions.writeFiles[].content` 원문을 그대로 사용한다.
+- 사용자 기획 입력 완료 확인 전에 `COLLECTED`를 호출하면 안 된다.
 - `COLLECTED` 단계는 `userInputConfirmed=true`가 아니면 서버가 거절한다.

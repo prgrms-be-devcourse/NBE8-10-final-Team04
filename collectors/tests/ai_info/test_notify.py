@@ -1,12 +1,5 @@
 """
 test_notify.py — ai_info notify 단위 테스트
-
-검증 대상:
-  - notify_success: send_embed 호출 여부 및 file_count 반영
-  - notify_failure: succeeded/failed 없을 때 원본 exc 그대로 전달
-  - notify_failure: succeeded만 있을 때 메시지에 포함
-  - notify_failure: failed만 있을 때 메시지에 포함
-  - notify_failure: succeeded/failed 모두 있을 때 메시지에 모두 포함
 """
 
 from unittest.mock import patch, MagicMock
@@ -20,7 +13,9 @@ def test_notify_success_calls_send_embed(mock_send_embed: MagicMock) -> None:
     notify_success(2)
 
     mock_send_embed.assert_called_once()
-    payload = mock_send_embed.call_args[0][0]
+
+    args, kwargs = mock_send_embed.call_args
+    payload = args[0]
     description = payload["embeds"][0]["description"]
     assert "2" in description
 
@@ -32,7 +27,9 @@ def test_notify_failure_no_detail(mock_send_error: MagicMock) -> None:
     notify_failure("upload_to_oci", exc)
 
     mock_send_error.assert_called_once()
-    forwarded_exc = mock_send_error.call_args[0][1]
+
+    args, kwargs = mock_send_error.call_args
+    forwarded_exc = args[1]
     assert forwarded_exc is exc
 
 
@@ -45,7 +42,8 @@ def test_notify_failure_with_succeeded_only(mock_send_error: MagicMock) -> None:
         succeeded=["data/ai-info/models_info_raw.json"],
     )
 
-    forwarded_exc = mock_send_error.call_args[0][1]
+    args, kwargs = mock_send_error.call_args
+    forwarded_exc = args[1]
     assert "models_info_raw.json" in str(forwarded_exc)
     assert "✓ 성공" in str(forwarded_exc)
 
@@ -59,7 +57,8 @@ def test_notify_failure_with_failed_only(mock_send_error: MagicMock) -> None:
         failed=["data/ai-info/models_benchmark_raw.json"],
     )
 
-    forwarded_exc = mock_send_error.call_args[0][1]
+    args, kwargs = mock_send_error.call_args
+    forwarded_exc = args[1]
     assert "models_benchmark_raw.json" in str(forwarded_exc)
     assert "✗ 실패" in str(forwarded_exc)
 
@@ -69,14 +68,14 @@ def test_notify_failure_with_both(mock_send_error: MagicMock) -> None:
     """succeeded/failed 모두 전달 시 메시지에 양쪽 내역이 모두 포함되어야 한다."""
     notify_failure(
         "upload_to_oci",
-        RuntimeError("부분 실패"),
+        RuntimeError("실패"),
         succeeded=["data/ai-info/models_info_raw.json"],
         failed=["data/ai-info/models_benchmark_raw.json"],
     )
 
-    forwarded_exc = mock_send_error.call_args[0][1]
-    msg = str(forwarded_exc)
-    assert "✓ 성공" in msg
-    assert "✗ 실패" in msg
-    assert "models_info_raw.json" in msg
-    assert "models_benchmark_raw.json" in msg
+    args, kwargs = mock_send_error.call_args
+    forwarded_exc = args[1]
+    assert "models_info_raw.json" in str(forwarded_exc)
+    assert "✓ 성공" in str(forwarded_exc)
+    assert "models_benchmark_raw.json" in str(forwarded_exc)
+    assert "✗ 실패" in str(forwarded_exc)

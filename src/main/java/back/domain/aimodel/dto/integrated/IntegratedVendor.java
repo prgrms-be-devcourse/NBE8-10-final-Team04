@@ -44,6 +44,18 @@ public record IntegratedVendor(
             String commonDescription,
 
             @JsonProperty("created_at")
-            String createdAt
-    ) {}
+            String createdAt,
+
+            @JsonProperty("input_types")
+            List<String> inputTypes,
+
+            @JsonProperty("output_types")
+            List<String> outputTypes
+    ) {
+        // 방어적 복사를 통한 불변성 보장
+        public IntegratedFamily {
+            inputTypes = inputTypes == null ? List.of() : List.copyOf(inputTypes);
+            outputTypes = outputTypes == null ? List.of() : List.copyOf(outputTypes);
+        }
+    }
 }

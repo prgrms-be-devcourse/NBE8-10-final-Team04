@@ -17,6 +17,55 @@ from collectors.scripts.ai_tracker.models import make_item
 log: logging.Logger = logging.getLogger(__name__)
 
 
+def parse_generic_changelog(html: str, source: dict[str, Any]) -> list[dict[str, Any]]:
+    """
+    구조 변경 대비 범용 파서 (휴리스틱 탐색).
+    특정 CSS 클래스에 의존하지 않고 HTML 시맨틱(H2, H3 및 형제 요소)을 기반으로 업데이트 내역을 추출합니다.
+    어떤 소스(provider)에서든 구조가 깨졌을 때 재사용 가능한 백업 파서입니다.
+    """
+    soup = BeautifulSoup(html, "html.parser")
+    items: list[dict[str, Any]] = []
+
+    # 네비게이션을 피해 실제 내용이 있을 만한 영역 특정
+    main_area = soup.find("main") or soup.find("article") or soup.find("div", id="root") or soup
+    # 소스에서 provider 이름 추출 (없을 경우 기본값)
+    provider: str = source.get("provider", "Update")
+
+    for heading in main_area.select("h2, h3"):
+        if len(items) >= MAX_ITEMS_PER_SOURCE:
+            break
+
+        heading_text: str = heading.get_text(strip=True)
+        if len(heading_text) < 4 or heading_text in EXCLUDE_NAV_TEXTS:
+            continue
+
+        content_parts: list[str] = []
+        sib = heading.find_next_sibling()
+
+        while sib and sib.name not in ("h1", "h2", "h3"):
+            if sib.name == "p":
+                text: str = sib.get_text(strip=True)
+                if text:
+                    content_parts.append(text)
+            elif sib.name == "ul":
+                content_parts.extend(
+                    li.get_text(strip=True) for li in sib.find_all("li", recursive=False)
+                )
+            sib = sib.find_next_sibling()
+
+        if content_parts:
+            summary_str: str = " ".join(content_parts)[:200] # 요약용은 짧게
+            raw_content: str = "\n".join(f"- {part}" for part in content_parts)
+
+            title: str = f"{provider} Update ({heading_text}): {summary_str[:20]}..."
+
+            item = make_item(source, title, source["url"], summary_str, "scrape", heading_text)
+            item["raw_content"] = raw_content
+            items.append(item)
+
+    return items
+
+
 def parse_anthropic_news(html: str, source: dict[str, Any]) -> list[dict[str, Any]]:
     """Anthropic 뉴스 페이지 파싱. 상위 MAX_ITEMS_PER_SOURCE개 항목 반환."""
     soup = BeautifulSoup(html, "html.parser")
@@ -38,41 +87,59 @@ def parse_anthropic_news(html: str, source: dict[str, Any]) -> list[dict[str, An
         p_tag = li.find("p")
         summary: str = p_tag.get_text(strip=True) if p_tag else title
         items.append(make_item(source, title, url, summary, "scrape"))
+
         if len(items) >= MAX_ITEMS_PER_SOURCE:
             break
+
     return items
 
-# TODO: 현재 changelog 관련 가져오기가 잘 되지 않아 추후 수정 예정 TM-135
+
 def parse_openai_changelog(html: str, source: dict[str, Any]) -> list[dict[str, Any]]:
-    """OpenAI Platform Changelog 파싱. CF BR 응답이 JSON 래퍼일 경우 내부 HTML 추출."""
+    """OpenAI Platform Changelog 파싱."""
     if html.strip().startswith("{"):
         try:
             html = json.loads(html).get("result", html)
         except Exception as e:
             log.warning("[openai_changelog] JSON 언래핑 실패: %s", e)
 
-    # TODO: 구조가 바뀐 경우를 대비해 범용 백업 로직 필요 TM-135
-    soup = BeautifulSoup(html, "html.parser")
-    items: list[dict[str, Any]] = []
-    for div in soup.find_all("div", class_=lambda c: c and "MarkdownContent" in c)[:MAX_ITEMS_PER_SOURCE]:
-        para = div.find("p")
-        if para:
-            items.append(
-                make_item(source, para.get_text(strip=True), source["url"], div.get_text(strip=True), "scrape")
-            )
+    items = _parse_openai_primary(html, source)
+    if not items:
+        log.warning("[openai_changelog] primary 파싱 결과 없음 — 범용 파서(fallback) 시도")
+        items = parse_generic_changelog(html, source)
+    if not items:
+        log.error("[openai_changelog] 범용 파서도 결과 없음 — 페이지 구조 변경 가능성 높음")
     return items
 
+
+def _parse_openai_primary(html: str, source: dict[str, Any]) -> list[dict[str, Any]]:
+    """MarkdownContent div 기반 파싱."""
+    soup = BeautifulSoup(html, "html.parser")
+    items: list[dict[str, Any]] = []
+
+    for div in soup.find_all("div", class_=lambda c: c and "MarkdownContent" in c):
+        if len(items) >= MAX_ITEMS_PER_SOURCE:
+            break
+
+        h_tag = div.find(["h2", "h3"])
+        date_text: str = h_tag.get_text(strip=True) if h_tag else ""
+
+        p_tag = div.find("p")
+        summary: str = p_tag.get_text(strip=True) if p_tag else "업데이트 내역"
+
+        title_prefix = f"OpenAI Update ({date_text})" if date_text else "OpenAI Update"
+        title: str = f"{title_prefix}: {summary[:20]}..."
+
+        raw_content: str = div.get_text(separator="\n", strip=True)
+
+        item = make_item(source, title, source["url"], summary, "scrape")
+        item["raw_content"] = raw_content
+        items.append(item)
+
+    return items
+
+
 def parse_anthropic_changelog(html: str, source: dict[str, Any]) -> list[dict[str, Any]]:
-    """
-    Anthropic API Changelog 파싱.
-
-    platform.claude.com/docs/en/release-notes/overview 페이지 구조:
-      <h2>날짜 (예: "March 2025")</h2>
-      <p> 또는 <ul> — 변경 내용
-
-    네비게이션의 h2/h3("Solutions", "Partners" 등)는 EXCLUDE_NAV_TEXTS로 필터링.
-    h3도 날짜 헤딩으로 사용될 수 있어 h2, h3 모두 탐색.
-    """
+    """Anthropic API Changelog 파싱."""
     soup = BeautifulSoup(html, "html.parser")
     items: list[dict[str, Any]] = []
 
@@ -82,16 +149,13 @@ def parse_anthropic_changelog(html: str, source: dict[str, Any]) -> list[dict[st
 
         date_text: str = heading.get_text(strip=True)
 
-        # 네비게이션 메뉴 오염 방어
         if date_text in EXCLUDE_NAV_TEXTS or not date_text:
             continue
 
-        # 날짜 형식이 아닌 단독 단어 헤딩 스킵 (예: "API", "SDK")
         words = date_text.split()
         if len(words) == 1 and not any(ch.isdigit() for ch in date_text):
             continue
 
-        # 헤딩 다음 형제 요소에서 변경 내용 수집
         content_parts: list[str] = []
         sib = heading.find_next_sibling()
         while sib and sib.name not in ("h2", "h3"):
@@ -109,15 +173,19 @@ def parse_anthropic_changelog(html: str, source: dict[str, Any]) -> list[dict[st
         if not content_parts:
             continue
 
-        title: str   = f"{date_text}: {content_parts[0]}"
-        summary: str = " | ".join(content_parts)
-        items.append(make_item(source, title, source["url"], summary, "scrape", date_text))
+        title: str = f"Anthropic Release: {date_text}"
+        summary_str: str = "\n".join(f"- {part}" for part in content_parts)
+        raw_content: str = summary_str
+
+        item = make_item(source, title, source["url"], summary_str, "scrape", date_text)
+        item["raw_content"] = raw_content
+        items.append(item)
 
     return items
 
 
 def parse_google_changelog(html: str, source: dict[str, Any]) -> list[dict[str, Any]]:
-    """Gemini API Changelog 파싱. CF BR 응답이 JSON 래퍼일 경우 내부 HTML 추출."""
+    """Gemini API Changelog 파싱."""
     if html.strip().startswith("{"):
         try:
             html = json.loads(html).get("result", html)
@@ -126,16 +194,28 @@ def parse_google_changelog(html: str, source: dict[str, Any]) -> list[dict[str, 
 
     soup = BeautifulSoup(html, "html.parser")
     items: list[dict[str, Any]] = []
-    for h2 in soup.select("h2")[:MAX_ITEMS_PER_SOURCE]:
+
+    for h2 in soup.select("h2"):
+        if len(items) >= MAX_ITEMS_PER_SOURCE:
+            break
+
         date_text: str = h2.get_text(strip=True)
         sib = h2.find_next_sibling()
         if not sib or sib.name != "ul":
             continue
-        for li in sib.find_all("li", recursive=False)[:5]:
-            li_text: str = li.get_text(strip=True)
-            items.append(
-                make_item(source, f"{date_text}: {li_text}", source["url"], li_text, "scrape", date_text)
-            )
+
+        bullets = [li.get_text(strip=True) for li in sib.find_all("li", recursive=False)]
+        if not bullets:
+            continue
+
+        title: str = f"Gemini API Update: {date_text}"
+        summary_str: str = "\n".join(f"- {b}" for b in bullets)
+        raw_content: str = summary_str
+
+        item = make_item(source, title, source["url"], summary_str, "scrape", date_text)
+        item["raw_content"] = raw_content
+        items.append(item)
+
     return items
 
 
