@@ -44,6 +44,12 @@ public class SkillChunkVectorSearchRepository {
 
         return jdbcTemplate.query(
                 sql,
+                ps -> {
+                    ps.setQueryTimeout(5); // 5초 초과 시 쿼리 취소 — 인덱스 없는 full scan 방어
+                    ps.setString(1, queryVector);
+                    ps.setString(2, queryVector);
+                    ps.setInt(3, topK);
+                },
                 (rs, rowNum) -> new SkillChunkVectorSearchRowDto(
                         rs.getLong("chunk_id"),
                         rs.getLong("skill_id"),
@@ -56,10 +62,7 @@ public class SkillChunkVectorSearchRepository {
                         rs.getObject("forks", Integer.class),
                         rs.getObject("updated_at", LocalDateTime.class),
                         rs.getFloat("similarity")
-                ),
-                queryVector,
-                queryVector,
-                topK
+                )
         );
     }
 }
