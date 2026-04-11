@@ -17,6 +17,7 @@ import back.global.exception.ServiceException;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
@@ -70,34 +71,46 @@ public class SkillSearchServiceImpl implements SkillSearchService {
             );
         }
 
-        // 쿼리별 embed + vector search 를 병렬 실행
-        // Before: N × (embed_latency + search_latency) 순차 합산
-        // After:  max(embed_latency) + max(search_latency) ≈ 1회 비용
-        List<CompletableFuture<List<QuerySearchHit>>> futures = searchQueries.stream()
+        // Phase 1: embed 병렬 실행 (Virtual Thread, DB 연결 없음)
+        // Virtual Thread 를 embed 에만 적용하는 이유:
+        //   embed = 외부 HTTP I/O → Virtual Thread 효과 있음
+        //   searchTopK = DB 쿼리 → DB 연결 대기는 JVM 레벨 락(Pinning)이라
+        //   Virtual Thread 를 쓰면 100 VU × 7 = 700개 동시 DB 연결 → HikariPool 고갈
+        //   따라서 DB 쿼리는 Phase 2 에서 순차 실행으로 분리
+        List<CompletableFuture<String>> embedFutures = searchQueries.stream()
                 .map(queryDto -> CompletableFuture.supplyAsync(
-                        () -> searchByQuery(queryDto),
+                        () -> VectorUtils.toPgVector(embeddingService.embed(queryDto.text())),
                         skillSearchExecutor
                 ))
                 .toList();
 
-        List<QuerySearchHit> allHits;
+        List<String> queryVectors;
         try {
-            allHits = futures.stream()
+            queryVectors = embedFutures.stream()
                     .map(CompletableFuture::join)
-                    .flatMap(List::stream)
                     .toList();
         } catch (CompletionException e) {
-            // supplyAsync 내부에서 던진 예외는 CompletionException 으로 래핑됨
-            // ServiceException 이면 그대로 재전파해 전역 핸들러가 처리하도록 함
             Throwable cause = e.getCause();
             if (cause instanceof ServiceException se) {
                 throw se;
             }
             throw new ServiceException(
                     CommonErrorCode.INTERNAL_SERVER_ERROR,
-                    "[SkillSearchServiceImpl#search] parallel embedding or vector search failed: " + e.getMessage(),
+                    "[SkillSearchServiceImpl#search] parallel embedding failed: " + e.getMessage(),
                     "검색 중 오류가 발생했습니다."
             );
+        }
+
+        // Phase 2: 벡터 검색 순차 실행 (DB 연결 최대 1개씩 사용)
+        // 7 × db_query_latency ≈ 7 × 20ms = 140ms — embed 병목 대비 무시할 수준
+        List<QuerySearchHit> allHits = new ArrayList<>();
+        for (int i = 0; i < searchQueries.size(); i++) {
+            SearchQueryDto queryDto = searchQueries.get(i);
+            String queryVector = queryVectors.get(i);
+            skillChunkVectorSearchRepository.searchTopK(queryVector, PER_QUERY_TOP_K)
+                    .forEach(row -> allHits.add(
+                            new QuerySearchHit(queryDto.text(), queryDto.type(), row)
+                    ));
         }
 
         List<CandidateDto> candidates = allHits.stream()
@@ -109,20 +122,6 @@ public class SkillSearchServiceImpl implements SkillSearchService {
                 .toList();
 
         return new SkillChunkSearchResultDto(candidates);
-    }
-
-    // 단일 쿼리에 대한 embed → vector search → hit 변환을 하나의 단위로 묶음
-    // CompletableFuture.supplyAsync() 의 람다로 전달되어 병렬 실행됨
-    private List<QuerySearchHit> searchByQuery(SearchQueryDto queryDto) {
-        List<Float> queryEmbedding = embeddingService.embed(queryDto.text());
-        String queryVector = VectorUtils.toPgVector(queryEmbedding);
-
-        List<SkillChunkVectorSearchRowDto> results =
-                skillChunkVectorSearchRepository.searchTopK(queryVector, PER_QUERY_TOP_K);
-
-        return results.stream()
-                .map(row -> new QuerySearchHit(queryDto.text(), queryDto.type(), row))
-                .toList();
     }
 
     private List<SearchQueryDto> toSearchQueryDtos(List<String> queries) {
