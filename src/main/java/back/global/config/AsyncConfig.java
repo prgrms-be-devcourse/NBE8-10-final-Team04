@@ -1,6 +1,7 @@
 package back.global.config;
 
 import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -25,27 +26,21 @@ public class AsyncConfig {
         return executor;
     }
 
-    // SkillSearchServiceImpl 의 CompletableFuture 병렬 임베딩 전용 풀
+    // SkillSearchServiceImpl 의 CompletableFuture 병렬 임베딩 전용 Executor
     //
-    // 스레드 수 근거:
-    //   QUERY_LIMIT = 7 → 요청 1건당 최대 7개 embed 호출을 동시에 실행
-    //   스레드 수를 7 초과로 늘려도 임베딩 서비스 자체가 병목이므로 효과 없음
-    //   ForkJoinPool.commonPool() 미사용: 공용 풀 점유 시 GC·기타 비동기 작업에 영향
+    // Virtual Thread 를 사용하는 이유:
+    //   embed() = 외부 HTTP 호출 = Blocking I/O
+    //   플랫폼 스레드 풀(고정 크기)로 Blocking I/O 를 처리하면:
+    //     → 스레드가 I/O 대기 중 OS 스레드를 점유
+    //     → 100 VU × 7 태스크 = 700개 동시 요청 시 풀이 즉시 고갈 → TaskRejectedException
+    //     → queueCapacity 를 늘려도 처리 스레드가 부족해 큐가 결국 꽉 참
     //
-    // 큐 크기 근거:
-    //   최대 동시 VU(100) × QUERY_LIMIT(7) = 700개 태스크가 순간적으로 제출될 수 있음
-    //   큐가 작으면 ThreadPoolTaskExecutor 가 TaskRejectedException → 500 에러 반환
-    //   700 + 여유분 = 1000 으로 설정해 피크 버스트를 흡수
+    //   Virtual Thread (Java 21) 는 I/O 대기 중 OS 스레드를 반환(mount/unmount)
+    //     → 수천 개가 동시에 대기해도 OS 스레드 소비 없음
+    //     → 큐 없이 태스크마다 즉시 가상 스레드 생성 → TaskRejectedException 원천 차단
+    //     → Blocking I/O 병렬화에 가장 적합한 방식
     @Bean(name = "skillSearchExecutor")
     public Executor skillSearchExecutor() {
-        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
-        executor.setCorePoolSize(7);
-        executor.setMaxPoolSize(7);
-        executor.setQueueCapacity(1000);
-        executor.setThreadNamePrefix("skill-search-");
-        executor.setWaitForTasksToCompleteOnShutdown(true);
-        executor.setAwaitTerminationSeconds(30);
-        executor.initialize();
-        return executor;
+        return Executors.newVirtualThreadPerTaskExecutor();
     }
 }
