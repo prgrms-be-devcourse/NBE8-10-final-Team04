@@ -57,7 +57,7 @@ public class UpdateRequest extends BaseEntity {
     @Column(name = "status", nullable = false)
     private Status status;
 
-    private LocalDate notifiedAt; // 업데이트 일시
+    private LocalDateTime notifiedAt; // 업데이트 일시
 
     private LocalDateTime reviewedAt; // 확인 및 반영 일시
 

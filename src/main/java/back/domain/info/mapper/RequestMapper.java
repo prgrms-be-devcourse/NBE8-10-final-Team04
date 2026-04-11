@@ -14,14 +14,14 @@ public class RequestMapper {
 
     public UpdateRequest toUpdateRequestEntity(ItemDto dto, AiVendor vendor, AiModelFamily family) {
         return UpdateRequest.builder()
-                .sourceId(dto.itemId())
+                .sourceId(dto.sourceId())
                 .vendor(vendor)
                 .family(family)
-                .sourceUrl(dto.url())
+                .sourceUrl(dto.soucreUrl())
                 .sourceType(dto.sourceType())
                 .rawContent(dto.rawContent())
                 .status(Status.PENDING)
-                .notifiedAt(LocalDate.now())
+                .notifiedAt(dto.notifiedAt())
                 .summary(dto.summary())
                 .build();
 
