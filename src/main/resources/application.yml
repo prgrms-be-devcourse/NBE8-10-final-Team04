@@ -115,7 +115,7 @@ ai-model:
 github:
   owner-repo: ${GH_OWNER_REPO:prgrms-be-devcourse/NBE8-10-final-Team04}
   workflows:
-    token: ${GITHUB_WORKFLOW_TOKEN}
+    token: ${GH_WORKFLOW_TOKEN}
     ai-info-and-stats:
       crons:
         - ${CRON_AI_INFO_AND_STATS:0 0 15 * * *}      # 매일 KST 00:00 (UTC 15:00)
