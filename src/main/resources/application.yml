@@ -114,6 +114,10 @@ management:
     health:
       probes:
         enabled: true
+  metrics:                          # histogram-buckets
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
 
 ai:
   service:
@@ -148,7 +152,7 @@ toss:
 github:
   owner-repo: ${GH_OWNER_REPO:prgrms-be-devcourse/NBE8-10-final-Team04}
   workflows:
-    token: ${GH_WORKFLOW_TOKEN}
+    token: ${GITHUB_WORKFLOW_TOKEN}
     ai-info-and-stats:
       crons:
         - ${CRON_AI_INFO_AND_STATS:0 0 15 * * *}      # 매일 KST 00:00 (UTC 15:00)
