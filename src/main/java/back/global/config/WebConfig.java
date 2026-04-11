@@ -6,6 +6,10 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+import org.apache.hc.client5.http.config.RequestConfig;
+import org.apache.hc.client5.http.impl.classic.HttpClients;
+import org.apache.hc.core5.util.Timeout;
+import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
@@ -32,8 +36,20 @@ public class WebConfig implements WebMvcConfigurer {
 
     @Bean
     public RestClient embeddingRestClient() {
+        var requestConfig = RequestConfig.custom()
+                .setConnectTimeout(Timeout.ofSeconds(3))   // 연결 수립 최대 3s
+                .setResponseTimeout(Timeout.ofSeconds(10)) // 응답 대기 최대 10s
+                .build();
+
+        var httpClient = HttpClients.custom()
+                .setDefaultRequestConfig(requestConfig)
+                .build();
+
+        var factory = new HttpComponentsClientHttpRequestFactory(httpClient);
+
         return RestClient.builder()
                 .baseUrl(embeddingBaseUrl)
+                .requestFactory(factory)
                 .build();
     }
 }
