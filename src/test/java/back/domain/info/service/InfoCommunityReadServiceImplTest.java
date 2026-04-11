@@ -1,7 +1,6 @@
 package back.domain.info.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anySet;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -55,6 +54,7 @@ class InfoCommunityReadServiceImplTest {
                 .inputTypes(new String[] {"text"})
                 .outputTypes(new String[] {"text"})
                 .build();
+
         when(aiModelFamilyRepository.findAllChangedBetween(targetDate.atStartOfDay(), targetDate.plusDays(1).atStartOfDay()))
                 .thenReturn(List.of(family));
 
@@ -77,6 +77,7 @@ class InfoCommunityReadServiceImplTest {
                 .inputTypes(new String[] {"text"})
                 .outputTypes(new String[] {"text"})
                 .build();
+
         when(aiModelFamilyRepository.findAllChangedBetweenAndVendorId(
                         targetDate.atStartOfDay(), targetDate.plusDays(1).atStartOfDay(), vendorId))
                 .thenReturn(List.of(family));
@@ -99,6 +100,7 @@ class InfoCommunityReadServiceImplTest {
                 .unit("score")
                 .measuredAt(LocalDateTime.of(2026, 4, 8, 12, 0))
                 .build();
+
         when(modelBenchmarkRepository.findAllByMeasuredAtBetween(
                         targetDate.atStartOfDay(), targetDate.plusDays(1).atStartOfDay()))
                 .thenReturn(List.of(benchmark));
@@ -114,6 +116,8 @@ class InfoCommunityReadServiceImplTest {
     void getPendingUpdateRequestsByDateAndVendor_returnsMappedResult() {
         LocalDate targetDate = LocalDate.of(2026, 4, 8);
         Long vendorId = 10L;
+        LocalDateTime start = targetDate.atStartOfDay();
+        LocalDateTime end = targetDate.plusDays(1).atStartOfDay();
 
         AiVendor vendor = AiVendor.builder().name("OpenAI").isActive(true).isDeprecated(false).build();
         AiModelFamily family = AiModelFamily.builder()
@@ -127,15 +131,15 @@ class InfoCommunityReadServiceImplTest {
                 .family(family)
                 .sourceUrl("https://news.example.com/openai")
                 .sourceType("RSS")
-                .summary("요약")
-                .rawContent("원문")
+                .summary("summary")
+                .rawContent("raw")
                 .status(Status.PENDING)
                 .notifiedAt(targetDate.atTime(12, 0))
                 .build();
         org.springframework.test.util.ReflectionTestUtils.setField(updateRequest, "id", 101L);
 
         when(updateRequestRepository.findAllByStatusAndVendorIdAndNotifiedAtBetweenOrderByReviewedAtDescCreatedAtDesc(
-                        Status.PENDING, vendorId, targetDate.atStartOfDay(), targetDate.plusDays(1).atStartOfDay()))
+                        Status.PENDING, vendorId, start, end))
                 .thenReturn(List.of(updateRequest));
 
         List<UpdateRequestCommunityView> result =
@@ -143,12 +147,13 @@ class InfoCommunityReadServiceImplTest {
 
         verify(updateRequestRepository)
                 .findAllByStatusAndVendorIdAndNotifiedAtBetweenOrderByReviewedAtDescCreatedAtDesc(
-                        Status.PENDING, vendorId, targetDate.atStartOfDay(), targetDate.plusDays(1).atStartOfDay());
+                        Status.PENDING, vendorId, start, end);
         assertThat(result).hasSize(1);
         assertThat(result.getFirst().id()).isEqualTo(101L);
         assertThat(result.getFirst().vendorName()).isEqualTo("OpenAI");
-        assertThat(result.getFirst().summary()).isEqualTo("요약");
-        assertThat(result.getFirst().rawContent()).isEqualTo("원문");
+        assertThat(result.getFirst().summary()).isEqualTo("summary");
+        assertThat(result.getFirst().rawContent()).isEqualTo("raw");
+        assertThat(result.getFirst().notifiedAt()).isEqualTo(targetDate.atTime(12, 0));
     }
 
     @Test
