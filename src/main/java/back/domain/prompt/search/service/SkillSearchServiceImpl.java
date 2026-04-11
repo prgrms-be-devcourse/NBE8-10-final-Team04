@@ -49,7 +49,7 @@ public class SkillSearchServiceImpl implements SkillSearchService {
 
     private static final int DEFAULT_TOP_K = 30;
     private static final int QUERY_LIMIT = 7;
-    private static final int PER_QUERY_TOP_K = DEFAULT_TOP_K * 3;
+    private static final int PER_QUERY_TOP_K = DEFAULT_TOP_K * 2;
     private static final int TECH_KEYWORD_MAX_TOKENS = 3;
 
     private static final double MATCHED_QUERY_BOOST_PER_EXTRA = 0.03;
