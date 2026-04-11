@@ -240,6 +240,44 @@ class CommunityPostServiceImplTest {
     }
 
     @Test
+    @DisplayName("DB NOT NULL 제약 충돌 시 BAD_REQUEST 예외를 반환한다")
+    void generatePost_whenNotNullConstraintViolation_thenThrowBadRequest() {
+        long adminId = 1L;
+        long vendorId = 10L;
+        LocalDate targetDate = LocalDate.of(2026, 4, 8);
+        Member admin = Member.createAdmin("sub-admin", "admin@example.com", "Admin");
+
+        when(memberRepository.findById(adminId)).thenReturn(java.util.Optional.of(admin));
+        when(communityPostRepository.existsByPostTypeAndTargetDateAndVendorId(
+                        CommunityPostType.MODEL_INFO, targetDate, vendorId))
+                .thenReturn(false);
+        when(infoCommunityReadService.getPendingUpdateRequestsByDateAndVendor(targetDate, vendorId))
+                .thenReturn(List.of(new UpdateRequestCommunityView(
+                        101L,
+                        "OpenAI",
+                        "GPT-5.4",
+                        "https://news.example.com/openai",
+                        "RSS",
+                        "GPT-5.4 업데이트",
+                        "원문 본문",
+                        targetDate)));
+        when(communityPostRepository.save(any(CommunityPost.class)))
+                .thenThrow(new DataIntegrityViolationException(
+                        "null value in column \"source_url\" violates not-null constraint",
+                        new SQLException("null value in column \"source_url\" violates not-null constraint", "23502")));
+
+        assertThatThrownBy(() -> communityPostService.generatePost(
+                        adminId, new AdminGenerateCommunityPostRequest(CommunityPostType.MODEL_INFO, targetDate, vendorId)))
+                .isInstanceOf(ServiceException.class)
+                .satisfies(ex -> {
+                    ServiceException serviceException = (ServiceException) ex;
+                    assertThat(serviceException.getErrorCode()).isEqualTo(CommonErrorCode.BAD_REQUEST);
+                    assertThat(serviceException.getClientMessage()).isEqualTo("게시글 생성에 필요한 필수 데이터가 누락되었습니다.");
+                });
+        verify(infoCommunityReadService, never()).approveUpdateRequests(any());
+    }
+
+    @Test
     @DisplayName("MODEL_INFO 생성 시 sourceUrl이 비어 있으면 NOT_FOUND 예외를 반환한다")
     void generatePost_whenSourceUrlMissing_thenThrowNotFound() {
         long adminId = 1L;
