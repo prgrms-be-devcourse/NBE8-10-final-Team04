@@ -55,7 +55,7 @@ public class SecurityConfig {
                                 "/dev/skills/**",
                                 "/dev/skill-chunks/**",
                                 "/api/skills/search",
-                                        "/api/chatbot",
+                                "/api/chatbot",
                                 "/api/v1/prompts/**",
                                 "/api/v1/skills/**")
                         .permitAll()
