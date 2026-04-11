@@ -23,7 +23,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import tools.jackson.databind.ObjectMapper;
 
-import java.time.LocalDate;
+import java.util.Locale;
 
 @Service
 @RequiredArgsConstructor
@@ -77,16 +77,13 @@ public class UpdateRequestServiceImpl implements UpdateRequestService {
     }
 
     private void processJson(ItemDto dto) {
-        String provider = null;
-        if(dto.provider().equals("google")) {
-            provider = "Google";
-        }
-        else if (dto.provider().equals("openai")) {
-            provider = "OpenAI";
-        }
-        else if (dto.provider().equals("anthropic")) {
-            provider = "Anthropic";
-        }
+        String normalizedProvider = dto.provider() == null ? "" : dto.provider().trim().toLowerCase(Locale.ROOT);
+        String provider = switch (normalizedProvider) {
+            case "google" -> "Google";
+            case "openai" -> "OpenAI";
+            case "anthropic" -> "Anthropic";
+            default -> dto.provider();
+        };
 
         AiVendor vendor = aiVendorRepository.findByName(provider)
                 .orElseThrow(() -> new ServiceException(

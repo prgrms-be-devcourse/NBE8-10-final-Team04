@@ -115,8 +115,8 @@ public class CommunityPostServiceImpl implements CommunityPostService {
     @Override
     public PageCommunityPostResponse getAdminPosts(CommunityPostStatus status, Pageable pageable) {
         Page<CommunityPostInfoResponse> page = (status == null
-                        ? communityPostRepository.findAll(pageable)
-                        : communityPostRepository.findAllByStatus(status, pageable))
+                ? communityPostRepository.findAll(pageable)
+                : communityPostRepository.findAllByStatus(status, pageable))
                 .map(CommunityPostInfoResponse::from);
         return PageCommunityPostResponse.from(page);
     }

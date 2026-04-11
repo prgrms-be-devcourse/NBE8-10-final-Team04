@@ -1,7 +1,6 @@
 package back.domain.info.dto.response;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 
 import back.domain.info.entity.UpdateRequest;
 
@@ -13,7 +12,7 @@ public record UpdateRequestCommunityView(
         String sourceType,
         String summary,
         String rawContent,
-        LocalDateTime notifiedAt) {
+        LocalDate notifiedAt) {
 
     public static UpdateRequestCommunityView from(UpdateRequest updateRequest) {
         return new UpdateRequestCommunityView(

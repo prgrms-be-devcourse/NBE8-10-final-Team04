@@ -15,7 +15,7 @@ public record UpdateRequestResponse(
         String sourceType,
         String summary,
         Status status,
-        LocalDateTime notifiedAt,
+        LocalDate notifiedAt,
         LocalDateTime reviewedAt,
         LocalDateTime createdAt
 ) {

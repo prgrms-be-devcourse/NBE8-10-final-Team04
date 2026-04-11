@@ -3,7 +3,6 @@ package back.domain.info.dto.data;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.time.LocalDateTime;
-import java.time.OffsetDateTime;
 
 public record ItemDto(
         @JsonProperty("source_id")

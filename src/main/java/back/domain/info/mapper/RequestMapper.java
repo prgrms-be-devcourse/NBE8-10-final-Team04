@@ -8,6 +8,9 @@ import back.domain.info.enums.Status;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.format.DateTimeParseException;
 
 @Component
 public class RequestMapper {
@@ -21,7 +24,7 @@ public class RequestMapper {
                 .sourceType(dto.sourceType())
                 .rawContent(dto.rawContent())
                 .status(Status.PENDING)
-                .notifiedAt(dto.notifiedAt())
+                .notifiedAt(dto.notifiedAt().toLocalDate())
                 .summary(dto.summary())
                 .build();
 
