@@ -35,7 +35,7 @@ import static org.mockito.Mockito.when;
 
 class UpdateRequestServiceImplTest {
 
-    private static final String BASE_PATH = "data/ai-tracker/updates_raw.json";
+    private static final String BASE_PATH = "data/ai-tracker/updates.json";
 
     private OciObjectStorageReader storageReader;
     private AiVendorRepository aiVendorRepository;
@@ -67,13 +67,14 @@ class UpdateRequestServiceImplTest {
                   "count": 1,
                   "items": [
                     {
-                      "id": "item-1",
-                      "provider": "OpenAI",
-                      "family": "GPT",
+                      "source_id": "item-1",
+                      "provider": "openai",
+                      "family_name": "GPT",
                       "source_type": "blog",
-                      "url": "https://example.com/post",
+                      "source_url": "https://example.com/post",
                       "summary": "summary",
-                      "raw_content": "raw text"
+                      "raw_content": "raw text",
+                      "notified_at": "2026-04-03T10:00:00"
                     }
                   ]
                 }
@@ -104,7 +105,7 @@ class UpdateRequestServiceImplTest {
         assertThat(saved.getVendor()).isSameAs(vendor);
         assertThat(saved.getFamily()).isSameAs(family);
         assertThat(saved.getStatus()).isEqualTo(Status.PENDING);
-        assertThat(saved.getNotifiedAt()).isEqualTo(LocalDate.now());
+        assertThat(saved.getNotifiedAt()).isEqualTo(LocalDate.of(2026, 4, 3));
     }
 
     @Test
@@ -115,13 +116,14 @@ class UpdateRequestServiceImplTest {
                   "count": 1,
                   "items": [
                     {
-                      "id": "item-1",
+                      "source_id": "item-1",
                       "provider": "Unknown",
-                      "family": "GPT",
+                      "family_name": "GPT",
                       "source_type": "blog",
-                      "url": "https://example.com/post",
+                      "source_url": "https://example.com/post",
                       "summary": "summary",
-                      "raw_content": "raw text"
+                      "raw_content": "raw text",
+                      "notified_at": "2026-04-03T10:00:00"
                     }
                   ]
                 }

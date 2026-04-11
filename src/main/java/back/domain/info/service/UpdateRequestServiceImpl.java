@@ -23,7 +23,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import tools.jackson.databind.ObjectMapper;
 
-import java.time.LocalDate;
+import java.util.Locale;
 
 @Service
 @RequiredArgsConstructor
@@ -34,7 +34,7 @@ import java.time.LocalDate;
 )
 public class UpdateRequestServiceImpl implements UpdateRequestService {
 
-    private static final String BASE_PATH = "data/ai-tracker/updates_raw.json";
+    private static final String BASE_PATH = "data/ai-tracker/updates.json";
 
     private final ObjectMapper objectMapper;
     private final OciObjectStorageReader storageReader;
@@ -68,7 +68,7 @@ public class UpdateRequestServiceImpl implements UpdateRequestService {
             } catch (ServiceException e) {
                 throw e;
             } catch (Exception e) {
-                log.error("[UpdateRequestService#run] 처리 실패 스킵. id={}", dto.itemId(), e);
+                log.error("[UpdateRequestService#run] 처리 실패 스킵. id={}", dto.sourceId(), e);
                 fail++;
             }
         }
@@ -77,16 +77,19 @@ public class UpdateRequestServiceImpl implements UpdateRequestService {
     }
 
     private void processJson(ItemDto dto) {
-        if (requestRepository.existsBySourceIdAndNotifiedAt(dto.itemId(), LocalDate.now())) {
-            log.info("[UpdateRequestService#processJson] 중복 스킵. sourceId={}", dto.itemId());
-            return;
-        }
+        String normalizedProvider = dto.provider() == null ? "" : dto.provider().trim().toLowerCase(Locale.ROOT);
+        String provider = switch (normalizedProvider) {
+            case "google" -> "Google";
+            case "openai" -> "OpenAI";
+            case "anthropic" -> "Anthropic";
+            default -> dto.provider();
+        };
 
-        AiVendor vendor = aiVendorRepository.findByName(dto.provider())
+        AiVendor vendor = aiVendorRepository.findByName(provider)
                 .orElseThrow(() -> new ServiceException(
                         CommonErrorCode.NOT_FOUND,
                         "[UpdateRequestService#processJson] update request 생성 실패. sourceId="
-                                + dto.itemId() + ", provider=" + dto.provider(),
+                                + dto.sourceId() + ", provider=" + dto.provider(),
                         "Vendor를 찾을 수 없습니다."
                 ));
 

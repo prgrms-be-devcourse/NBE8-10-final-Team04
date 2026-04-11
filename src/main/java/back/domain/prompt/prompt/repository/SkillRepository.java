@@ -15,8 +15,9 @@ import java.util.Optional;
 
 public interface SkillRepository extends JpaRepository<Skill, Long> {
 
-    // content_hash 기준 변경 감지
     Optional<Skill> findByRepositoryIdAndName(Long repositoryId, String name);
+
+    List<Skill> findByRepositoryId(Long repositoryId);
 
     List<Skill> findAllByOrderByIdAsc();
 

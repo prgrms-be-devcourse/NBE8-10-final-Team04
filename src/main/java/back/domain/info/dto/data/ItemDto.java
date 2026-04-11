@@ -2,29 +2,26 @@ package back.domain.info.dto.data;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import java.time.OffsetDateTime;
+import java.time.LocalDateTime;
 
 public record ItemDto(
-        @JsonProperty("id")
-        String itemId,
+        @JsonProperty("source_id")
+        String sourceId,
 
         @JsonProperty("provider")
         String provider,
 
-        @JsonProperty("family")
+        @JsonProperty("family_name")
         String family,
 
         @JsonProperty("source_type")
         String sourceType,
 
-        @JsonProperty("label")
-        String label,
+        @JsonProperty("source_url")
+        String soucreUrl,
 
         @JsonProperty("title")
         String title,
-
-        @JsonProperty("url")
-        String url,
 
         @JsonProperty("summary")
         String summary,
@@ -32,7 +29,7 @@ public record ItemDto(
         @JsonProperty("raw_content")
         String rawContent,
 
-        @JsonProperty("published_at")
-        OffsetDateTime publishedAt
+        @JsonProperty("notified_at")
+        LocalDateTime notifiedAt
 ) {
 }

@@ -8,20 +8,23 @@ import back.domain.info.enums.Status;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.format.DateTimeParseException;
 
 @Component
 public class RequestMapper {
 
     public UpdateRequest toUpdateRequestEntity(ItemDto dto, AiVendor vendor, AiModelFamily family) {
         return UpdateRequest.builder()
-                .sourceId(dto.itemId())
+                .sourceId(dto.sourceId())
                 .vendor(vendor)
                 .family(family)
-                .sourceUrl(dto.url())
+                .sourceUrl(dto.soucreUrl())
                 .sourceType(dto.sourceType())
                 .rawContent(dto.rawContent())
                 .status(Status.PENDING)
-                .notifiedAt(LocalDate.now())
+                .notifiedAt(dto.notifiedAt().toLocalDate())
                 .summary(dto.summary())
                 .build();
 

@@ -7,12 +7,15 @@ import back.domain.prompt.prompt.entity.Agent;
 import back.domain.prompt.prompt.entity.Repository;
 import back.domain.prompt.prompt.entity.Skill;
 
+import java.util.List;
+
 public interface SkillUpsertService {
 
     Repository upsertRepository(PromptRepoItem repoItem);
 
+    void upsertSkills(Repository repository, List<SkillDto> skillDtos);
+
     Skill upsertSkill(Repository repository, SkillDto skillDto);
 
     Agent upsertAgent(Repository repository, AgentDto agentDto);
-
 }

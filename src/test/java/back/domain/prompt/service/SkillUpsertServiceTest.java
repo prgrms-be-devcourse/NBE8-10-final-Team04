@@ -1,17 +1,5 @@
 package back.domain.prompt.prompt.service;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-
 import back.domain.prompt.prompt.dto.AgentDto;
 import back.domain.prompt.prompt.dto.PromptRepoItem;
 import back.domain.prompt.prompt.dto.RepositoryDto;
@@ -21,6 +9,10 @@ import back.domain.prompt.prompt.entity.Repository;
 import back.domain.prompt.prompt.entity.Skill;
 import back.domain.prompt.prompt.enums.Category;
 import back.domain.prompt.prompt.enums.OwnerType;
+import back.domain.prompt.prompt.parser.SkillNormalizeParser;
+import back.domain.prompt.prompt.repository.AgentRepository;
+import back.domain.prompt.prompt.repository.RepositoryRepository;
+import back.domain.prompt.prompt.repository.SkillRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -29,10 +21,24 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
-import back.domain.prompt.prompt.parser.SkillNormalizeParser;
-import back.domain.prompt.prompt.repository.AgentRepository;
-import back.domain.prompt.prompt.repository.RepositoryRepository;
-import back.domain.prompt.prompt.repository.SkillRepository;
+
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.IntStream;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatNoException;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class SkillUpsertServiceTest {
@@ -53,7 +59,7 @@ class SkillUpsertServiceTest {
     private SkillNormalizeParser parser;
 
     @Test
-    @DisplayName("normalizeRepository는 정규화된 태그와 함께 새 repository를 저장한다")
+    @DisplayName("upsertRepository saves a new repository")
     void normalizeRepository_savesNewRepository() {
         PromptRepoItem repoItem = promptRepoItem(
                 100L,
@@ -78,39 +84,8 @@ class SkillUpsertServiceTest {
         assertThat(captured.getOwnerType()).isEqualTo(OwnerType.USER);
     }
 
-//    @Test
-//    @DisplayName("normalizeRepository는 source timestamp가 바뀌면 기존 repository를 갱신한다")
-//    void normalizeRepository_updatesExistingRepository() {
-//        Repository existing = repository(
-//                1L,
-//                100L,
-//                "owner/repo",
-//                3,
-//                1,
-//                "etag-old",
-//                LocalDateTime.parse("2026-03-25T10:00:00")
-//        );
-//        PromptRepoItem repoItem = promptRepoItem(
-//                100L,
-//                LocalDateTime.parse("2026-03-26T10:00:00"),
-//                30,
-//                7,
-//                "etag-new"
-//        );
-//        when(repositoryRepository.findByGithubId(100L)).thenReturn(Optional.of(existing));
-//
-//        Repository result = skillNormalizeService.upsertRepository(repoItem);
-//
-//        assertThat(result).isSameAs(existing);
-//        assertThat(existing.getStarCount()).isEqualTo(30);
-//        assertThat(existing.getForkCount()).isEqualTo(7);
-//        assertThat(existing.getEtag()).isEqualTo("etag-new");
-//        assertThat(existing.getSourceUpdatedAt()).isEqualTo(LocalDateTime.parse("2026-03-26T10:00:00"));
-//        verify(repositoryRepository, never()).save(any(Repository.class));
-//    }
-
     @Test
-    @DisplayName("normalizeRepository는 source timestamp가 같으면 기존 repository를 그대로 유지한다")
+    @DisplayName("upsertRepository keeps existing repository when timestamp is unchanged")
     void normalizeRepository_keepsExistingRepositoryUnchanged() {
         Repository existing = repository(
                 1L,
@@ -140,7 +115,7 @@ class SkillUpsertServiceTest {
     }
 
     @Test
-    @DisplayName("normalizeSkill은 skill이 없으면 새 skill을 저장한다")
+    @DisplayName("upsertSkill saves a new skill when absent")
     void normalizeSkill_savesNewSkill() {
         Repository repository = repository(
                 1L,
@@ -173,7 +148,7 @@ class SkillUpsertServiceTest {
     }
 
     @Test
-    @DisplayName("normalizeSkill은 content hash가 바뀌면 기존 skill을 갱신한다")
+    @DisplayName("upsertSkill updates existing skill when hash changes")
     void normalizeSkill_updatesExistingSkill() {
         Repository repository = repository(
                 1L,
@@ -209,7 +184,7 @@ class SkillUpsertServiceTest {
     }
 
     @Test
-    @DisplayName("normalizeAgent는 agent가 없으면 새 agent를 저장한다")
+    @DisplayName("upsertAgent saves a new agent when absent")
     void normalizeAgent_savesNewAgent() {
         Repository repository = repository(
                 1L,
@@ -237,7 +212,7 @@ class SkillUpsertServiceTest {
     }
 
     @Test
-    @DisplayName("normalizeAgent는 content hash가 바뀌면 기존 agent를 갱신한다")
+    @DisplayName("upsertAgent updates existing agent when hash changes")
     void normalizeAgent_updatesExistingAgent() {
         Repository repository = repository(
                 1L,
@@ -263,6 +238,100 @@ class SkillUpsertServiceTest {
         assertThat(existing.getContentMd()).isEqualTo("new agent content");
         assertThat(existing.getContentHash()).isEqualTo("new-agent-hash");
         verify(agentRepository, never()).save(any(Agent.class));
+    }
+
+    @Test
+    @DisplayName("upsertSkills batch-saves new skills")
+    void upsertSkills_savesNewSkillsInBatch() {
+        Repository repository = repository(
+                1L,
+                100L,
+                "owner/repo",
+                3,
+                1,
+                "etag-old",
+                LocalDateTime.parse("2026-03-26T10:00:00")
+        );
+        List<SkillDto> skillDtos = List.of(
+                skillData("alpha", "skills/alpha.md", "alpha content", "alpha-hash"),
+                skillData("beta", "skills/beta.md", "beta content", "beta-hash")
+        );
+
+        when(skillRepository.findByRepositoryId(1L)).thenReturn(List.of());
+        when(skillRepository.saveAll(any())).thenAnswer(invocation -> invocation.getArgument(0));
+        when(parser.extractTags("demo summary", "alpha content")).thenReturn(Set.of("spring"));
+        when(parser.extractCategory("demo summary", "alpha content")).thenReturn(Category.BACKEND);
+        when(parser.extractTags("demo summary", "beta content")).thenReturn(Set.of("java"));
+        when(parser.extractCategory("demo summary", "beta content")).thenReturn(Category.BACKEND);
+
+        skillNormalizeService.upsertSkills(repository, skillDtos);
+
+        ArgumentCaptor<List> skillBatchCaptor = ArgumentCaptor.forClass(List.class);
+        verify(skillRepository).saveAll(skillBatchCaptor.capture());
+        assertThat(skillBatchCaptor.getValue()).hasSize(2);
+    }
+
+    @Test
+    @DisplayName("upsertSkills continues with per-item fallback when batch save fails")
+    void upsertSkills_fallbacksToSingleSaveWhenBatchFails() {
+        Repository repository = repository(
+                1L,
+                100L,
+                "owner/repo",
+                3,
+                1,
+                "etag-old",
+                LocalDateTime.parse("2026-03-26T10:00:00")
+        );
+        List<SkillDto> skillDtos = List.of(
+                skillData("valid-skill", "skills/valid.md", "valid content", "valid-hash"),
+                skillData(null, "skills/invalid.md", "invalid content", "invalid-hash")
+        );
+
+        when(skillRepository.findByRepositoryId(1L)).thenReturn(List.of());
+        doThrow(new RuntimeException("batch failed")).when(skillRepository).saveAll(any());
+        when(skillRepository.save(argThat(skill -> "valid-skill".equals(skill.getName()))))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+        doThrow(new RuntimeException("invalid row"))
+                .when(skillRepository)
+                .save(argThat(skill -> skill.getName() == null));
+        when(parser.extractTags(anyString(), anyString())).thenReturn(Set.of("batch"));
+        when(parser.extractCategory(anyString(), anyString())).thenReturn(Category.BACKEND);
+
+        assertThatNoException().isThrownBy(() -> skillNormalizeService.upsertSkills(repository, skillDtos));
+
+        verify(skillRepository).saveAll(any());
+        verify(skillRepository, times(2)).save(any());
+    }
+
+    @Test
+    @DisplayName("upsertSkills는 신규 스킬을 200개 단위로 저장한다")
+    void upsertSkills_splitsSkillsInto200Chunks() {
+        Repository repository = repository(
+                1L,
+                100L,
+                "owner/repo",
+                3,
+                1,
+                "etag-old",
+                LocalDateTime.parse("2026-03-26T10:00:00")
+        );
+
+        List<SkillDto> skillDtos = IntStream.range(0, 201)
+                .mapToObj(i -> skillData("skill-" + i, "skills/skill-" + i + ".md", "content-" + i, "hash-" + i))
+                .toList();
+
+        when(skillRepository.findByRepositoryId(1L)).thenReturn(List.of());
+        when(skillRepository.saveAll(any())).thenAnswer(invocation -> invocation.getArgument(0));
+        when(parser.extractTags(anyString(), anyString())).thenReturn(Set.of("batch"));
+        when(parser.extractCategory(anyString(), anyString())).thenReturn(Category.BACKEND);
+
+        skillNormalizeService.upsertSkills(repository, skillDtos);
+
+        ArgumentCaptor<List> skillBatchCaptor = ArgumentCaptor.forClass(List.class);
+        verify(skillRepository, times(2)).saveAll(skillBatchCaptor.capture());
+        assertThat(skillBatchCaptor.getAllValues().get(0)).hasSize(200);
+        assertThat(skillBatchCaptor.getAllValues().get(1)).hasSize(1);
     }
 
     private PromptRepoItem promptRepoItem(
@@ -353,5 +422,4 @@ class SkillUpsertServiceTest {
         ReflectionTestUtils.setField(repository, "id", id);
         return repository;
     }
-
 }

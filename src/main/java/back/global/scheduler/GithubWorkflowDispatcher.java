@@ -34,7 +34,7 @@ import java.util.Map;
  */
 @Slf4j
 @Component
-public class GithubWorkflowDispatcher {
+public class  GithubWorkflowDispatcher {
 
     private static final String GITHUB_API_BASE = "https://api.github.com";
     private static final String DISPATCH_PATH = "/repos/{owner}/{repo}/actions/workflows/{workflowId}/dispatches";

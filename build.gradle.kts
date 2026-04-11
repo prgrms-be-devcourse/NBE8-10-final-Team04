@@ -95,6 +95,8 @@ dependencies {
 
     // test
     testImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")
+
+    implementation ("org.apache.httpcomponents.client5:httpclient5")
 }
 
 tasks.withType<Test> {
