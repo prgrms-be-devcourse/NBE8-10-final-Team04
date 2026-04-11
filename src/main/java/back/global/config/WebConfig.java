@@ -38,23 +38,27 @@ public class WebConfig implements WebMvcConfigurer {
 
     @Bean
     public RestClient embeddingRestClient() {
-        // HC5에서 timeout 은 두 레이어로 나뉜다:
-        //   setResponseTimeout → response headers 수신까지의 timeout (HC4의 waitForContinue)
-        //   SocketConfig.setSoTimeout → socket read 마다 적용되는 timeout (HC4의 socketTimeout)
+        // PoolingHttpClientConnectionManager 기본값:
+        //   maxConnPerRoute = 5  → 100 VU 에서 95개가 연결 풀 대기 → Tomcat 스레드 95개 묶임
+        //   maxConnTotal    = 25 → 전체 연결 한도
         //
-        // body 전송 지연(embed 서버가 헤더는 빠르게, body는 28s 후 전송)을 막으려면
-        // setSoTimeout 이 반드시 필요하다. setResponseTimeout 만으로는 부족하다.
+        // 100 VU 기준으로 충분한 연결 수를 확보한다.
+        // setConnectionRequestTimeout: 풀에서 연결을 빌리지 못하면 3s 후 즉시 실패
+        //   → 풀이 꽉 찼을 때 Tomcat 스레드가 무한 대기하는 것을 방지
         var socketConfig = SocketConfig.custom()
-                .setSoTimeout(Timeout.ofSeconds(10)) // 소켓 read 블로킹 최대 10s
+                .setSoTimeout(Timeout.ofSeconds(10))
                 .build();
 
         var connManager = PoolingHttpClientConnectionManagerBuilder.create()
                 .setDefaultSocketConfig(socketConfig)
+                .setMaxConnPerRoute(200) // embed 서버 1개 엔드포인트로의 최대 동시 연결 수
+                .setMaxConnTotal(200)    // 전체 최대 연결 수
                 .build();
 
         var requestConfig = RequestConfig.custom()
-                .setConnectTimeout(Timeout.ofSeconds(3))   // TCP 연결 수립 최대 3s
-                .setResponseTimeout(Timeout.ofSeconds(10)) // response headers 수신 최대 10s
+                .setConnectTimeout(Timeout.ofSeconds(3))
+                .setConnectionRequestTimeout(Timeout.ofSeconds(3)) // 풀 연결 획득 대기 최대 3s
+                .setResponseTimeout(Timeout.ofSeconds(10))
                 .build();
 
         var httpClient = HttpClients.custom()
