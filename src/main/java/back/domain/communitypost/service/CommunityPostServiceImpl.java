@@ -1,5 +1,6 @@
 package back.domain.communitypost.service;
 
+import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -40,6 +41,9 @@ public class CommunityPostServiceImpl implements CommunityPostService {
 
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
     private static final long NO_VENDOR_PLACEHOLDER = 0L;
+    private static final String COMMUNITY_POST_UNIQUE_CONSTRAINT = "uk_ai_community_posts_type_target_vendor";
+    private static final String SQL_STATE_UNIQUE_VIOLATION = "23505";
+    private static final String SQL_STATE_NOT_NULL_VIOLATION = "23502";
 
     private final CommunityPostRepository communityPostRepository;
     private final MemberRepository memberRepository;
@@ -163,6 +167,13 @@ public class CommunityPostServiceImpl implements CommunityPostService {
                 .filter(this::hasText)
                 .findFirst()
                 .orElse(null);
+        if (!hasText(sourceUrl)) {
+            throw new ServiceException(
+                    CommonErrorCode.NOT_FOUND,
+                    "[CommunityPostServiceImpl#generateModelInfoContent] "
+                            + "sourceUrl is missing in update request source data",
+                    "해당 벤더/날짜의 업데이트 원천 데이터에 sourceUrl이 없습니다.");
+        }
 
         List<Long> requestIdsToApprove = new ArrayList<>();
         for (UpdateRequestCommunityView updateRequest : updateRequests) {
@@ -248,10 +259,23 @@ public class CommunityPostServiceImpl implements CommunityPostService {
         try {
             return CommunityPostInfoResponse.from(communityPostRepository.save(post));
         } catch (DataIntegrityViolationException ex) {
+            if (isDuplicateConstraintViolation(ex)) {
+                throw new ServiceException(
+                        CommonErrorCode.CONFLICT,
+                        "[CommunityPostServiceImpl#savePostWithDuplicateGuard] duplicated post by unique constraint",
+                        "해당 날짜와 타입의 게시글이 이미 존재합니다.");
+            }
+            if (hasSqlState(ex, SQL_STATE_NOT_NULL_VIOLATION)) {
+                throw new ServiceException(
+                        CommonErrorCode.BAD_REQUEST,
+                        "[CommunityPostServiceImpl#savePostWithDuplicateGuard] not-null violation while saving post",
+                        "게시글 생성에 필요한 필수 데이터가 누락되었습니다.");
+            }
             throw new ServiceException(
-                    CommonErrorCode.CONFLICT,
-                    "[CommunityPostServiceImpl#savePostWithDuplicateGuard] duplicated post by unique constraint",
-                    "해당 날짜와 타입의 게시글이 이미 존재합니다.");
+                    CommonErrorCode.INTERNAL_SERVER_ERROR,
+                    "[CommunityPostServiceImpl#savePostWithDuplicateGuard] "
+                            + "unexpected integrity violation while saving post",
+                    "게시글 생성 중 데이터 무결성 오류가 발생했습니다.");
         }
     }
 
@@ -278,6 +302,35 @@ public class CommunityPostServiceImpl implements CommunityPostService {
 
     private boolean hasText(String value) {
         return value != null && !value.isBlank();
+    }
+
+    private boolean isDuplicateConstraintViolation(Throwable throwable) {
+        return hasSqlState(throwable, SQL_STATE_UNIQUE_VIOLATION)
+                || containsMessage(throwable, COMMUNITY_POST_UNIQUE_CONSTRAINT);
+    }
+
+    private boolean hasSqlState(Throwable throwable, String sqlState) {
+        Throwable current = throwable;
+        while (current != null) {
+            if (current instanceof SQLException sqlException && sqlState.equals(sqlException.getSQLState())) {
+                return true;
+            }
+            current = current.getCause();
+        }
+        return false;
+    }
+
+    private boolean containsMessage(Throwable throwable, String keyword) {
+        Throwable current = throwable;
+        String lowerKeyword = keyword.toLowerCase();
+        while (current != null) {
+            String message = current.getMessage();
+            if (message != null && message.toLowerCase().contains(lowerKeyword)) {
+                return true;
+            }
+            current = current.getCause();
+        }
+        return false;
     }
 
     private record GeneratedPostContent(

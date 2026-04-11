@@ -9,6 +9,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
+import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -34,6 +35,7 @@ import back.domain.info.enums.MetricType;
 import back.domain.info.service.InfoCommunityReadService;
 import back.domain.member.entity.Member;
 import back.domain.member.repository.MemberRepository;
+import back.global.exception.CommonErrorCode;
 import back.global.exception.ServiceException;
 
 @ExtendWith(MockitoExtension.class)
@@ -222,12 +224,92 @@ class CommunityPostServiceImplTest {
                         "원문 본문",
                         targetDate)));
         when(communityPostRepository.save(any(CommunityPost.class)))
-                .thenThrow(new DataIntegrityViolationException("duplicate key value violates unique constraint"));
+                .thenThrow(new DataIntegrityViolationException(
+                        "duplicate key value violates unique constraint",
+                        new SQLException("duplicate key value violates unique constraint", "23505")));
 
         assertThatThrownBy(() -> communityPostService.generatePost(
                         adminId, new AdminGenerateCommunityPostRequest(CommunityPostType.MODEL_INFO, targetDate, vendorId)))
                 .isInstanceOf(ServiceException.class)
-                .hasMessageContaining("savePostWithDuplicateGuard");
+                .satisfies(ex -> {
+                    ServiceException serviceException = (ServiceException) ex;
+                    assertThat(serviceException.getErrorCode()).isEqualTo(CommonErrorCode.CONFLICT);
+                    assertThat(serviceException.getClientMessage()).isEqualTo("해당 날짜와 타입의 게시글이 이미 존재합니다.");
+                });
+        verify(infoCommunityReadService, never()).approveUpdateRequests(any());
+    }
+
+    @Test
+    @DisplayName("MODEL_INFO 생성 시 sourceUrl이 비어 있으면 NOT_FOUND 예외를 반환한다")
+    void generatePost_whenSourceUrlMissing_thenThrowNotFound() {
+        long adminId = 1L;
+        long vendorId = 10L;
+        LocalDate targetDate = LocalDate.of(2026, 4, 10);
+        Member admin = Member.createAdmin("sub-admin", "admin@example.com", "Admin");
+
+        when(memberRepository.findById(adminId)).thenReturn(java.util.Optional.of(admin));
+        when(communityPostRepository.existsByPostTypeAndTargetDateAndVendorId(
+                        CommunityPostType.MODEL_INFO, targetDate, vendorId))
+                .thenReturn(false);
+        when(infoCommunityReadService.getPendingUpdateRequestsByDateAndVendor(targetDate, vendorId))
+                .thenReturn(List.of(new UpdateRequestCommunityView(
+                        101L,
+                        "OpenAI",
+                        "GPT-5.4",
+                        "   ",
+                        "RSS",
+                        "GPT-5.4 업데이트",
+                        "원문 본문",
+                        targetDate)));
+
+        assertThatThrownBy(() -> communityPostService.generatePost(
+                        adminId, new AdminGenerateCommunityPostRequest(CommunityPostType.MODEL_INFO, targetDate, vendorId)))
+                .isInstanceOf(ServiceException.class)
+                .satisfies(ex -> {
+                    ServiceException serviceException = (ServiceException) ex;
+                    assertThat(serviceException.getErrorCode()).isEqualTo(CommonErrorCode.NOT_FOUND);
+                    assertThat(serviceException.getClientMessage())
+                            .isEqualTo("해당 벤더/날짜의 업데이트 원천 데이터에 sourceUrl이 없습니다.");
+                });
+        verify(communityPostRepository, never()).save(any());
+        verify(infoCommunityReadService, never()).approveUpdateRequests(any());
+    }
+
+    @Test
+    @DisplayName("DB 무결성 오류가 중복 제약이 아니면 INTERNAL_SERVER_ERROR 예외를 반환한다")
+    void generatePost_whenUnexpectedIntegrityViolation_thenThrowInternalServerError() {
+        long adminId = 1L;
+        long vendorId = 10L;
+        LocalDate targetDate = LocalDate.of(2026, 4, 10);
+        Member admin = Member.createAdmin("sub-admin", "admin@example.com", "Admin");
+
+        when(memberRepository.findById(adminId)).thenReturn(java.util.Optional.of(admin));
+        when(communityPostRepository.existsByPostTypeAndTargetDateAndVendorId(
+                        CommunityPostType.MODEL_INFO, targetDate, vendorId))
+                .thenReturn(false);
+        when(infoCommunityReadService.getPendingUpdateRequestsByDateAndVendor(targetDate, vendorId))
+                .thenReturn(List.of(new UpdateRequestCommunityView(
+                        101L,
+                        "OpenAI",
+                        "GPT-5.4",
+                        "https://news.example.com/openai",
+                        "RSS",
+                        "GPT-5.4 업데이트",
+                        "원문 본문",
+                        targetDate)));
+        when(communityPostRepository.save(any(CommunityPost.class)))
+                .thenThrow(new DataIntegrityViolationException(
+                        "unexpected integrity violation",
+                        new SQLException("unexpected integrity violation", "XX000")));
+
+        assertThatThrownBy(() -> communityPostService.generatePost(
+                        adminId, new AdminGenerateCommunityPostRequest(CommunityPostType.MODEL_INFO, targetDate, vendorId)))
+                .isInstanceOf(ServiceException.class)
+                .satisfies(ex -> {
+                    ServiceException serviceException = (ServiceException) ex;
+                    assertThat(serviceException.getErrorCode()).isEqualTo(CommonErrorCode.INTERNAL_SERVER_ERROR);
+                    assertThat(serviceException.getClientMessage()).isEqualTo("게시글 생성 중 데이터 무결성 오류가 발생했습니다.");
+                });
         verify(infoCommunityReadService, never()).approveUpdateRequests(any());
     }
 }
