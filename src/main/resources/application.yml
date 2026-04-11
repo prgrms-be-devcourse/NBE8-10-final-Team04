@@ -114,6 +114,10 @@ management:
     health:
       probes:
         enabled: true
+  metrics:                          # histogram-buckets
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
 
 ai:
   service:
