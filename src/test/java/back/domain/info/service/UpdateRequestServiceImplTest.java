@@ -19,7 +19,6 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.test.util.ReflectionTestUtils;
 import tools.jackson.databind.ObjectMapper;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -35,7 +34,7 @@ import static org.mockito.Mockito.when;
 
 class UpdateRequestServiceImplTest {
 
-    private static final String BASE_PATH = "data/ai-tracker/updates_raw.json";
+    private static final String BASE_PATH = "data/ai-tracker/updates.json";
 
     private OciObjectStorageReader storageReader;
     private AiVendorRepository aiVendorRepository;
@@ -67,13 +66,14 @@ class UpdateRequestServiceImplTest {
                   "count": 1,
                   "items": [
                     {
-                      "id": "item-1",
-                      "provider": "OpenAI",
-                      "family": "GPT",
+                      "source_id": "item-1",
+                      "provider": "openai",
+                      "family_name": "GPT",
                       "source_type": "blog",
-                      "url": "https://example.com/post",
+                      "source_url": "https://example.com/post",
                       "summary": "summary",
-                      "raw_content": "raw text"
+                      "raw_content": "raw text",
+                      "notified_at": "2026-04-03T10:00:00"
                     }
                   ]
                 }
@@ -104,7 +104,7 @@ class UpdateRequestServiceImplTest {
         assertThat(saved.getVendor()).isSameAs(vendor);
         assertThat(saved.getFamily()).isSameAs(family);
         assertThat(saved.getStatus()).isEqualTo(Status.PENDING);
-        assertThat(saved.getNotifiedAt()).isEqualTo(LocalDate.now());
+        assertThat(saved.getNotifiedAt()).isEqualTo(LocalDateTime.of(2026, 4, 3, 10, 0));
     }
 
     @Test
@@ -115,13 +115,14 @@ class UpdateRequestServiceImplTest {
                   "count": 1,
                   "items": [
                     {
-                      "id": "item-1",
+                      "source_id": "item-1",
                       "provider": "Unknown",
-                      "family": "GPT",
+                      "family_name": "GPT",
                       "source_type": "blog",
-                      "url": "https://example.com/post",
+                      "source_url": "https://example.com/post",
                       "summary": "summary",
-                      "raw_content": "raw text"
+                      "raw_content": "raw text",
+                      "notified_at": "2026-04-03T10:00:00"
                     }
                   ]
                 }
@@ -214,7 +215,7 @@ class UpdateRequestServiceImplTest {
                 .sourceType("blog")
                 .summary("summary")
                 .status(Status.APPROVED)
-                .notifiedAt(LocalDate.of(2026, 4, 3))
+                .notifiedAt(LocalDateTime.of(2026, 4, 3, 9, 30))
                 .reviewedAt(LocalDateTime.of(2026, 4, 3, 10, 0))
                 .build();
         ReflectionTestUtils.setField(request, "id", 1L);

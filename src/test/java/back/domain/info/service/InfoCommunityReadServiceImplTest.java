@@ -130,20 +130,20 @@ class InfoCommunityReadServiceImplTest {
                 .summary("요약")
                 .rawContent("원문")
                 .status(Status.PENDING)
-                .notifiedAt(targetDate)
+                .notifiedAt(targetDate.atTime(12, 0))
                 .build();
         org.springframework.test.util.ReflectionTestUtils.setField(updateRequest, "id", 101L);
 
-        when(updateRequestRepository.findAllByStatusAndVendorIdAndNotifiedAtOrderByReviewedAtDescCreatedAtDesc(
-                        Status.PENDING, vendorId, targetDate))
+        when(updateRequestRepository.findAllByStatusAndVendorIdAndNotifiedAtBetweenOrderByReviewedAtDescCreatedAtDesc(
+                        Status.PENDING, vendorId, targetDate.atStartOfDay(), targetDate.plusDays(1).atStartOfDay()))
                 .thenReturn(List.of(updateRequest));
 
         List<UpdateRequestCommunityView> result =
                 infoCommunityReadService.getPendingUpdateRequestsByDateAndVendor(targetDate, vendorId);
 
         verify(updateRequestRepository)
-                .findAllByStatusAndVendorIdAndNotifiedAtOrderByReviewedAtDescCreatedAtDesc(
-                        Status.PENDING, vendorId, targetDate);
+                .findAllByStatusAndVendorIdAndNotifiedAtBetweenOrderByReviewedAtDescCreatedAtDesc(
+                        Status.PENDING, vendorId, targetDate.atStartOfDay(), targetDate.plusDays(1).atStartOfDay());
         assertThat(result).hasSize(1);
         assertThat(result.getFirst().id()).isEqualTo(101L);
         assertThat(result.getFirst().vendorName()).isEqualTo("OpenAI");

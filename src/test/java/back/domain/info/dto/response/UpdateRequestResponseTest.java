@@ -7,7 +7,6 @@ import back.domain.info.enums.Status;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -57,7 +56,7 @@ class UpdateRequestResponseTest {
                 .sourceType("blog")
                 .summary("summary")
                 .status(Status.APPROVED)
-                .notifiedAt(LocalDate.of(2026, 4, 3))
+                .notifiedAt(LocalDateTime.of(2026, 4, 3, 9, 30))
                 .reviewedAt(LocalDateTime.of(2026, 4, 3, 10, 0))
                 .build();
         ReflectionTestUtils.setField(entity, "id", 1L);

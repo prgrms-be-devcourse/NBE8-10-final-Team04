@@ -6,7 +6,7 @@ import back.domain.info.entity.AiVendor;
 import back.domain.info.enums.Status;
 import org.junit.jupiter.api.Test;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -18,15 +18,14 @@ class RequestMapperTest {
     void toUpdateRequestEntity_mapsFields() {
         ItemDto dto = new ItemDto(
                 "item-1",
-                "OpenAI",
+                "openai",
                 "GPT",
                 "blog",
-                null,
-                null,
                 "https://example.com/post",
+                null,
                 "summary",
                 "raw content",
-                null
+                LocalDateTime.of(2026, 4, 3, 10, 0)
         );
 
         AiVendor vendor = AiVendor.builder()
@@ -51,6 +50,6 @@ class RequestMapperTest {
         assertThat(entity.getRawContent()).isEqualTo("raw content");
         assertThat(entity.getSummary()).isEqualTo("summary");
         assertThat(entity.getStatus()).isEqualTo(Status.PENDING);
-        assertThat(entity.getNotifiedAt()).isEqualTo(LocalDate.now());
+        assertThat(entity.getNotifiedAt()).isEqualTo(LocalDateTime.of(2026, 4, 3, 10, 0));
     }
 }
