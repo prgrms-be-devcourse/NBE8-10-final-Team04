@@ -14,12 +14,18 @@ import back.domain.prompt.search.repository.SkillChunkVectorSearchRepository;
 import back.domain.prompt.search.util.VectorUtils;
 import back.global.exception.CommonErrorCode;
 import back.global.exception.ServiceException;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.Executor;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 
 @Service
@@ -28,14 +34,17 @@ public class SkillSearchServiceImpl implements SkillSearchService {
     private final EmbeddingService embeddingService;
     private final SkillChunkVectorSearchRepository skillChunkVectorSearchRepository;
     private final QueryTypeRuleProvider queryTypeRuleProvider;
+    private final Executor skillSearchExecutor;
 
     public SkillSearchServiceImpl(
             EmbeddingService embeddingService,
             SkillChunkVectorSearchRepository skillChunkVectorSearchRepository,
-            QueryTypeRuleProvider queryTypeRuleProvider) {
+            QueryTypeRuleProvider queryTypeRuleProvider,
+            @Qualifier("skillSearchExecutor") Executor skillSearchExecutor) {
         this.embeddingService = embeddingService;
         this.skillChunkVectorSearchRepository = skillChunkVectorSearchRepository;
         this.queryTypeRuleProvider = queryTypeRuleProvider;
+        this.skillSearchExecutor = skillSearchExecutor;
     }
 
     private static final int DEFAULT_TOP_K = 30;
@@ -78,12 +87,27 @@ public class SkillSearchServiceImpl implements SkillSearchService {
                 .map(SearchQueryDto::text)
                 .toList();
 
+        // JVM 레벨 타임아웃: HTTP 클라이언트 설정과 무관하게 10초 내 Tomcat 스레드 강제 해제
+        // embedBatch 를 Virtual Thread 에서 실행 → Tomcat 스레드는 join() 에서 대기
+        // orTimeout(10s): 10초 후 TimeoutException → CompletionException → ServiceException → 500
+        // 이로써 HTTP 클라이언트 timeout 설정이 어떤 이유로든 발동하지 않아도
+        // Tomcat 스레드가 10s 이상 묶이지 않아 스레드 누적(PENDING)이 원천 차단된다.
         List<List<Float>> batchEmbeddings;
         try {
-            batchEmbeddings = embeddingService.embedBatch(texts);
-        } catch (ServiceException e) {
-            throw e;
-        } catch (Exception e) {
+            batchEmbeddings = CompletableFuture
+                    .supplyAsync(() -> embeddingService.embedBatch(texts), skillSearchExecutor)
+                    .orTimeout(10, TimeUnit.SECONDS)
+                    .join();
+        } catch (CompletionException e) {
+            Throwable cause = e.getCause();
+            if (cause instanceof ServiceException se) throw se;
+            if (cause instanceof TimeoutException) {
+                throw new ServiceException(
+                        CommonErrorCode.INTERNAL_SERVER_ERROR,
+                        "[SkillSearchServiceImpl#search] embedding timed out after 10s",
+                        "검색 중 오류가 발생했습니다."
+                );
+            }
             throw new ServiceException(
                     CommonErrorCode.INTERNAL_SERVER_ERROR,
                     "[SkillSearchServiceImpl#search] batch embedding failed: " + e.getMessage(),

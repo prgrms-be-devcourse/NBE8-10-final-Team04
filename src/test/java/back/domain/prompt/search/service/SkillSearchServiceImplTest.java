@@ -8,6 +8,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.Executor;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -37,8 +38,14 @@ class SkillSearchServiceImplTest {
     @Test
     @DisplayName("search는 chunk 결과를 skill 기준으로 묶고 점수 순으로 반환한다")
     void search_groupsAndSortsCandidates() {
+        Executor directExecutor = Runnable::run;
         SkillSearchServiceImpl skillSearchService =
-                new SkillSearchServiceImpl(embeddingService, skillChunkVectorSearchRepository, queryTypeRuleProvider);
+                new SkillSearchServiceImpl(
+                        embeddingService,
+                        skillChunkVectorSearchRepository,
+                        queryTypeRuleProvider,
+                        directExecutor
+                );
 
         when(queryTypeRuleProvider.getTechQueryWhitelist()).thenReturn(Set.of());
         when(queryTypeRuleProvider.getFunctionHintWords()).thenReturn(Set.of("search"));
