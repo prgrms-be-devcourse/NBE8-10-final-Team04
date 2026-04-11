@@ -116,8 +116,6 @@ class InfoCommunityReadServiceImplTest {
     void getPendingUpdateRequestsByDateAndVendor_returnsMappedResult() {
         LocalDate targetDate = LocalDate.of(2026, 4, 8);
         Long vendorId = 10L;
-        LocalDateTime start = targetDate.atStartOfDay();
-        LocalDateTime end = targetDate.plusDays(1).atStartOfDay();
 
         AiVendor vendor = AiVendor.builder().name("OpenAI").isActive(true).isDeprecated(false).build();
         AiModelFamily family = AiModelFamily.builder()
@@ -134,26 +132,26 @@ class InfoCommunityReadServiceImplTest {
                 .summary("summary")
                 .rawContent("raw")
                 .status(Status.PENDING)
-                .notifiedAt(targetDate.atTime(12, 0))
+                .notifiedAt(targetDate)
                 .build();
         org.springframework.test.util.ReflectionTestUtils.setField(updateRequest, "id", 101L);
 
-        when(updateRequestRepository.findAllByStatusAndVendorIdAndNotifiedAtBetweenOrderByReviewedAtDescCreatedAtDesc(
-                        Status.PENDING, vendorId, start, end))
+        when(updateRequestRepository.findAllByStatusAndVendorIdAndNotifiedAtOrderByReviewedAtDescCreatedAtDesc(
+                        Status.PENDING, vendorId, targetDate))
                 .thenReturn(List.of(updateRequest));
 
         List<UpdateRequestCommunityView> result =
                 infoCommunityReadService.getPendingUpdateRequestsByDateAndVendor(targetDate, vendorId);
 
         verify(updateRequestRepository)
-                .findAllByStatusAndVendorIdAndNotifiedAtBetweenOrderByReviewedAtDescCreatedAtDesc(
-                        Status.PENDING, vendorId, start, end);
+                .findAllByStatusAndVendorIdAndNotifiedAtOrderByReviewedAtDescCreatedAtDesc(
+                        Status.PENDING, vendorId, targetDate);
         assertThat(result).hasSize(1);
         assertThat(result.getFirst().id()).isEqualTo(101L);
         assertThat(result.getFirst().vendorName()).isEqualTo("OpenAI");
         assertThat(result.getFirst().summary()).isEqualTo("summary");
         assertThat(result.getFirst().rawContent()).isEqualTo("raw");
-        assertThat(result.getFirst().notifiedAt()).isEqualTo(targetDate.atTime(12, 0));
+        assertThat(result.getFirst().notifiedAt()).isEqualTo(targetDate);
     }
 
     @Test

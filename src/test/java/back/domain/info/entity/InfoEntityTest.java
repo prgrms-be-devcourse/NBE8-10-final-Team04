@@ -5,6 +5,7 @@ import back.domain.info.enums.Status;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 
@@ -86,7 +87,7 @@ class InfoEntityTest {
                 .rawContent("raw")
                 .summary("summary")
                 .status(Status.PENDING)
-                .notifiedAt(LocalDateTime.of(2026, 4, 3, 9, 30))
+                .notifiedAt(LocalDate.of(2026, 4, 3))
                 .build();
         LocalDateTime beforeReview = LocalDateTime.now().minusSeconds(1);
         request.review(Status.APPROVED);
@@ -99,7 +100,7 @@ class InfoEntityTest {
         assertThat(request.getRawContent()).isEqualTo("raw");
         assertThat(request.getSummary()).isEqualTo("summary");
         assertThat(request.getStatus()).isEqualTo(Status.APPROVED);
-        assertThat(request.getNotifiedAt()).isEqualTo(LocalDateTime.of(2026, 4, 3, 9, 30));
+        assertThat(request.getNotifiedAt()).isEqualTo(LocalDate.of(2026, 4, 3));
         assertThat(request.getReviewedAt()).isAfter(beforeReview);
     }
 }

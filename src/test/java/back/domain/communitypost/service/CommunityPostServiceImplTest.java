@@ -79,7 +79,7 @@ class CommunityPostServiceImplTest {
                         "RSS",
                         "GPT-5.4 업데이트",
                         "원문 본문",
-                        targetDate.atStartOfDay())));
+                        targetDate)));
         when(communityPostRepository.save(any(CommunityPost.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -222,7 +222,7 @@ class CommunityPostServiceImplTest {
                         "RSS",
                         "GPT-5.4 업데이트",
                         "원문 본문",
-                        targetDate.atStartOfDay())));
+                        targetDate)));
         when(communityPostRepository.save(any(CommunityPost.class)))
                 .thenThrow(new DataIntegrityViolationException(
                         "duplicate key value violates unique constraint",
@@ -260,7 +260,7 @@ class CommunityPostServiceImplTest {
                         "RSS",
                         "GPT-5.4 업데이트",
                         "원문 본문",
-                        targetDate.atStartOfDay())));
+                        targetDate)));
         when(communityPostRepository.save(any(CommunityPost.class)))
                 .thenThrow(new DataIntegrityViolationException(
                         "null value in column \"source_url\" violates not-null constraint",
@@ -298,7 +298,7 @@ class CommunityPostServiceImplTest {
                         "RSS",
                         "GPT-5.4 업데이트",
                         "원문 본문",
-                        targetDate.atStartOfDay())));
+                        targetDate)));
 
         assertThatThrownBy(() -> communityPostService.generatePost(
                         adminId, new AdminGenerateCommunityPostRequest(CommunityPostType.MODEL_INFO, targetDate, vendorId)))
@@ -334,7 +334,7 @@ class CommunityPostServiceImplTest {
                         "RSS",
                         "GPT-5.4 업데이트",
                         "원문 본문",
-                        targetDate.atStartOfDay())));
+                        targetDate)));
         when(communityPostRepository.save(any(CommunityPost.class)))
                 .thenThrow(new DataIntegrityViolationException(
                         "unexpected integrity violation",

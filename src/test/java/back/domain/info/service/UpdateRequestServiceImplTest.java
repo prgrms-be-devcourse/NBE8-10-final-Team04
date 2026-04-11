@@ -19,6 +19,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.test.util.ReflectionTestUtils;
 import tools.jackson.databind.ObjectMapper;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -104,7 +105,7 @@ class UpdateRequestServiceImplTest {
         assertThat(saved.getVendor()).isSameAs(vendor);
         assertThat(saved.getFamily()).isSameAs(family);
         assertThat(saved.getStatus()).isEqualTo(Status.PENDING);
-        assertThat(saved.getNotifiedAt()).isEqualTo(LocalDateTime.of(2026, 4, 3, 10, 0));
+        assertThat(saved.getNotifiedAt()).isEqualTo(LocalDate.of(2026, 4, 3));
     }
 
     @Test
@@ -215,7 +216,7 @@ class UpdateRequestServiceImplTest {
                 .sourceType("blog")
                 .summary("summary")
                 .status(Status.APPROVED)
-                .notifiedAt(LocalDateTime.of(2026, 4, 3, 9, 30))
+                .notifiedAt(LocalDate.of(2026, 4, 3))
                 .reviewedAt(LocalDateTime.of(2026, 4, 3, 10, 0))
                 .build();
         ReflectionTestUtils.setField(request, "id", 1L);

@@ -6,6 +6,7 @@ import back.domain.info.entity.AiVendor;
 import back.domain.info.enums.Status;
 import org.junit.jupiter.api.Test;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -50,6 +51,6 @@ class RequestMapperTest {
         assertThat(entity.getRawContent()).isEqualTo("raw content");
         assertThat(entity.getSummary()).isEqualTo("summary");
         assertThat(entity.getStatus()).isEqualTo(Status.PENDING);
-        assertThat(entity.getNotifiedAt()).isEqualTo(LocalDateTime.of(2026, 4, 3, 10, 0));
+        assertThat(entity.getNotifiedAt()).isEqualTo(LocalDate.of(2026, 4, 3));
     }
 }

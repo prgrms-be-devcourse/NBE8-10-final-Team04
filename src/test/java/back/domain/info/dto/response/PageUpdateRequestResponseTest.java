@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -23,7 +24,7 @@ class PageUpdateRequestResponseTest {
                 "blog",
                 "summary",
                 Status.APPROVED,
-                LocalDateTime.of(2026, 4, 3, 9, 30),
+                LocalDate.of(2026, 4, 3),
                 LocalDateTime.of(2026, 4, 3, 10, 0),
                 LocalDateTime.of(2026, 4, 3, 9, 0)
         );
