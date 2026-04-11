@@ -8,6 +8,8 @@ import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import org.apache.hc.client5.http.config.RequestConfig;
 import org.apache.hc.client5.http.impl.classic.HttpClients;
+import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManagerBuilder;
+import org.apache.hc.core5.http.io.SocketConfig;
 import org.apache.hc.core5.util.Timeout;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 
@@ -36,20 +38,33 @@ public class WebConfig implements WebMvcConfigurer {
 
     @Bean
     public RestClient embeddingRestClient() {
+        // HC5에서 timeout 은 두 레이어로 나뉜다:
+        //   setResponseTimeout → response headers 수신까지의 timeout (HC4의 waitForContinue)
+        //   SocketConfig.setSoTimeout → socket read 마다 적용되는 timeout (HC4의 socketTimeout)
+        //
+        // body 전송 지연(embed 서버가 헤더는 빠르게, body는 28s 후 전송)을 막으려면
+        // setSoTimeout 이 반드시 필요하다. setResponseTimeout 만으로는 부족하다.
+        var socketConfig = SocketConfig.custom()
+                .setSoTimeout(Timeout.ofSeconds(10)) // 소켓 read 블로킹 최대 10s
+                .build();
+
+        var connManager = PoolingHttpClientConnectionManagerBuilder.create()
+                .setDefaultSocketConfig(socketConfig)
+                .build();
+
         var requestConfig = RequestConfig.custom()
-                .setConnectTimeout(Timeout.ofSeconds(3))   // 연결 수립 최대 3s
-                .setResponseTimeout(Timeout.ofSeconds(10)) // 응답 대기 최대 10s
+                .setConnectTimeout(Timeout.ofSeconds(3))   // TCP 연결 수립 최대 3s
+                .setResponseTimeout(Timeout.ofSeconds(10)) // response headers 수신 최대 10s
                 .build();
 
         var httpClient = HttpClients.custom()
+                .setConnectionManager(connManager)
                 .setDefaultRequestConfig(requestConfig)
                 .build();
 
-        var factory = new HttpComponentsClientHttpRequestFactory(httpClient);
-
         return RestClient.builder()
                 .baseUrl(embeddingBaseUrl)
-                .requestFactory(factory)
+                .requestFactory(new HttpComponentsClientHttpRequestFactory(httpClient))
                 .build();
     }
 }
