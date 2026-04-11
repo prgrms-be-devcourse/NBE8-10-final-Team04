@@ -53,7 +53,7 @@ class SkillSearchServiceImplTest {
 
         when(embeddingService.embedBatch(List.of("spring search")))
                 .thenReturn(List.of(List.of(0.1f, 0.2f)));
-        when(skillChunkVectorSearchRepository.searchTopK("[0.1,0.2]", 90)).thenReturn(List.of(
+        when(skillChunkVectorSearchRepository.searchTopK("[0.1,0.2]", 60)).thenReturn(List.of(
                 row(11L, 1L, "alpha", "BACKEND", "   ", 0.82f, null),
                 row(12L, 1L, "alpha", "BACKEND", "ignored", 0.71f, LocalDateTime.parse("2026-03-31T00:00:00")),
                 row(21L, 2L, "beta", "FRONTEND", "frontend summary", 0.61f,
@@ -62,7 +62,7 @@ class SkillSearchServiceImplTest {
 
         SkillChunkSearchResultDto result = skillSearchService.search(List.of("spring search"));
 
-        verify(skillChunkVectorSearchRepository).searchTopK("[0.1,0.2]", 90);
+        verify(skillChunkVectorSearchRepository).searchTopK("[0.1,0.2]", 60);
         assertThat(result.candidates()).hasSize(2);
 
         assertThat(result.candidates().get(0).skillId()).isEqualTo(1L);

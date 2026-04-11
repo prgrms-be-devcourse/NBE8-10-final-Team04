@@ -1,12 +1,12 @@
 package back.domain.prompt.search.repository;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
 
-import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -16,7 +16,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.PreparedStatementSetter;
 import org.springframework.jdbc.core.RowMapper;
 
 import back.domain.prompt.search.dto.chunk.SkillChunkVectorSearchRowDto;
@@ -33,17 +32,15 @@ class SkillChunkVectorSearchRepositoryTest {
 
         doAnswer(invocation -> {
             String sql = invocation.getArgument(0, String.class);
-            PreparedStatementSetter setter = invocation.getArgument(1, PreparedStatementSetter.class);
-            RowMapper<SkillChunkVectorSearchRowDto> rowMapper = invocation.getArgument(2);
+            RowMapper<SkillChunkVectorSearchRowDto> rowMapper = invocation.getArgument(1);
+            String firstVector = invocation.getArgument(2, String.class);
+            String secondVector = invocation.getArgument(3, String.class);
+            Integer topK = invocation.getArgument(4, Integer.class);
 
             assertThat(sql).contains("CAST(? AS vector)");
-
-            PreparedStatement ps = mock(PreparedStatement.class);
-            setter.setValues(ps);
-            verify(ps).setQueryTimeout(5);
-            verify(ps).setString(1, "[0.1,0.2]");
-            verify(ps).setString(2, "[0.1,0.2]");
-            verify(ps).setInt(3, 5);
+            assertThat(firstVector).isEqualTo("[0.1,0.2]");
+            assertThat(secondVector).isEqualTo("[0.1,0.2]");
+            assertThat(topK).isEqualTo(5);
 
             ResultSet rs = mock(ResultSet.class);
             org.mockito.Mockito.when(rs.getLong("chunk_id")).thenReturn(1L);
@@ -60,7 +57,7 @@ class SkillChunkVectorSearchRepositoryTest {
             org.mockito.Mockito.when(rs.getFloat("similarity")).thenReturn(0.91f);
 
             return List.of(rowMapper.mapRow(rs, 0));
-        }).when(jdbcTemplate).query(anyString(), org.mockito.ArgumentMatchers.any(PreparedStatementSetter.class), org.mockito.ArgumentMatchers.any(RowMapper.class));
+        }).when(jdbcTemplate).query(anyString(), any(RowMapper.class), anyString(), anyString(), anyInt());
 
         List<SkillChunkVectorSearchRowDto> result = repository.searchTopK("[0.1,0.2]", 5);
 
